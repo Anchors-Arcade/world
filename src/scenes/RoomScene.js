@@ -2,6 +2,10 @@ import { ROOMS } from '../maps/rooms.js';
 import { Avatar } from '../entities/Avatar.js';
 import { toast } from '../ui/hud.js';
 import { RemotePlayers } from '../multiplayer/RemotePlayers.js';
+import { HomeRoom } from '../rooms/HomeRoom.js';
+import { RoomEditor } from '../rooms/RoomEditor.js';
+import { ROOM, rectOf } from '../rooms/roomRules.js';
+import { fetchRoom } from '../database/rooms.js';
 
 const DOOR_W = 70, DOOR_H = 56;
 
@@ -11,6 +15,11 @@ export class RoomScene extends Phaser.Scene {
   init(data) {
     this.roomId = ROOMS[data.roomId] ? data.roomId : 'snowy_plaza';
     this.fromRoom = data.from || null;
+    // 'home' is a template: the owner decides whose layout loads. Presence channel is per owner so every room is separate.
+    const profile = this.registry.get('profile');
+    this.ownerId = this.roomId === 'home' ? (data.ownerId || profile.id) : null;
+    this.channelId = this.ownerId ? `home:${this.ownerId}` : this.roomId;
+    this.editing = false; this.uiLocked = false; this.editor = null; this.home = null; this.loadToken = 0;
     this.leaving = false; this.target = null; this.pendingDoor = null; this.stuck = 0;
   }
 
@@ -27,7 +36,8 @@ export class RoomScene extends Phaser.Scene {
     (room.blocks || []).forEach((b) => this.addBlock(b));
     (room.trees || []).forEach(([x, y]) => this.addTree(x, y));
     (room.portals || []).forEach((p) => this.addPortal(p));
-    if (room.indoor) this.addWall(0, 0, room.w, 150, 0x7a4f2f);
+    (room.kiosks || []).forEach((k) => this.addKiosk(k));
+    if (room.indoor) { const wall = this.addWall(0, 0, room.w, 150, 0x7a4f2f); if (room.type === 'home') wall.setAlpha(0); }   // homes draw their own themed wall
 
     const s = this.spawnPoint(room);
     this.player = new Avatar(this, s.x, s.y, profile.avatar_data, profile.display_name);
@@ -40,15 +50,74 @@ export class RoomScene extends Phaser.Scene {
     this.setupInput();
 
     // multiplayer (no-op for guests) + live outfit changes from the wardrobe
-    this.mp = new RemotePlayers(this, this.registry.get('net'), profile, this.roomId);
+    this.mp = new RemotePlayers(this, this.registry.get('net'), profile, this.channelId);
     this.onOutfit = (av) => { this.player.setOutfit(av); this.mp.outfit(av); };
     this.game.events.on('outfit-changed', this.onOutfit);
-    this.events.once('shutdown', () => { this.game.events.off('outfit-changed', this.onOutfit); this.mp.destroy(); });
+    this.onLock = (v) => { this.uiLocked = v; if (v) { this.target = null; this.pendingDoor = null; this.player.move(0, 0); } };
+    this.game.events.on('ui-lock', this.onLock);
+    this.events.once('shutdown', () => {
+      this.game.events.off('outfit-changed', this.onOutfit); this.game.events.off('ui-lock', this.onLock);
+      this.editor?.dispose(); this.editor = null; this.home?.destroy(); this.loadToken++;
+      this.mp.destroy();
+      this.game.events.emit('home-left');
+    });
     this.game.events.emit('room-entered', this.roomId, room.name);
+    if (room.type === 'home') this.setupHome(profile);
+  }
+
+  // ---------- player rooms ----------
+  async setupHome(profile) {
+    const isOwner = this.ownerId === profile.id, token = ++this.loadToken;
+    this.home = new HomeRoom(this, { ownerId: this.ownerId, isOwner });
+    this.home.setTitle(isOwner ? 'My Room' : 'Room');
+    this.game.events.emit('home-ready', { isOwner, guest: !!profile.guest });
+    if (profile.guest) { this.home.loaded = true; return toast('Guest rooms are empty and not saved. Create an account to decorate!'); }
+    try {
+      const data = await fetchRoom(this.ownerId);                                   // own room, or (later) a friend's
+      if (token !== this.loadToken || this.home.destroyed) return;                  // scene changed while loading
+      this.home.load(data);
+      const owner = data.room.owner_name || 'Player', title = data.is_owner ? 'My Room' : `${owner}'s Room`;
+      this.home.setTitle(title);
+      this.game.events.emit('room-title', title);
+    } catch (e) { toast('Could not load the room: ' + e.message); }
+  }
+
+  startEdit() {
+    const profile = this.registry.get('profile');
+    if (!this.home || !this.home.isOwner || this.editing || this.leaving || this.uiLocked) return;
+    if (profile.guest) return toast('Create an account to decorate your room');
+    if (!this.home.loaded) return toast('Your room is still loading…');
+    this.editing = true; this.target = null; this.pendingDoor = null; this.player.move(0, 0);
+    this.game.events.emit('edit-mode', true);
+    this.editor = new RoomEditor(this, this.home, { profile, onClose: () => {
+      this.editing = false; this.editor = null; this.rescuePlayer();
+      this.game.events.emit('edit-mode', false);
+    } });
+  }
+
+  // If a freshly placed piece landed on top of the avatar, put the avatar back in the (always clear) doorway strip.
+  rescuePlayer() {
+    const p = this.player, hb = new Phaser.Geom.Rectangle(p.x - 13, p.y - 7, 26, 14);
+    const stuck = this.home.pieces.some((pc) => {
+      const it = this.home.itemOf(pc.furniture_id); if (it.walkable) return false;
+      const r = rectOf(pc, it);
+      return Phaser.Geom.Intersects.RectangleToRectangle(hb, new Phaser.Geom.Rectangle(r.l, r.t, r.r - r.l, r.b - r.t));
+    });
+    if (stuck) p.hitbox.body.reset(ROOM.w / 2, ROOM.floorBottom + 35);
+  }
+
+  goHome() {
+    const profile = this.registry.get('profile');
+    if (this.leaving || this.editing || this.uiLocked) return;
+    if (this.roomId === 'home' && this.ownerId === profile.id) return toast("You're already home");
+    this.leaving = true; this.player.move(0, 0);
+    this.cameras.main.fadeOut(220);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({ roomId: 'home', from: this.roomId, ownerId: profile.id }));
   }
 
   // ---------- world building ----------
   drawFloor(room) {
+    if (room.type === 'home') return;                       // HomeRoom draws the themed floor and walls
     this.add.tileSprite(0, 0, room.w, room.h, room.floor).setOrigin(0).setDepth(-1000);
     if (room.floor === 'snow') {
       const g = this.add.graphics().setDepth(-999);
@@ -93,6 +162,17 @@ export class RoomScene extends Phaser.Scene {
     this.doors.push({ label: b.label, to: b.to, spawn: b.spawn, zone: new Phaser.Geom.Rectangle(x + w / 2 - DOOR_W / 2, y + h + 2, DOOR_W, DOOR_H), body: new Phaser.Geom.Rectangle(x, y, w, h), below: true });
   }
 
+  // A shop counter: solid, with a "browse" zone in front. Entering the zone + E (or clicking the counter) opens the storefront.
+  addKiosk(k) {
+    const r = this.add.rectangle(k.x + k.w / 2, k.y + k.h / 2, k.w, k.h, 0xe9d3b0).setStrokeStyle(4, 0x6b4428).setDepth(k.y + k.h);
+    this.walls.add(r);
+    this.add.text(r.x, r.y, k.icon || k.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '17px', fontStyle: 'bold', color: '#4a3200' }).setOrigin(0.5).setDepth(k.y + k.h + 1);
+    this.add.text(r.x, k.y + 10, '🐧', { fontSize: '38px' }).setOrigin(0.5, 1).setDepth(k.y + k.h - 1);             // shopkeeper behind the counter
+    const zone = new Phaser.Geom.Rectangle(k.x + k.w / 2 - 70, k.y + k.h + 2, 140, DOOR_H);
+    this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.18).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
+    this.doors.push({ label: k.label, action: k.action, zone, body: new Phaser.Geom.Rectangle(k.x, k.y, k.w, k.h), below: true });
+  }
+
   addPortal(p) {
     this.add.rectangle(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h, 0xffffff, 0.35).setStrokeStyle(3, 0x7fb8d8).setDepth(-900);
     this.add.text(p.x + p.w / 2, p.y + p.h / 2, p.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '14px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 6, y: 3 } }).setOrigin(0.5).setDepth(-800);
@@ -125,17 +205,24 @@ export class RoomScene extends Phaser.Scene {
   setupInput() {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E');
     this.input.on('pointerdown', (p) => {
-      if (this.leaving || p.event?.target?.tagName !== 'CANVAS') return;
+      if (this.leaving || this.editing || this.uiLocked || p.event?.target?.tagName !== 'CANVAS') return;
       const hit = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.body, p.worldX, p.worldY));
       if (hit) { this.pendingDoor = hit; this.target = new Phaser.Math.Vector2(hit.zone.centerX, hit.zone.centerY); }
       else { this.pendingDoor = null; this.target = new Phaser.Math.Vector2(p.worldX, p.worldY); }
       this.stuck = 0;
     });
-    this.keys.E.on('down', () => this.nearDoor && this.enter(this.nearDoor));
+    this.keys.E.on('down', () => this.nearDoor && !this.editing && !this.uiLocked && this.enter(this.nearDoor));
   }
 
   update(time, delta) {
     if (this.leaving) return;
+    if (this.editing || this.uiLocked) {                    // editing / shopping: avatar stands still, others keep moving
+      this.player.move(0, 0);
+      this.player.update(time, this.registry.get('reduceMotion'));
+      this.mp.update(time, delta, this.registry.get('reduceMotion'));
+      this.game.events.emit('door-prompt', '');
+      return;
+    }
     const k = this.keys;
     let vx = (k.D.isDown || k.RIGHT.isDown ? 1 : 0) - (k.A.isDown || k.LEFT.isDown ? 1 : 0);
     let vy = (k.S.isDown || k.DOWN.isDown ? 1 : 0) - (k.W.isDown || k.UP.isDown ? 1 : 0);
@@ -150,7 +237,8 @@ export class RoomScene extends Phaser.Scene {
     this.mp.update(time, delta, this.registry.get('reduceMotion'));
 
     this.nearDoor = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.zone, this.player.x, this.player.y)) || null;
-    this.game.events.emit('door-prompt', this.nearDoor ? `Press E to enter ${this.nearDoor.label}` : '');
+    const nd = this.nearDoor;
+    this.game.events.emit('door-prompt', nd ? `Press E to ${nd.action ? 'browse' : 'enter'} ${nd.label}` : '');
     if (this.nearDoor && this.pendingDoor === this.nearDoor) this.enter(this.nearDoor);
   }
 
@@ -164,10 +252,17 @@ export class RoomScene extends Phaser.Scene {
 
   enter(door) {
     if (this.leaving) return;
+    if (door.action) {                                        // shop counter: open the storefront, stay in the room
+      this.target = null; this.pendingDoor = null; this.player.move(0, 0);
+      this.game.events.emit('open-shop', door.action);
+      return;
+    }
     if (!ROOMS[door.to]) { this.target = null; this.pendingDoor = null; toast(`${door.label} is coming soon!`); this.nearDoor = null; this.player.move(0, 0); this.bounce(door); return; }
     this.leaving = true; this.player.move(0, 0);
     this.cameras.main.fadeOut(220);
-    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({ roomId: door.to, from: this.roomId }));
+    const next = { roomId: door.to, from: this.roomId };
+    if (door.to === 'home') next.ownerId = door.ownerId || this.registry.get('profile').id;   // friend rooms later: door.ownerId = friend's id
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart(next));
   }
 
   // move the player just clear of a "coming soon" door so the toast doesn't repeat

@@ -11,7 +11,7 @@ export const LAYOUT = {
   eyes: { x: 0, y: -36 }, face: { x: 0, y: -33 }, hat: { x: 0, y: -50 }, hand: { x: 27, y: -14 },
 };
 
-const I = (id, name, category, rarity, price, description, extra = {}) => ({ id, name, category, rarity, price, description, asset: id, ...extra });
+const I = (id, name, category, rarity, price, description, extra = {}) => ({ id, name, category, rarity, price, description, asset: id, kind: 'clothing', ...extra });
 export const ITEMS = [
   I('eyes_0', 'Bright Eyes', 'eyes', 'common', 0, 'Wide awake.', { starter: true }),
   I('eyes_1', 'Happy Eyes', 'eyes', 'common', 0, 'Always smiling.', { starter: true }),

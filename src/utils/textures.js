@@ -1,4 +1,5 @@
 import { makeItemTextures } from './itemArt.js';
+import { makeFurnitureTextures } from './furnitureArt.js';
 
 // All art is generated procedurally so the game runs with zero external assets.
 // To use real artwork later, load images in BootScene.preload() under the same keys.
@@ -32,4 +33,5 @@ export function makeTextures(scene) {
   gen('flake', 6, 6, (g) => { g.fillStyle(0xffffff); g.fillCircle(3, 3, 3); });
   g.destroy();
   makeItemTextures(scene);
+  makeFurnitureTextures(scene);
 }

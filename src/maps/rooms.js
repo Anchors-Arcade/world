@@ -13,7 +13,7 @@ export const ROOMS = {
       { label: 'Café',          x: 1480, y: 150, w: 220, h: 170, wall: 0xb5703f, roof: 0xe8483c, to: 'cafe' },
       { label: 'Clothing Shop', x: 250,  y: 560, w: 220, h: 170, wall: 0x2a9d8f, roof: 0x1d6f66, to: 'clothing_shop' },
       { label: 'Furniture Shop',x: 1330, y: 560, w: 230, h: 170, wall: 0xe9a23b, roof: 0x9c5f12, to: 'furniture_shop' },
-      { label: 'Player Homes',  x: 780,  y: 780, w: 240, h: 150, wall: 0x7fa6c9, roof: 0x34506b, to: 'homes' },
+      { label: 'My Home',       x: 780,  y: 780, w: 240, h: 150, wall: 0x7fa6c9, roof: 0x34506b, to: 'home' },
     ],
     portals: [
       { label: 'Forest ▸', x: 0,    y: 440, w: 60, h: 220, to: 'forest', spawn: { x: 120, y: 550 } },
@@ -30,5 +30,32 @@ export const ROOMS = {
       { x: 330, y: 440, w: 340, h: 50, label: 'Counter', color: 0x6b4428 },
     ],
     portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 560 } }],
+  },
+  // Shops: walk to the counter and press E (or click it) to open the storefront.
+  clothing_shop: {
+    name: 'Snowy Threads', w: 1000, h: 700, floor: 'wood', indoor: true, spawn: { x: 500, y: 580 },
+    blocks: [
+      { x: 60, y: 230, w: 150, h: 60, label: '🧥 Coats', color: 0x2a9d8f }, { x: 250, y: 230, w: 150, h: 60, label: '👕 Shirts', color: 0x2a9d8f },
+      { x: 600, y: 230, w: 150, h: 60, label: '👖 Pants', color: 0x2a9d8f }, { x: 790, y: 230, w: 150, h: 60, label: '🎩 Hats', color: 0x2a9d8f },
+      { x: 80, y: 440, w: 90, h: 120, label: '👟', color: 0x1d6f66 }, { x: 830, y: 440, w: 90, h: 120, label: '🧣', color: 0x1d6f66 },
+    ],
+    kiosks: [{ label: 'Clothing Shop', x: 400, y: 300, w: 200, h: 60, action: 'clothing', icon: '🛍️ Try things on' }],
+    portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 580 } }],
+  },
+  furniture_shop: {
+    name: 'Cozy Corner', w: 1000, h: 700, floor: 'wood', indoor: true, spawn: { x: 500, y: 580 },
+    blocks: [
+      { x: 60, y: 230, w: 150, h: 60, label: '🛋️ Sofas', color: 0xe9a23b }, { x: 250, y: 230, w: 150, h: 60, label: '🛏️ Beds', color: 0xe9a23b },
+      { x: 600, y: 230, w: 150, h: 60, label: '💡 Lamps', color: 0xe9a23b }, { x: 790, y: 230, w: 150, h: 60, label: '🪴 Plants', color: 0xe9a23b },
+      { x: 80, y: 440, w: 90, h: 120, label: '📚', color: 0x9c5f12 }, { x: 830, y: 440, w: 90, h: 120, label: '🧶', color: 0x9c5f12 },
+    ],
+    kiosks: [{ label: 'Furniture Shop', x: 400, y: 300, w: 200, h: 60, action: 'furniture', icon: '🛋️ Browse furniture' }],
+    portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 580 } }],
+  },
+  // Player room TEMPLATE: one definition, loaded for any owner. The scene builds the floor/walls/furniture from the
+  // owner's saved room (see rooms/HomeRoom.js), so every player gets their own layout without separate map code.
+  home: {
+    name: 'My Room', type: 'home', w: 960, h: 680, floor: 'wood', indoor: true, spawn: { x: 480, y: 560 },
+    portals: [{ label: 'Exit ▾', x: 400, y: 630, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 480, y: 560 } }],
   },
 };

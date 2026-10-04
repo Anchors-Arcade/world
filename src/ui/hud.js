@@ -1,6 +1,6 @@
 const BUTTONS = [
-  ['🗺️', 'Map', 'map', 'Phase 5'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['👥', 'Friends', 'friends', 'Phase 6'],
-  ['💬', 'Chat', 'chat', 'Phase 6'], ['😄', 'Emotes', 'emotes', 'Phase 6'], ['🛍️', 'Shop', 'shop', 'Phase 5'], ['🚪', 'Log out', 'logout'],
+  ['🗺️', 'Map', 'map', 'Phase 6'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['🏠', 'My Room', 'home'], ['👥', 'Friends', 'friends', 'Phase 6'],
+  ['💬', 'Chat', 'chat', 'Phase 6'], ['😄', 'Emotes', 'emotes', 'Phase 6'], ['🛍️', 'Shop', 'shop'], ['🚪', 'Log out', 'logout'],
 ];
 
 export function toast(text) {
@@ -18,6 +18,7 @@ export function mountHUD(root, profile, { onAction }) {
       <div class="pill"><b id="hn"></b><small id="hl">Snowy Plaza</small></div>
       <div class="pill coins"><span class="coin">⚓</span><span id="hc">0</span></div>
       <button class="pill gift" id="hd" title="Daily reward">🎁 Daily</button>
+      <button class="pill gift deco" id="hb" title="Decorate your room" hidden>🛠️ Decorate</button>
       <div class="pill"><small id="hp2">👥 1 here</small></div>
     </div>
     <div class="prompt" id="hp"></div>
@@ -29,6 +30,7 @@ export function mountHUD(root, profile, { onAction }) {
   setCoins(profile.coins);
 
   q('#hd').onclick = () => onAction('daily');
+  q('#hb').onclick = () => onAction('decorate');
   el.querySelectorAll('.dock button').forEach((b, i) => (b.onclick = () => {
     const [, label, key, soon] = BUTTONS[i];
     if (key === 'logout') { if (confirm(profile.guest ? 'Leave the guest session?' : 'Log out?')) onAction('logout'); }
@@ -39,6 +41,7 @@ export function mountHUD(root, profile, { onAction }) {
   return {
     setCoins,
     setLocation: (t) => (q('#hl').textContent = t),
+    setDecorate: (on) => { q('#hb').hidden = !on; },
     setPlayers: (n) => (q('#hp2').textContent = `👥 ${n} here`),
     setPrompt: (t) => { const p = q('#hp'); p.textContent = t || ''; p.classList.toggle('on', !!t); },
     destroy: () => el.remove(),
