@@ -1,0 +1,52 @@
+// All art is generated procedurally so the game runs with zero external assets.
+// To use real artwork later, load images in BootScene.preload() under the same keys.
+export function makeTextures(scene) {
+  const g = scene.make.graphics({ x: 0, y: 0, add: false });
+  const gen = (key, w, h, draw) => { g.clear(); draw(g); g.generateTexture(key, w, h); };
+  const INK = 0x1b2a41;
+
+  // --- avatar layers (body is white so it can be tinted with the player's colour) ---
+  gen('av_body', 44, 48, (g) => { g.fillStyle(INK); g.fillEllipse(22, 26, 44, 48); g.fillStyle(0xffffff); g.fillEllipse(22, 26, 39, 43); });
+  gen('av_belly', 26, 28, (g) => { g.fillStyle(0xf4fbff); g.fillEllipse(13, 14, 26, 28); });
+  gen('av_foot', 16, 8, (g) => { g.fillStyle(INK); g.fillEllipse(8, 4, 16, 8); g.fillStyle(0xff9a3c); g.fillEllipse(8, 4, 13, 6); });
+  gen('face_0', 30, 20, (g) => {
+    g.fillStyle(0xffffff); g.fillCircle(8, 7, 6); g.fillCircle(22, 7, 6);
+    g.fillStyle(INK); g.fillCircle(9, 8, 3); g.fillCircle(21, 8, 3);
+    g.fillStyle(0xff9a3c); g.fillTriangle(10, 12, 20, 12, 15, 19);
+  });
+  gen('face_1', 30, 20, (g) => {
+    g.lineStyle(3, INK); g.beginPath(); g.arc(8, 9, 5, Math.PI, 0, false); g.strokePath();
+    g.beginPath(); g.arc(22, 9, 5, Math.PI, 0, false); g.strokePath();
+    g.fillStyle(0xff9a3c); g.fillTriangle(10, 12, 20, 12, 15, 19);
+  });
+  gen('hat_beanie', 40, 30, (g) => {
+    g.fillStyle(INK); g.fillEllipse(20, 20, 40, 32); g.fillStyle(0xe8483c); g.fillEllipse(20, 19, 35, 28);
+    g.fillStyle(0xffffff); g.fillRoundedRect(2, 19, 36, 9, 4); g.fillStyle(0xe8483c); g.fillRect(8, 20, 4, 7); g.fillRect(18, 20, 4, 7); g.fillRect(28, 20, 4, 7);
+    g.fillStyle(0xffffff); g.fillCircle(20, 4, 5);
+  });
+  gen('shirt_stripe', 38, 22, (g) => {
+    g.fillStyle(0x2f6fb5); g.fillRoundedRect(0, 0, 38, 22, 9);
+    g.fillStyle(0xffffff); g.fillRect(0, 6, 38, 4); g.fillRect(0, 14, 38, 4);
+  });
+
+  // --- world ---
+  gen('snow', 64, 64, (g) => {
+    g.fillStyle(0xe9f4fb); g.fillRect(0, 0, 64, 64);
+    for (let i = 0; i < 26; i++) { g.fillStyle(i % 3 ? 0xffffff : 0xcfe4f2); g.fillCircle(Math.random() * 64, Math.random() * 64, 1 + Math.random() * 2); }
+  });
+  gen('wood', 64, 64, (g) => {
+    g.fillStyle(0xb9814f); g.fillRect(0, 0, 64, 64);
+    g.fillStyle(0x9c693c); for (let y = 0; y < 64; y += 16) g.fillRect(0, y, 64, 2);
+    g.fillRect(20, 0, 2, 16); g.fillRect(44, 16, 2, 16); g.fillRect(12, 32, 2, 16); g.fillRect(36, 48, 2, 16);
+  });
+  gen('pine', 96, 140, (g) => {
+    g.fillStyle(0x6b4428); g.fillRect(42, 110, 12, 28);
+    [[4, 70, 60], [18, 50, 50], [32, 30, 36]].forEach(([top, y, hw], i) => {
+      const cy = 18 + i * 34;
+      g.fillStyle(0x1f6b4f); g.fillTriangle(48, cy, 48 - hw / 1.2 - 12, cy + 52, 48 + hw / 1.2 + 12, cy + 52);
+      g.fillStyle(0xffffff); g.fillTriangle(48, cy, 48 - 14 - i * 4, cy + 22, 48 + 14 + i * 4, cy + 22);
+    });
+  });
+  gen('flake', 6, 6, (g) => { g.fillStyle(0xffffff); g.fillCircle(3, 3, 3); });
+  g.destroy();
+}
