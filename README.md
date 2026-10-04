@@ -3,7 +3,7 @@
 Plain HTML/CSS/JS. Phaser and Supabase load from CDNs. Upload the files as-is to GitHub.
 
 ## Setup (once)
-1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards). All safe to re-run.
+1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places). All safe to re-run.
    Deploy the new client files and run `phase6.sql` together: Phase 6 changes how your own profile is loaded (`get_my_profile()`).
    (Auth → Providers → Email: turn off "Confirm email" while testing, or keep it on and do step 1b.)
 1b. **E-mail confirmation links** go to your Supabase *Site URL*, which defaults to `http://localhost:3000` ("site can't be reached"). Fix: Supabase → Authentication → **URL Configuration** → set **Site URL** to where the game runs (e.g. `https://YOUR-USER.github.io/YOUR-REPO/` or `http://localhost:5173/`) and add the same address(es) under **Redirect URLs** (add `http://localhost:5173/**` and your GitHub Pages address with `/**`). The game now also sends the page you signed up from as the redirect, and the sign-up screen has a "Resend confirmation email" button. Links already sent keep the old address: request a new one.
@@ -45,3 +45,46 @@ Controls: WASD / arrows or click. E (or click a building) to enter doors. **Ente
 - **Add a game**: a row in the `minigames` SQL table, an entry in `registry.js`, a scene extending `MinigameScene` (override `build / resetRun / tick / hudText`, call `this.finish({score})`), add it to `minigames/index.js`, and a cabinet in `maps/rooms.js`.
 - Guests can play for fun; their scores aren't saved and they earn no coins.
 - Tests: `node scripts/test-phase7.mjs` (scoring, reward tiers, client/SQL consistency, SQL permissions).
+
+## Phase 8: the wider world, secrets, collectibles, achievements
+- **Ten new places**, all on the same reusable room system (`src/maps/rooms.js` — one data entry each, no per-map code):
+  🌲 Deep Forest, ⛺ Snow Camp, 🧊 Frozen Lake, 🏘️ Harbour Village, 🗼 Lighthouse, 🏔️ Mountain Pass, 🕳️ Ice Caves,
+  🏛️ Old Observatory, and two **secret** rooms — 💎 Crystal Hollow and 🪐 Star Chamber. The plaza's old "Forest"/"Beach"
+  portals now lead somewhere real. Each room keeps its own id, name, floor, collision, spawn, portals, interactive
+  objects and multiplayer players, exactly like Phases 1–7.
+- **A connected world**: Deep Forest ⇄ Plaza ⇄ Harbour Village · Deep Forest ⇄ Snow Camp ⇄ Frozen Lake ⇄ Harbour Village ·
+  Frozen Lake ⇄ Mountain Pass → Ice Caves / Observatory · Harbour Village → Lighthouse. Walk the edge portals, press **E**
+  at doors, or use the **World Map** 🗺️.
+- **World Map** 🗺️: every location with its activities, whether you have been there, and per-room exploration progress
+  (⭐ items, 🔎 secrets, ✓ when a place is finished). Secret rooms are **not** listed until their secret is discovered.
+- **Secrets** 🔎 (`src/world/secrets.js`): seven of them, each a set of **clues** hidden in the world — three glowing marks
+  in the Ice Caves open a cracked wall into Crystal Hollow; two Observatory dials plus the old chart unseal the Star
+  Chamber; the lighthouse lamp switch, a suspiciously neat snow pile, four humming pines, a bubble in the lake and three
+  fallen cairns do the rest. Clue objects glow until you have found them; a one-clue secret is a hidden switch.
+  When the last clue lands, a hidden entrance appears in the room **without reloading it**.
+- **Collectibles** ⭐ (32): snowflakes, crystals, lost objects, badges and artifacts in five rarities. Walk into one to
+  pick it up; coins come from the server. Items behind an undiscovered secret are never sent to the browser at all.
+- **Achievements** 🏅 (10): First Find, Curator, Snow Hunter, Completionist, Curious Penguin, Explorer, Wanderer,
+  Arcade Master, Social Anchor, Room Designer. Progress is **recomputed server-side** from real rows (collectibles,
+  secrets, friendships, furniture, arcade bests, visited places), so they also count things you did in earlier phases.
+- **Explorer's Journal** 📒 (dock button): three tabs — items by location (unfound ones show only their rarity and
+  region), secrets with clue progress, and badges with progress bars and rewards.
+- **Interactive objects** (`src/world/interactions.js`): signs, notice boards, campfires, snow piles, crates, cairns,
+  pines, dials, charts, a lamp switch, telescopes, crystals. They are registered in the scene's existing `doors` list as
+  `world:<id>`, so the **E** prompt, click-to-walk and mobile tap all work unchanged. **No NPCs anywhere outside the
+  shops** — the only penguin behind a counter is the Phase 5 shopkeeper.
+- **Trust model** (`supabase/phase8.sql`): four `security definer` functions — `get_exploration()` (one request fills the
+  journal, the map and the hidden-room gates), `collect_collectible()`, `find_clue()`, `visit_room()`. The browser never
+  sends a player id, a coin amount, a progress value or an "unlocked" flag. Duplicate rewards are blocked by a
+  `unique (player_id, collectible_id)` constraint; an invented clue id is rejected because it is not in the secret's own
+  clue list; achievement rewards are paid once inside `_sync_achievements()`, which players cannot call. Players have no
+  insert/update/delete rights on any Phase 8 table, and `collectibles`/`secrets` have RLS on with no policy at all.
+- **Performance**: only the room you are standing in builds its objects and collectibles (`src/world/WorldLayer.js`);
+  pickups are a few distance checks, not physics bodies; no new realtime subscription, no polling — state is updated
+  from the return values of collect / find_clue / visit_room, plus one request when the journal is opened.
+- **Guests** can explore, pick things up and open secrets locally; nothing is saved and no coins are earned.
+- **Add a place**: one entry in `src/maps/rooms.js` + one in `src/world/worldMap.js`. **Add a secret**: a row in `secrets`
+  (SQL) + `src/world/secrets.js` + one object per clue in `src/world/interactions.js`. **Add a collectible**: a row in
+  `collectibles` (SQL) + `src/world/collectibles.js`.
+- Tests: `node scripts/test-phase8.mjs` (rooms reachable and escapable, collectibles inside their rooms, every clue has an
+  object, secret rooms properly gated and off the map, no NPCs outside shops, client/SQL seeds identical, SQL permissions).

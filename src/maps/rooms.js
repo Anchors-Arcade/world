@@ -1,7 +1,14 @@
 // Data-driven rooms. To add a room: add an entry here, then link a door/portal to it.
 // building: { id,label,x,y,w,h,wall,roof,to }  -> collidable; door zone is auto-placed below it.
 // portal:   { label,x,y,w,h,to,spawn }          -> walk-in zone (edges, interior exits).
+//           `spawn` is where you land IN THIS ROOM when you arrive from `to`.
+//           Phase 8: { secret: '<secret id>' } hides the portal until that secret is discovered.
 // blocks:   [{x,y,w,h}]                         -> invisible/visible collision rectangles.
+// props:    [{ type: 'pond' | 'ice' | 'rock' | 'crystal' | 'dock', ... }] -> scenery; `rock` collides.
+// hidden:   true                                -> secret room: never listed on the world map until it is unlocked.
+//
+// Phase 8 note: interactive objects and collectibles are NOT listed here. They come from src/world/interactions.js
+// and from the server's collectible catalogue, keyed by room id, so one room definition serves every system.
 export const ROOMS = {
   snowy_plaza: {
     name: 'Snowy Plaza', w: 1800, h: 1100, floor: 'snow', spawn: { x: 900, y: 860 },
@@ -16,8 +23,8 @@ export const ROOMS = {
       { label: 'My Home',       x: 780,  y: 780, w: 240, h: 150, wall: 0x7fa6c9, roof: 0x34506b, to: 'home' },
     ],
     portals: [
-      { label: 'Forest ▸', x: 0,    y: 440, w: 60, h: 220, to: 'forest', spawn: { x: 120, y: 550 } },
-      { label: '◂ Beach',  x: 1740, y: 440, w: 60, h: 220, to: 'beach',  spawn: { x: 1680, y: 550 } },
+      { label: '◂ Deep Forest', x: 0,    y: 440, w: 60, h: 220, to: 'deep_forest',    spawn: { x: 120,  y: 550 } },
+      { label: 'Harbour ▸',     x: 1740, y: 440, w: 60, h: 220, to: 'harbor_village', spawn: { x: 1680, y: 550 } },
     ],
     props: [{ type: 'pond', x: 900, y: 500, rx: 150, ry: 80 }],
     trees: [[60,60],[190,420],[640,430],[1160,430],[1650,430],[130,900],[420,950],[1400,930],[1680,880],[1720,1040],[60,1040],[640,980],[1130,1010],[560,720],[1240,720]],
@@ -73,5 +80,135 @@ export const ROOMS = {
   home: {
     name: 'My Room', type: 'home', w: 960, h: 680, floor: 'wood', indoor: true, spawn: { x: 480, y: 560 },
     portals: [{ label: 'Exit ▾', x: 400, y: 630, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 480, y: 560 } }],
+  },
+
+  // ===================================================================
+  // PHASE 8 — the wider world. Same room system, same scene, more places.
+  // Travel graph:
+  //   Deep Forest ⇄ Snowy Plaza ⇄ Harbour Village
+  //   Deep Forest ⇄ Snow Camp ⇄ Frozen Lake ⇄ Harbour Village
+  //   Frozen Lake ⇄ Mountain Pass → Ice Caves / Old Observatory
+  //   Harbour Village → Lighthouse
+  //   Ice Caves → Crystal Hollow 🔒   Old Observatory → Star Chamber 🔒  (secret rooms)
+  // ===================================================================
+  deep_forest: {
+    name: 'Deep Forest', w: 1600, h: 1000, floor: 'snow', spawn: { x: 800, y: 700 },
+    portals: [
+      { label: 'Plaza ▸',     x: 1540, y: 440, w: 60,  h: 220, to: 'snowy_plaza', spawn: { x: 1460, y: 550 } },
+      { label: '▴ Snow Camp', x: 690,  y: 0,   w: 220, h: 60,  to: 'snow_camp',   spawn: { x: 800,  y: 150 } },
+    ],
+    props: [{ type: 'rock', x: 1420, y: 820, r: 46 }, { type: 'rock', x: 160, y: 180, r: 38 }],
+    trees: [[90, 240], [170, 480], [120, 760], [400, 180], [460, 420], [380, 900], [560, 560], [700, 260],
+      [760, 700], [880, 420], [960, 160], [1020, 620], [1120, 460], [1240, 240], [1280, 900], [1360, 620],
+      [1500, 340], [1540, 880], [620, 960], [240, 980]],
+  },
+  snow_camp: {
+    name: 'Snow Camp', w: 1400, h: 900, floor: 'snow', spawn: { x: 700, y: 700 },
+    portals: [
+      { label: 'Deep Forest ▾', x: 590,  y: 840, w: 220, h: 60,  to: 'deep_forest', spawn: { x: 700,  y: 760 } },
+      { label: 'Frozen Lake ▸', x: 1340, y: 380, w: 60,  h: 200, to: 'frozen_lake', spawn: { x: 1260, y: 480 } },
+    ],
+    blocks: [
+      { x: 180, y: 180, w: 150, h: 90, label: '⛺', color: 0xc9553d }, { x: 1120, y: 180, w: 150, h: 90, label: '⛺', color: 0x3f8fc9 },
+      { x: 640, y: 180, w: 160, h: 90, label: '⛺ Mess Tent', color: 0x2a9d8f },
+    ],
+    props: [{ type: 'rock', x: 240, y: 620, r: 40 }, { type: 'rock', x: 1240, y: 720, r: 36 }],
+    trees: [[70, 420], [80, 820], [1340, 120], [1330, 880], [460, 120], [900, 120]],
+  },
+  frozen_lake: {
+    name: 'Frozen Lake', w: 1600, h: 1000, floor: 'ice', spawn: { x: 800, y: 820 },
+    portals: [
+      { label: '◂ Snow Camp',       x: 0,   y: 380, w: 60,  h: 200, to: 'snow_camp',      spawn: { x: 120, y: 480 } },
+      { label: '▴ Mountain Pass',   x: 690, y: 0,   w: 220, h: 60,  to: 'mountain_pass',  spawn: { x: 800, y: 150 } },
+      { label: 'Harbour Village ▾', x: 690, y: 940, w: 220, h: 60,  to: 'harbor_village', spawn: { x: 800, y: 860 } },
+    ],
+    props: [
+      { type: 'ice', x: 800, y: 540, rx: 300, ry: 170 }, { type: 'ice', x: 320, y: 300, rx: 150, ry: 90 },
+      { type: 'ice', x: 1320, y: 820, rx: 170, ry: 100 },
+      { type: 'rock', x: 180, y: 900, r: 44 }, { type: 'rock', x: 1480, y: 200, r: 50 },
+    ],
+    trees: [[80, 120], [80, 660], [1520, 480], [1540, 980], [420, 980], [1180, 120]],
+  },
+  harbor_village: {
+    name: 'Harbour Village', w: 1600, h: 1000, floor: 'snow', spawn: { x: 800, y: 820 },
+    buildings: [
+      { label: 'Lighthouse', x: 1140, y: 150, w: 190, h: 270, wall: 0xf0f4f7, roof: 0xe8483c, to: 'lighthouse' },
+    ],
+    portals: [
+      { label: '◂ Snowy Plaza', x: 0,   y: 440, w: 60,  h: 220, to: 'snowy_plaza', spawn: { x: 120, y: 550 } },
+      { label: '▴ Frozen Lake', x: 690, y: 0,   w: 220, h: 60,  to: 'frozen_lake', spawn: { x: 800, y: 150 } },
+    ],
+    blocks: [
+      { x: 240, y: 240, w: 170, h: 100, label: '🏘️ Boathouse', color: 0x8c5a3a },
+      { x: 480, y: 540, w: 130, h: 60,  label: '📦', color: 0x9c5f12 },
+      { x: 1040, y: 560, w: 130, h: 60, label: '📦', color: 0x9c5f12 },
+    ],
+    props: [{ type: 'dock', x: 700, y: 900, w: 500, h: 70 }, { type: 'rock', x: 1500, y: 880, r: 44 }],
+    trees: [[90, 180], [80, 880], [1540, 560], [1420, 120]],
+  },
+  lighthouse: {
+    name: 'Lighthouse', w: 900, h: 700, floor: 'stone', indoor: true, wallColor: 0x4a5b6b, spawn: { x: 450, y: 560 },
+    sign: 'LAMP ROOM',
+    blocks: [
+      { x: 60, y: 420, w: 110, h: 70, label: '🪣', color: 0x4a5b6b }, { x: 740, y: 420, w: 100, h: 70, label: '🧰', color: 0x4a5b6b },
+      { x: 60, y: 560, w: 110, h: 70, label: '🪜', color: 0x5e6f7f },
+    ],
+    portals: [{ label: 'Exit ▾', x: 370, y: 650, w: 160, h: 50, to: 'harbor_village', spawn: { x: 450, y: 560 } }],
+  },
+  mountain_pass: {
+    name: 'Mountain Pass', w: 1400, h: 1000, floor: 'stone', spawn: { x: 700, y: 860 },
+    buildings: [
+      { label: 'Ice Caves',       x: 140, y: 150, w: 240, h: 200, wall: 0x6f8a9c, roof: 0x3a4d5c, to: 'ice_caves' },
+      { label: 'Old Observatory', x: 940, y: 130, w: 260, h: 230, wall: 0xd8c9a3, roof: 0x6a4fb3, to: 'observatory' },
+    ],
+    portals: [
+      { label: 'Frozen Lake ▾', x: 590, y: 940, w: 220, h: 60, to: 'frozen_lake', spawn: { x: 700, y: 860 } },
+    ],
+    props: [
+      { type: 'rock', x: 180, y: 560, r: 52 }, { type: 'rock', x: 300, y: 860, r: 44 }, { type: 'rock', x: 560, y: 260, r: 48 },
+      { type: 'rock', x: 1240, y: 560, r: 50 }, { type: 'rock', x: 1120, y: 900, r: 46 }, { type: 'rock', x: 840, y: 620, r: 40 },
+    ],
+    trees: [[70, 300], [60, 960], [1360, 240], [1340, 960]],
+  },
+  ice_caves: {
+    name: 'Ice Caves', w: 1400, h: 900, floor: 'cave', indoor: true, wallColor: 0x24404f, spawn: { x: 700, y: 780 },
+    sign: 'ICE CAVES',
+    props: [
+      { type: 'crystal', x: 520, y: 620, s: 1 }, { type: 'crystal', x: 980, y: 420, s: 0.8 }, { type: 'crystal', x: 1260, y: 760, s: 1.2 },
+      { type: 'rock', x: 420, y: 820, r: 46 }, { type: 'rock', x: 1120, y: 240, r: 52 },
+    ],
+    blocks: [{ x: 620, y: 180, w: 160, h: 70, label: '🧊', color: 0x4d7a8f }],
+    portals: [
+      { label: 'Exit ▾', x: 620, y: 840, w: 160, h: 50, to: 'mountain_pass', spawn: { x: 700, y: 780 } },
+      // Opens only once the three glowing marks have been found (secret `hollow_crack`).
+      { label: 'Crystal Hollow ◂', x: 60, y: 480, w: 90, h: 140, to: 'crystal_hollow', spawn: { x: 170, y: 550 }, secret: 'hollow_crack' },
+    ],
+  },
+  crystal_hollow: {
+    name: 'Crystal Hollow', w: 1000, h: 700, floor: 'cave', indoor: true, hidden: true, wallColor: 0x3b2f66,
+    spawn: { x: 500, y: 560 }, sign: 'CRYSTAL HOLLOW',
+    props: [
+      { type: 'crystal', x: 220, y: 520, s: 1.3 }, { type: 'crystal', x: 680, y: 300, s: 0.9 },
+      { type: 'crystal', x: 880, y: 600, s: 1.1 }, { type: 'crystal', x: 360, y: 640, s: 0.7 },
+    ],
+    portals: [{ label: 'Exit ▾', x: 420, y: 630, w: 160, h: 50, to: 'ice_caves', spawn: { x: 500, y: 560 } }],
+  },
+  observatory: {
+    name: 'Old Observatory', w: 1100, h: 800, floor: 'wood', indoor: true, wallColor: 0x3c3470, spawn: { x: 550, y: 700 },
+    sign: 'OLD OBSERVATORY',
+    blocks: [
+      { x: 60, y: 660, w: 120, h: 70, label: '🪑', color: 0x6b4428 }, { x: 920, y: 660, w: 120, h: 70, label: '🕰️', color: 0x6b4428 },
+    ],
+    portals: [
+      { label: 'Exit ▾', x: 470, y: 740, w: 160, h: 50, to: 'mountain_pass', spawn: { x: 550, y: 680 } },
+      // Opens once both dials match the old chart (secret `star_alignment`).
+      { label: 'Star Chamber ▸', x: 970, y: 200, w: 90, h: 140, to: 'star_chamber', spawn: { x: 880, y: 280 }, secret: 'star_alignment' },
+    ],
+  },
+  star_chamber: {
+    name: 'Star Chamber', w: 1000, h: 700, floor: 'stone', indoor: true, hidden: true, wallColor: 0x241f4d,
+    spawn: { x: 500, y: 560 }, sign: 'STAR CHAMBER',
+    blocks: [{ x: 60, y: 560, w: 120, h: 70, label: '📜', color: 0x4a3f7a }, { x: 820, y: 560, w: 120, h: 70, label: '🔭', color: 0x4a3f7a }],
+    portals: [{ label: 'Exit ▾', x: 420, y: 630, w: 160, h: 50, to: 'observatory', spawn: { x: 500, y: 560 } }],
   },
 };

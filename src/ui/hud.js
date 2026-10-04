@@ -1,6 +1,6 @@
-// [icon, label, key]. Every dock button is live as of Phase 6.
+// [icon, label, key]. Every dock button is live as of Phase 8.
 const BUTTONS = [
-  ['🗺️', 'Map', 'map'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['🏠', 'My Room', 'home'], ['👥', 'Friends', 'friends'],
+  ['🗺️', 'Map', 'map'], ['📒', 'Journal', 'journal'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['🏠', 'My Room', 'home'], ['👥', 'Friends', 'friends'],
   ['💬', 'Chat', 'chat'], ['😄', 'Emotes', 'emotes'], ['🛍️', 'Shop', 'shop'], ['⚙️', 'Settings', 'settings'], ['🚪', 'Log out', 'logout'],
 ];
 

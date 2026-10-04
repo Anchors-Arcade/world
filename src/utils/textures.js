@@ -28,6 +28,30 @@ export function makeTextures(scene) {
     g.fillStyle(0x5bb6e8, 0.55); g.fillCircle(16, 48, 2); g.fillCircle(48, 16, 2);
     g.fillStyle(0xff6fae, 0.45); g.fillCircle(48, 48, 1.6); g.fillCircle(16, 16, 1.6);
   });
+  // --- Phase 8 floors: one tile each, generated the same way as the Phase 1-7 floors ---
+  gen('ice', 64, 64, (g) => {
+    g.fillStyle(0xd6ecf8); g.fillRect(0, 0, 64, 64);
+    g.fillStyle(0xc2e0f2); g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32);
+    g.lineStyle(2, 0xffffff, 0.75); g.lineBetween(4, 18, 30, 6); g.lineBetween(34, 58, 60, 40); g.lineBetween(10, 44, 26, 62);
+  });
+  gen('stone', 64, 64, (g) => {
+    g.fillStyle(0x9aa7b0); g.fillRect(0, 0, 64, 64);
+    g.fillStyle(0x8793a0); g.fillRoundedRect(3, 3, 28, 26, 5); g.fillRoundedRect(35, 8, 26, 22, 5);
+    g.fillRoundedRect(6, 34, 24, 24, 5); g.fillRoundedRect(34, 36, 27, 24, 5);
+    g.fillStyle(0xffffff, 0.3); g.fillRect(0, 0, 64, 2);
+  });
+  gen('cave', 64, 64, (g) => {
+    g.fillStyle(0x2c4a5c); g.fillRect(0, 0, 64, 64);
+    g.fillStyle(0x35576b); g.fillEllipse(18, 22, 30, 22); g.fillEllipse(48, 46, 26, 20);
+    g.fillStyle(0x7fd4f0, 0.35); g.fillCircle(52, 14, 2.4); g.fillCircle(12, 52, 2); g.fillCircle(32, 34, 1.6);
+  });
+  // collectible sparkle (tinted per rarity by WorldLayer)
+  gen('sparkle', 34, 34, (g) => {
+    g.fillStyle(0xffffff);
+    g.fillTriangle(17, 0, 12, 17, 22, 17); g.fillTriangle(17, 34, 12, 17, 22, 17);
+    g.fillTriangle(0, 17, 17, 12, 17, 22); g.fillTriangle(34, 17, 17, 12, 17, 22);
+    g.fillCircle(17, 17, 6);
+  });
   gen('pine', 96, 140, (g) => {
     g.fillStyle(0x6b4428); g.fillRect(42, 110, 12, 28);
     [[4, 70, 60], [18, 50, 50], [32, 30, 36]].forEach(([top, y, hw], i) => {

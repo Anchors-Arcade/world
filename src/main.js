@@ -12,20 +12,26 @@ import { createSettings } from './ui/settings.js';
 import { createMapPanel } from './ui/mapPanel.js';
 import { createEmoteMenu } from './ui/emoteMenu.js';
 import { createArcade } from './ui/arcade.js';
+import { createJournal } from './ui/journal.js';
+import { createWorldDialog } from './ui/worldDialog.js';
+import { ExplorationState } from './world/ExplorationState.js';
 import { MINIGAME_SCENES, MinigameManager } from './minigames/index.js';
 import { SocialState } from './social/SocialState.js';
 import { Network } from './multiplayer/Network.js';
 import { normalizeAvatar, ITEM_BY_ID } from './shops/items.js';
 import { isConfigured, supabase } from './config/supabase.js';
+import { ROOMS } from './maps/rooms.js';
 
 const ui = document.getElementById('ui');
 let game = null, hud = null, wardrobe = null, shop = null, net = null, social = null, chat = null, friends = null, settings = null, mapPanel = null, emotes = null, arcade = null, minigames = null;
+let explore = null, journal = null, worldDialog = null;   // Phase 8: exploration state + journal + interaction cards
 
 function startGame(profile) {
   profile.avatar_data = normalizeAvatar(profile.avatar_data);
   profile.owned = new Set(); profile.inv = new Map();     // inv: item id -> quantity (furniture stacks)
   net = new Network(profile);
   social = new SocialState(profile, net);                 // Phase 6: friends / blocks / presence (inert for guests)
+  explore = new ExplorationState(profile);                // Phase 8: collectibles / secrets / achievements (local-only for guests)
 
   game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#0e2238',
@@ -34,6 +40,7 @@ function startGame(profile) {
     scene: [BootScene, RoomScene, ...MINIGAME_SCENES],       // Phase 7: minigames are registered scenes, launched on demand by MinigameManager
     callbacks: { preBoot: (g) => {
       g.registry.set('profile', profile); g.registry.set('net', net); g.registry.set('social', social);
+      g.registry.set('exploration', explore);
       g.registry.set('reduceMotion', matchMedia('(prefers-reduced-motion: reduce)').matches);
     } },
   });
@@ -43,15 +50,40 @@ function startGame(profile) {
   shop = createShop(ui, { game, profile, wardrobe, onCoins: (n) => hud.setCoins(n) });
 
   // Phase 6: social UI. The right-hand drawers (wardrobe, friends, settings, map) are mutually exclusive.
-  const closeDrawers = () => [wardrobe, friends, settings, mapPanel].forEach((d) => d?.close?.());
+  const closeDrawers = () => [wardrobe, friends, settings, mapPanel, journal].forEach((d) => d?.close?.());
   const sp = { game, profile, social, closeOthers: closeDrawers };
   friends = createFriends(ui, sp);
   settings = createSettings(ui, sp);
-  mapPanel = createMapPanel(ui, sp);
+  mapPanel = createMapPanel(ui, { ...sp, explore });
   chat = createChat(ui, { game, profile, social, onUnread: (n) => hud.setBadge('chat', n) });
   emotes = createEmoteMenu(ui, { game });
   social.on(() => hud.setBadge('friends', social.incoming.length));
   social.start().catch((e) => toast('Friends & chat unavailable: ' + e.message));
+
+  // Phase 8: exploration. ONE request at sign-in fills the journal, the world map and the hidden-room gates;
+  // after that the state is kept fresh by the return values of collect / find_clue / visit_room.
+  journal = createJournal(ui, { game, profile, explore, closeOthers: closeDrawers });
+  worldDialog = createWorldDialog(ui, { game, explore });
+  let unseen = 0;
+  const bumpJournal = () => hud.setBadge('journal', ++unseen);
+  explore.on((ev) => {
+    if (ev.type === 'collected') {
+      if (typeof ev.balance === 'number') { profile.coins = ev.balance; hud.setCoins(ev.balance); }
+      toast(ev.coins ? `⭐ ${ev.name} found! +${ev.coins} Anchor Coins` : `⭐ ${ev.name} found!`);
+      bumpJournal();
+    } else if (ev.type === 'clue') {
+      if (typeof ev.balance === 'number' && ev.coins) { profile.coins = ev.balance; hud.setCoins(ev.balance); }
+      if (ev.new) bumpJournal();
+    } else if (ev.type === 'achievement') {
+      toast(`${ev.icon || '🏅'} Achievement unlocked: ${ev.name}${ev.coins ? ` (+${ev.coins} ⚓)` : ''}`);
+      bumpJournal();
+      // a cosmetic reward lands straight in the wardrobe (the server put it in the inventory)
+      if (ev.item && !profile.guest) fetchInventory().then((m) => { setInventory(profile, m); wardrobe.refresh(); }).catch(() => {});
+    } else if (ev.type === 'discovered') {
+      toast(`🗺️ New place discovered: ${ROOMS[ev.room]?.name || ev.room}`);
+    }
+  });
+  explore.start().catch(() => {});
 
   // Phase 7: Arcade + minigames. Games run as extra Phaser scenes while the Room scene is paused (networking stays connected).
   minigames = new MinigameManager(game);
@@ -63,6 +95,7 @@ function startGame(profile) {
 
   game.events.on('room-entered', (id, name) => {
     hud.setLocation(name);
+    explore?.visit(id);                                      // Phase 8: first visits light up the world map
     if (!profile.guest && id !== profile.current_room) { profile.current_room = id; auth.savePlayerLocation(profile.id, id); }
   });
   game.events.on('door-prompt', (t) => hud.setPrompt(t));
@@ -84,6 +117,7 @@ function startGame(profile) {
     if (key === 'emotes') return emotes.toggle();
     if (key === 'settings') return settings.toggle();
     if (key === 'map') return mapPanel.toggle();
+    if (key === 'journal') { unseen = 0; hud.setBadge('journal', 0); return journal.toggle(); }
     if (key === 'shop') return shop.open('clothing');
     if (key === 'home') return game.scene.getScene('Room')?.goHome?.();
     if (key === 'decorate') return game.scene.getScene('Room')?.startEdit?.();
@@ -100,10 +134,11 @@ function startGame(profile) {
 }
 
 async function logout() {
-  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames].forEach((x) => x?.destroy());
+  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, explore].forEach((x) => x?.destroy());
   ui.classList.remove('in-minigame');
   net?.destroy(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
   game = hud = wardrobe = shop = net = social = chat = friends = settings = mapPanel = emotes = arcade = minigames = null;
+  explore = journal = worldDialog = null;
   if (isConfigured) await auth.logout();
   mountAuth(ui, startGame);
 }
