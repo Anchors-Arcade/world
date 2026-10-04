@@ -530,3 +530,93 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
   .t-snow{opacity:.35}
 }
 .t-btn i{font-style:normal}
+
+/* =====================================================================
+   PHASE 10 — fullscreen on every screen + the UI refresh.
+   These rules come last on purpose: they override the Phase 1-9 shells.
+   ===================================================================== */
+
+/* ---- 1. Fill the screen, whatever the screen is ---- */
+html,body{height:100%;height:100dvh;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;
+  -webkit-text-size-adjust:100%;touch-action:manipulation}
+@supports (height:-webkit-fill-available){html,body{height:-webkit-fill-available}}
+#game,#ui{position:fixed;inset:0;height:100%;height:100dvh}
+#game canvas{display:block;width:100%!important;height:100%!important}
+/* every fixed UI edge respects the notch, the home bar and browser chrome */
+:root{--sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);
+  --sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+.hud-top{top:calc(10px + var(--sa-t))!important;left:calc(10px + var(--sa-l))!important;right:calc(10px + var(--sa-r))!important}
+.dock{bottom:calc(10px + var(--sa-b))!important;max-width:calc(100vw - 16px - var(--sa-l) - var(--sa-r))}
+.drawer{top:calc(68px + var(--sa-t));bottom:calc(96px + var(--sa-b));right:calc(12px + var(--sa-r))}
+.chat{bottom:calc(96px + var(--sa-b));left:calc(12px + var(--sa-l))}
+.prompt{bottom:calc(104px + var(--sa-b))}
+.toast{bottom:calc(150px + var(--sa-b))}
+.title,.t-foot{padding-bottom:var(--sa-b)}
+/* short, wide windows (a phone on its side, a split screen): shrink the chrome instead of overlapping it */
+@media (max-height:520px){
+  .hud-top{top:calc(6px + var(--sa-t))!important}
+  .dock{bottom:calc(6px + var(--sa-b))!important;padding:5px}
+  .dock button{min-width:42px;padding:5px 4px;font-size:0}
+  .dock button span{font-size:19px}
+  .drawer{top:calc(54px + var(--sa-t));bottom:calc(66px + var(--sa-b))}
+  .chat{bottom:calc(66px + var(--sa-b))}
+  .prompt{bottom:calc(72px + var(--sa-b))}
+}
+/* very wide screens: keep the UI from stretching to the far corners */
+@media (min-width:1500px){.hud-top{left:max(10px,calc((100vw - 1480px)/2))!important;right:max(10px,calc((100vw - 1480px)/2))!important}}
+
+/* ---- 2. Top bar: glassy pills with a little depth ---- */
+.hud-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;
+  background:linear-gradient(180deg,rgba(24,52,80,.92),rgba(12,32,52,.92));
+  box-shadow:0 4px 14px rgba(0,0,0,.4),inset 0 1px 0 rgba(207,232,245,.22);
+  color:var(--snow);font-size:13px;font-weight:800;backdrop-filter:blur(8px)}
+.pill.who{padding:5px 14px 5px 6px}
+.pill .pav{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;font-size:17px;
+  background:linear-gradient(160deg,#5bb6e8,#2a6fa0);box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+.pill .pwho{display:grid;line-height:1.15}
+.pill .pwho b{font-size:13.5px}
+.pill .pwho small,.pill small{font-size:11px;font-weight:700;color:#a9cde3}
+.pill.coins{background:linear-gradient(180deg,#ffd977,#ffa93c);color:#4a3200;
+  box-shadow:0 4px 14px rgba(255,169,60,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+.pill.coins .coin{font-size:16px}
+.pill.coins span{font-variant-numeric:tabular-nums;font-size:14.5px;font-weight:900}
+.pill.gift{border:0;font:inherit;font-size:13px;font-weight:900;color:#16304a;
+  background:linear-gradient(180deg,#ffffff,#d9eefb);box-shadow:0 4px 0 #8fbdd8,0 8px 18px rgba(0,0,0,.3)}
+.pill.gift:hover{background:linear-gradient(180deg,#ffffff,#eaf7ff);transform:translateY(-1px)}
+.pill.gift:active{transform:translateY(2px);box-shadow:0 2px 0 #8fbdd8}
+.pill.deco{background:linear-gradient(180deg,#8ff0b3,#2f9e5b);color:#0d3a22;box-shadow:0 4px 0 #1f6e3f}
+
+/* ---- 3. Dock: a glass tray with a lit-up active button ---- */
+.dock{gap:4px;padding:7px;border-radius:22px;
+  background:linear-gradient(180deg,rgba(18,42,66,.88),rgba(8,24,40,.92));
+  box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(207,232,245,.18);backdrop-filter:blur(12px)}
+.dock button{position:relative;border-radius:16px;background:transparent;color:#bcd9ea;font-weight:800;
+  transition:background .15s,color .15s,transform .12s}
+.dock button::after{content:'';position:absolute;left:50%;bottom:3px;width:0;height:3px;border-radius:99px;
+  background:var(--gold);transform:translateX(-50%);transition:width .18s}
+.dock button:hover{background:rgba(207,234,247,.16);color:#fff;transform:translateY(-2px)}
+.dock button:active{transform:translateY(1px)}
+.dock button.on{background:rgba(255,194,71,.18);color:#fff}
+.dock button.on::after{width:22px}
+.dock button .badge{top:2px;right:4px;box-shadow:0 0 0 2px rgba(8,24,40,.9)}
+
+/* ---- 4. Prompt + toasts ---- */
+.prompt{padding:9px 18px;border-radius:99px;font-size:14px;font-weight:900;
+  background:linear-gradient(180deg,rgba(24,52,80,.95),rgba(10,28,46,.95));
+  box-shadow:0 6px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(207,232,245,.25)}
+.toast{border-radius:18px;padding:12px 18px;font-weight:800;
+  background:linear-gradient(180deg,rgba(28,58,88,.97),rgba(12,32,52,.97));color:#f4fbff;
+  box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(207,232,245,.25)}
+
+/* ---- 5. Drawers: gradient header, softer body ---- */
+.drawer{border-radius:26px;overflow:hidden;
+  box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.drawer header{padding:14px 16px 10px;background:linear-gradient(180deg,#ffffff,#e4f3fc)}
+.drawer header h2{font-size:21px;letter-spacing:.2px}
+.drawer .x{border:0;border-radius:50%;width:30px;height:30px;font-size:15px;font-weight:900;
+  background:#dff1fb;color:#2c5f80;box-shadow:0 2px 0 #a9d3ea}
+.drawer .x:hover{background:#ffd9d0;color:#8c2b20}
+.drawer footer{background:linear-gradient(180deg,#dff1fb,#cfe8f5);font-weight:700}
+.place{border-radius:18px;transition:transform .12s,box-shadow .12s}
+.place:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 0 #a9d3ea}

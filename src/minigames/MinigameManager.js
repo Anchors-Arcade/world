@@ -33,7 +33,7 @@ export class MinigameManager {
     const room = this.game.scene.getScene('Room');             // look it up again: it is null if the game was torn down meanwhile
     if (room) { room.scene.setVisible(true); if (room.scene.isPaused()) room.scene.resume(); }
     this.game.events.emit('ui-lock', false);
-    this.game.events.emit('minigame-end', { id, tab, game });
+    this.game.events.emit('minigame-end', { id, tab, game, world: !!GAMES[id]?.world });
   }
 
   destroy() {                                                 // logout while a game is open

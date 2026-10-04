@@ -7,6 +7,8 @@ import { RoomEditor } from '../rooms/RoomEditor.js';
 import { ROOM, rectOf } from '../rooms/roomRules.js';
 import { fetchRoom } from '../database/rooms.js';
 import { WorldLayer } from '../world/WorldLayer.js';
+import { GAMES } from '../minigames/registry.js';
+import { bestOf } from '../minigames/scoreSystem.js';
 
 const DOOR_W = 70, DOOR_H = 56;
 
@@ -41,7 +43,8 @@ export class RoomScene extends Phaser.Scene {
     // Phase 8: a portal with `secret` is a hidden entrance — it exists only once that secret has been discovered.
     (room.portals || []).forEach((p) => { if (!p.secret) this.addPortal(p); else if (this.explore?.isRoomUnlocked(p.to)) this.addSecretPortal(p, true); });
     (room.kiosks || []).forEach((k) => this.addKiosk(k));
-    (room.cabinets || []).forEach((c) => this.addCabinet(c));                                   // Phase 7: arcade machines + leaderboard board
+    (room.cabinets || []).forEach((c) => this.addCabinet(c));
+    (room.activities || []).forEach((a) => this.addActivity(a));                                 // Phase 10: one minigame per map                                   // Phase 7: arcade machines + leaderboard board
     if (room.indoor) { const wall = this.addWall(0, 0, room.w, 150, room.wallColor ?? 0x7a4f2f); if (room.type === 'home') wall.setAlpha(0); }   // homes draw their own themed wall
 
     const s = this.spawnPoint(room);
@@ -201,14 +204,36 @@ export class RoomScene extends Phaser.Scene {
         if (!calm) this.tweens.add({ targets: band, x: room.w / 2 + (i % 2 ? 90 : -90), scaleY: 1.3, alpha: a * 0.45, duration: 7000 + i * 1800, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
       });
     }
-    if (room.vignette) {                                    // caves and lamp rooms: dark at the edges
-      const g = this.add.graphics().setDepth(1.9e6).setScrollFactor(0);
-      const w = this.scale.width, h = this.scale.height;
-      for (let i = 0; i < 10; i++) { g.fillStyle(0x000000, 0.055); g.fillRect(0, 0, w, 26 * (10 - i) / 3); g.fillRect(0, h - 26 * (10 - i) / 3, w, 26 * (10 - i) / 3); g.fillRect(0, 0, 30 * (10 - i) / 3, h); g.fillRect(w - 30 * (10 - i) / 3, 0, 30 * (10 - i) / 3, h); }
-      this.scale.on('resize', () => g.clear());
-    }
+    if (room.vignette) this.drawVignette();                 // caves and lamp rooms: dark at the edges
     const fx = room.fx ?? (room.indoor ? 'none' : 'snow');
     if (fx !== 'none' && !calm) this.addWeather(fx);
+
+    // Phase 10: weather and the vignette are drawn in SCREEN space, so they have to be rebuilt when the window
+    // changes size — rotating a phone, dragging a window, entering or leaving fullscreen. Debounced, so a drag
+    // that fires fifty resize events rebuilds once.
+    this.onResize = () => {
+      clearTimeout(this.resizeT);
+      this.resizeT = setTimeout(() => {
+        if (!this.scene.isActive()) return;
+        this.weather?.destroy(); this.weather = null;
+        this.vignette?.destroy(); this.vignette = null;
+        if (room.vignette) this.drawVignette();
+        if (fx !== 'none' && !this.registry.get('reduceMotion')) this.addWeather(fx);
+      }, 180);
+    };
+    this.scale.on('resize', this.onResize);
+    this.events.once('shutdown', () => { clearTimeout(this.resizeT); this.scale.off('resize', this.onResize); });
+  }
+
+  drawVignette() {
+    const g = this.add.graphics().setDepth(1.9e6).setScrollFactor(0);
+    const w = this.scale.width, h = this.scale.height;
+    for (let i = 0; i < 10; i++) {
+      const b = 26 * (10 - i) / 3, sx = 30 * (10 - i) / 3;
+      g.fillStyle(0x000000, 0.055);
+      g.fillRect(0, 0, w, b); g.fillRect(0, h - b, w, b); g.fillRect(0, 0, sx, h); g.fillRect(w - sx, 0, sx, h);
+    }
+    this.vignette = g;
   }
 
   // Weather and floating motes. One emitter, screen-space, so it costs the same in a big room as a small one.
@@ -223,7 +248,7 @@ export class RoomScene extends Phaser.Scene {
     }[kind];
     if (!conf) return;
     const { key, y = -10, ...rest } = conf;
-    this.add.particles(0, 0, key, { x: { min: 0, max: w }, y, quantity: 1, ...rest })
+    this.weather = this.add.particles(0, 0, key, { x: { min: 0, max: w }, y, quantity: 1, ...rest })
       .setScrollFactor(0).setDepth(2e6);
   }
 
@@ -254,8 +279,40 @@ export class RoomScene extends Phaser.Scene {
       g.fillStyle(0xfff0b0); g.fillRoundedRect(wx, winY, 34, 34, 6); g.lineStyle(3, 0x5a3b22); g.strokeRoundedRect(wx, winY, 34, 34, 6);
       g.lineBetween(wx + 17, winY, wx + 17, winY + 34); g.lineBetween(wx, winY + 17, wx + 34, winY + 17);
     }
-    g.fillStyle(0x5a3b22); g.fillRoundedRect(x + w / 2 - 24, y + h - 62, 48, 62, { tl: 22, tr: 22, bl: 0, br: 0 });  // door
-    g.fillStyle(0xffc247); g.fillCircle(x + w / 2 + 14, y + h - 30, 3);
+    // --- Phase 10: the details that make a building look lived in ---
+    const cx2 = x + w / 2;
+    g.fillStyle(0x7d6a58); g.fillRect(x + w - 54, y + 4, 26, 44);                                     // chimney
+    g.fillStyle(0x5e4e40); g.fillRect(x + w - 58, y, 34, 10);
+    g.fillStyle(0xffffff); g.fillRoundedRect(x + w - 60, y - 5, 38, 9, 4);
+    g.fillStyle(0xffffff, 0.9);                                                                        // icicles under the eaves
+    for (let ix = x - 6; ix < x + w + 6; ix += 17) g.fillTriangle(ix, y + 52, ix + 7, y + 52, ix + 3.5, y + 52 + (6 + ((ix / 17) % 3) * 6));
+    g.fillStyle(0x3a2616); g.fillRoundedRect(cx2 - 34, y + h - 10, 68, 12, 4);                        // door step
+    g.fillStyle(0x5a3b22); g.fillRoundedRect(cx2 - 24, y + h - 62, 48, 62, { tl: 22, tr: 22, bl: 0, br: 0 });  // door
+    g.fillStyle(0x7a5330); g.fillRoundedRect(cx2 - 18, y + h - 56, 36, 50, { tl: 18, tr: 18, bl: 0, br: 0 });
+    g.fillStyle(0xffc247); g.fillCircle(cx2 + 14, y + h - 30, 3);
+    g.fillStyle(0x2f9e5b); g.fillCircle(cx2, y + h - 60, 9);                                           // door wreath
+    g.fillStyle(b.wall); g.fillCircle(cx2, y + h - 60, 4.5);
+    g.fillStyle(0xe8483c); g.fillCircle(cx2 - 5, y + h - 64, 2); g.fillCircle(cx2 + 6, y + h - 57, 2);
+    [cx2 - 40, cx2 + 40].forEach((lx) => {                                                             // porch lanterns
+      g.fillStyle(0x3a3f4b); g.fillRect(lx - 2, y + h - 74, 4, 10);
+      g.fillStyle(0xfff0b0); g.fillRoundedRect(lx - 7, y + h - 66, 14, 16, 4);
+      g.fillStyle(0x3a3f4b); g.fillRect(lx - 8, y + h - 50, 16, 3);
+    });
+    const lamp = this.add.ellipse(cx2, y + h - 30, 170, 70, 0xffc247, 0.14).setDepth(-992).setBlendMode(Phaser.BlendModes.ADD);
+    if (!this.registry.get('reduceMotion')) {
+      this.tweens.add({ targets: lamp, alpha: 0.07, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+      this.add.particles(x + w - 41, y + 2, 'flake', {                                                 // chimney smoke
+        lifespan: 2600, speedY: { min: -46, max: -22 }, speedX: { min: -16, max: 16 },
+        scale: { start: 0.5, end: 2.1 }, alpha: { start: 0.35, end: 0 }, frequency: 240, quantity: 1, tint: 0xdfe8ef,
+      }).setDepth(y + h - 1);
+    }
+    // string lights along the eaves
+    const lights = ['0xffc247', '0xe8483c', '0x6fd08c', '0x5bb6e8'].map((c) => Number(c));
+    for (let i = 0, lx = x + 8; lx < x + w - 6; lx += 26, i++) {
+      const sag = Math.sin((lx - x) / w * Math.PI) * 7;
+      g.fillStyle(0x3a3f4b); g.fillRect(lx, y + 56 + sag, 2, 5);
+      g.fillStyle(lights[i % 4]); g.fillCircle(lx + 1, y + 63 + sag, 4);
+    }
     this.add.text(x + w / 2, y + h + 22, b.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 8, y: 3 } })
       .setOrigin(0.5).setDepth(y + h + 2);
     this.walls.add(this.add.rectangle(x + w / 2, y + 40 + (h - 40) / 2, w, h - 40, 0, 0));
@@ -302,6 +359,41 @@ export class RoomScene extends Phaser.Scene {
     const zone = new Phaser.Geom.Rectangle(cx - Math.min(80, w / 2), y + h + 2, Math.min(160, w), DOOR_H);
     this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.16).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
     this.doors.push({ label: c.label, action: c.action, verb: c.verb || 'play', zone, body: new Phaser.Geom.Rectangle(x, y, w, h), below: true });
+  }
+
+  // Phase 10: an activity stand — the world's version of an arcade cabinet. A board on two posts with the game's
+  // emoji, its name and your best score, and a play zone in front. Data lives in `activities` on the room.
+  addActivity(a) {
+    const def = GAMES[a.id]; if (!def) return;
+    const w = a.w || 190, h = a.h || 140, x = a.x, y = a.y, cx = x + w / 2, depth = y + h;
+    const tint = Phaser.Display.Color.HexStringToColor(def.colors.a).color;
+    const dark = Phaser.Display.Color.HexStringToColor(def.colors.b).color;
+    const calm = this.registry.get('reduceMotion');
+
+    const glow = this.add.rectangle(cx, y + h / 2, w + 44, h + 44, tint, 0.18).setDepth(depth - 3);
+    if (!calm) this.tweens.add({ targets: glow, alpha: 0.06, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+
+    const g = this.add.graphics().setDepth(depth);
+    g.fillStyle(0x16304a, 0.2); g.fillEllipse(cx, y + h + 6, w + 20, 26);
+    g.fillStyle(0x6b4428); g.fillRect(x + 16, y + h - 34, 14, 40); g.fillRect(x + w - 30, y + h - 34, 14, 40);   // posts
+    g.fillStyle(dark); g.fillRoundedRect(x - 6, y - 6, w + 12, h - 18, 16);                                      // frame
+    g.fillStyle(tint); g.fillRoundedRect(x, y, w, h - 30, 12);                                                   // board
+    g.fillStyle(0xffffff, 0.22); g.fillRoundedRect(x + 6, y + 6, w - 12, 22, 8);
+    g.fillStyle(0x16304a, 0.25); g.fillRoundedRect(x + 14, y + 40, w - 28, h - 92, 10);
+    g.fillStyle(0xffffff); g.fillEllipse(cx, y - 8, w * 0.7, 16);                                                // snow on top
+    g.fillStyle(0xffc247); g.fillRoundedRect(x + 22, y + h - 66, w - 44, 22, 8);
+
+    const t = (str, size, color, py, extra = {}) => this.add.text(cx, py, str, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: `${size}px`, fontStyle: 'bold', color, ...extra }).setOrigin(0.5).setDepth(depth + 1);
+    t(def.name.toUpperCase(), 13.5, '#16304a', y + 17);
+    const icon = t(def.emoji, 42, '#ffffff', y + 40 + (h - 92) / 2);
+    if (!calm) this.tweens.add({ targets: icon, scale: 1.12, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    const best = bestOf(def.id, !!this.registry.get('profile').guest);
+    t(best == null ? '▶ PLAY' : `▶ PLAY · best ${best.toLocaleString()}`, 11.5, '#4a3200', y + h - 55);
+
+    this.walls.add(this.add.rectangle(cx, y + h / 2, w, h - 20, 0, 0));
+    const zone = new Phaser.Geom.Rectangle(cx - 85, y + h + 4, 170, DOOR_H);
+    this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.16).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
+    this.doors.push({ label: def.name, action: `play:${def.id}`, verb: 'play', zone, body: new Phaser.Geom.Rectangle(x, y, w, h), below: true });
   }
 
   // neon sign on an indoor back wall
@@ -477,6 +569,7 @@ export class RoomScene extends Phaser.Scene {
       this.target = null; this.pendingDoor = null; this.player.move(0, 0);
       if (door.action.startsWith('arcade:')) this.game.events.emit('open-arcade', door.action.slice(7));   // Phase 7
       else if (door.action.startsWith('world:')) this.game.events.emit('world-interact', door.world);       // Phase 8
+      else if (door.action.startsWith('play:')) this.game.events.emit('minigame-play', door.action.slice(5)); // Phase 10
       else this.game.events.emit('open-shop', door.action);
       return;
     }

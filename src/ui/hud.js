@@ -1,8 +1,34 @@
 // [icon, label, key]. Every dock button is live as of Phase 8.
 const BUTTONS = [
   ['🗺️', 'Map', 'map'], ['📒', 'Journal', 'journal'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['🏠', 'My Room', 'home'], ['👥', 'Friends', 'friends'],
-  ['💬', 'Chat', 'chat'], ['😄', 'Emotes', 'emotes'], ['🛍️', 'Shop', 'shop'], ['⚙️', 'Settings', 'settings'], ['🚪', 'Log out', 'logout'],
+  ['💬', 'Chat', 'chat'], ['😄', 'Emotes', 'emotes'], ['🛍️', 'Shop', 'shop'], ['⚙️', 'Settings', 'settings'], ['⛶', 'Full', 'fullscreen'], ['🚪', 'Log out', 'logout'],
 ];
+
+// ---------------------------------------------------------------------
+// Phase 10 — fullscreen that works on every screen.
+// Desktop and Android use the Fullscreen API on the whole document. iPhone Safari does not allow it on a normal
+// element, so there the button tells the player how to get the same result (Add to Home Screen), and the layout
+// already fills the visible area by itself: the CSS uses dvh units and safe-area insets, so the HUD never ends up
+// under the notch, the home bar or the browser's own toolbars.
+export const fsSupported = () => !!(document.fullscreenEnabled || document.webkitFullscreenEnabled ||
+  document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+export const isFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+
+export async function toggleFullscreen() {
+  const el = document.documentElement;
+  try {
+    if (isFullscreen()) {
+      await (document.exitFullscreen?.() ?? document.webkitExitFullscreen?.());
+      return true;
+    }
+    const req = el.requestFullscreen?.bind(el) ?? el.webkitRequestFullscreen?.bind(el);
+    if (!req) return false;
+    await req({ navigationUI: 'hide' });
+    // lock to landscape where the browser allows it (phones); harmless everywhere else
+    try { await screen.orientation?.lock?.('landscape'); } catch { /* not allowed on this device */ }
+    return true;
+  } catch { return false; }
+}
 
 export function toast(text) {
   const t = document.createElement('div');
@@ -16,8 +42,8 @@ export function mountHUD(root, profile, { onAction }) {
   const el = document.createElement('div');
   el.innerHTML = `
     <div class="hud-top">
-      <div class="pill"><b id="hn"></b><small id="hl">Snowy Plaza</small></div>
-      <div class="pill coins"><span class="coin">⚓</span><span id="hc">0</span></div>
+      <div class="pill who"><span class="pav">🐧</span><span class="pwho"><b id="hn"></b><small id="hl">Snowy Plaza</small></span></div>
+      <div class="pill coins" title="Anchor Coins"><span class="coin">⚓</span><span id="hc">0</span></div>
       <button class="pill gift" id="hd" title="Daily reward">🎁 Daily</button>
       <button class="pill gift deco" id="hb" title="Decorate your room" hidden>🛠️ Decorate</button>
       <div class="pill"><small id="hp2">👥 1 here</small></div>
@@ -38,8 +64,17 @@ export function mountHUD(root, profile, { onAction }) {
     else onAction(key);
   }));
 
+  // keep the dock button in step with the real fullscreen state (Esc, F11, the system gesture…)
+  const fsBtn = el.querySelector('.dock button[data-key="fullscreen"]');
+  const syncFs = () => { if (fsBtn) { fsBtn.classList.toggle('on', isFullscreen()); fsBtn.querySelector('span').textContent = isFullscreen() ? '⛷' : '⛶'; } };
+  document.addEventListener('fullscreenchange', syncFs);
+  document.addEventListener('webkitfullscreenchange', syncFs);
+  syncFs();
+
   return {
     setCoins,
+    // highlight the dock button whose panel is open
+    setOn: (key, on) => el.querySelector(`.dock button[data-key="${key}"]`)?.classList.toggle('on', !!on),
     // small red counter on a dock button (friend requests, unread chat); 0 hides it
     setBadge: (key, n) => {
       const b = el.querySelector(`.dock button[data-key="${key}"]`); if (!b) return;
@@ -52,6 +87,7 @@ export function mountHUD(root, profile, { onAction }) {
     setDecorate: (on) => { q('#hb').hidden = !on; },
     setPlayers: (n) => (q('#hp2').textContent = `👥 ${n} here`),
     setPrompt: (t) => { const p = q('#hp'); p.textContent = t || ''; p.classList.toggle('on', !!t); },
-    destroy: () => el.remove(),
+    syncFs,
+    destroy: () => { document.removeEventListener('fullscreenchange', syncFs); document.removeEventListener('webkitfullscreenchange', syncFs); el.remove(); },
   };
 }

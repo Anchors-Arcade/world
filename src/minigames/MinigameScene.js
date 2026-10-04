@@ -56,9 +56,13 @@ export class MinigameScene extends Phaser.Scene {
   build() {} resetRun() {} onStart() {} tick() {} idle() {} hudText() { return {}; }
 
   // ---------- helpers ----------
+  // Fit the 960x540 design area inside ANY window: portrait phones, ultrawide monitors, split screens.
+  // The zoom is capped so a huge display does not blow the art up past 2x, and the camera is re-centred on resize.
   fit() {
     const cam = this.cameras.main;
-    cam.setZoom(Math.min(this.scale.width / W, this.scale.height / H)); cam.centerOn(W / 2, H / 2);
+    const z = Math.min(this.scale.width / W, this.scale.height / H);
+    cam.setZoom(Phaser.Math.Clamp(z, 0.3, 2));
+    cam.centerOn(W / 2, H / 2);
   }
   shake(ms = 120, power = 0.006) { if (!this.reduce) this.cameras.main.shake(ms, power); }
   flash(r, g, b) { if (!this.reduce) this.cameras.main.flash(120, r, g, b); }
@@ -140,7 +144,7 @@ export class MinigameScene extends Phaser.Scene {
       this.text(W / 2, 252, d.description, 17, '#2f5875', { align: 'center', wordWrap: { width: 560 } }),
       this.text(W / 2, 330, `🎮 ${d.controls}`, 15, '#44708f', { align: 'center', wordWrap: { width: 580 } }), ui.stats,
       this.button(W / 2 - 100, 432, 190, 54, '▶ PLAY', { color: 0x2f9e5b, shadow: 0x1f6e3f, size: 26, onClick: () => this.begin() }),
-      this.button(W / 2 + 120, 432, 170, 54, 'ARCADE', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 22, onClick: () => this.toArcade() }),
+      this.button(W / 2 + 120, 432, 170, 54, this.def.world ? '◂ BACK' : 'ARCADE', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 22, onClick: () => this.toArcade() }),
     ]);
     ui.err = this.text(W / 2, 478, err || (this.guest ? 'Guest mode: scores are not saved and no coins are earned.' : ''), 14, err ? '#c4472b' : '#44708f', { align: 'center', wordWrap: { width: 580 } });
     p.add(ui.err);
@@ -179,7 +183,7 @@ export class MinigameScene extends Phaser.Scene {
     p.add([
       this.text(W / 2, 175, '⏸ PAUSED', 40), this.text(W / 2, 222, `Sound: ${sfx.muted ? 'off' : 'on'}  (press M)`, 15, '#44708f'),
       this.button(W / 2, 285, 280, 56, '▶ RESUME', { color: 0x2f9e5b, shadow: 0x1f6e3f, onClick: () => this.resume() }),
-      this.button(W / 2, 360, 280, 50, 'Quit to Arcade', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 20, onClick: () => this.toArcade() }),
+      this.button(W / 2, 360, 280, 50, this.def.world ? 'Leave the game' : 'Quit to Arcade', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 20, onClick: () => this.toArcade() }),
     ]);
   }
   resume() { if (this.state !== 'paused') return; this.clearUi(); this.state = 'playing'; }
@@ -226,7 +230,7 @@ export class MinigameScene extends Phaser.Scene {
       ]);
       if (out.retry) p.add(this.button(X, 370, 280, 54, '↻ TRY AGAIN', { color: 0x2f9e5b, shadow: 0x1f6e3f, onClick: () => this.submit() }));
       p.add([this.button(X - 125, 435, 220, 48, '▶ PLAY AGAIN', { color: 0xffc247, shadow: 0xc97f12, text: '#4a3200', size: 20, onClick: () => this.begin() }),
-        this.button(X + 125, 435, 220, 48, 'ARCADE', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 20, onClick: () => this.toArcade() })]);
+        this.button(X + 125, 435, 220, 48, this.def.world ? '◂ BACK' : 'ARCADE', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 20, onClick: () => this.toArcade() })]);
       return;
     }
     p.add(this.text(X, 112, f.title, 30, '#16304a'));
@@ -252,7 +256,7 @@ export class MinigameScene extends Phaser.Scene {
     p.add([
       this.button(X - 190, 446, 190, 50, '▶ PLAY AGAIN', { color: 0x2f9e5b, shadow: 0x1f6e3f, size: 19, onClick: () => this.begin() }),
       this.button(X + 10, 446, 160, 50, '🏆 BOARD', { color: 0xffc247, shadow: 0xc97f12, text: '#4a3200', size: 19, onClick: () => this.toArcade('board') }),
-      this.button(X + 180, 446, 150, 50, 'ARCADE', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 19, onClick: () => this.toArcade() }),
+      this.button(X + 180, 446, 150, 50, this.def.world ? '◂ BACK' : 'ARCADE', { color: 0xffffff, shadow: 0x9cc9e2, text: '#16304a', size: 19, onClick: () => this.toArcade() }),
     ]);
   }
 

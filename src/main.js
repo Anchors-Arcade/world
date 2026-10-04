@@ -1,7 +1,7 @@
 import { BootScene } from './scenes/BootScene.js';
 import { RoomScene } from './scenes/RoomScene.js';
 import { mountAuth } from './ui/authUI.js';
-import { mountHUD, toast } from './ui/hud.js';
+import { mountHUD, toast, toggleFullscreen, fsSupported } from './ui/hud.js';
 import { createWardrobe } from './ui/wardrobe.js';
 import { createShop } from './ui/shop.js';
 import * as auth from './database/auth.js';
@@ -89,6 +89,7 @@ function startGame(profile) {
   minigames = new MinigameManager(game);
   arcade = createArcade(ui, { game, profile, manager: minigames });
   game.events.on('open-arcade', (what) => arcade.open(what));
+  game.events.on('minigame-play', (id) => minigames.start(id));       // Phase 10: activity stands out in the world
   game.events.on('minigame-start', () => { closeDrawers(); chat.close(); emotes.close(); ui.classList.add('in-minigame'); });
   game.events.on('minigame-end', () => ui.classList.remove('in-minigame'));
   game.events.on('coins-changed', (n) => { profile.coins = n; hud.setCoins(n); });     // reward from the server -> wallet/HUD immediately
@@ -109,13 +110,27 @@ function startGame(profile) {
   if (!profile.guest) fetchInventory().then((m) => { setInventory(profile, m); wardrobe.refresh(); game.events.emit('inventory-changed'); })
     .catch((e) => toast('Could not load inventory: ' + e.message));
 
+  // Phase 10: the dock shows which panel is open.
+  const syncDock = () => {
+    const open = { wardrobe: wardrobe?.isOpen?.(), friends: friends?.isOpen?.(), chat: chat?.isOpen?.(),
+      settings: settings?.isOpen?.(), map: mapPanel?.isOpen?.(), journal: journal?.isOpen?.(), emotes: emotes?.isOpen?.() };
+    for (const [k, v] of Object.entries(open)) hud.setOn(k, !!v);
+    hud.setOn('avatar', !!open.wardrobe);
+  };
+
   async function onAction(key) {
+    queueMicrotask(syncDock);
     if (key === 'logout') return logout();
     if (key === 'wardrobe' || key === 'avatar') { if (!wardrobe.isOpen()) closeDrawers(); return wardrobe.toggle(key === 'avatar' ? 'look' : undefined); }
     if (key === 'friends') return friends.toggle();
     if (key === 'chat') return chat.toggle();
     if (key === 'emotes') return emotes.toggle();
     if (key === 'settings') return settings.toggle();
+    if (key === 'fullscreen') {
+      const ok = await toggleFullscreen();
+      if (!ok) toast(fsSupported() ? 'Your browser would not go fullscreen.' : 'On iPhone, use Share ▸ Add to Home Screen for fullscreen.');
+      return;
+    }
     if (key === 'map') return mapPanel.toggle();
     if (key === 'journal') { unseen = 0; hud.setBadge('journal', 0); return journal.toggle(); }
     if (key === 'shop') return shop.open('clothing');

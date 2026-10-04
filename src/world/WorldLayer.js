@@ -43,7 +43,9 @@ export class WorldLayer {
       g.fillStyle(o.color ?? 0x8c5a3a); g.fillRoundedRect(x, y, w, h, 10);
       g.fillStyle(0xffffff, 0.22); g.fillRoundedRect(x + 4, y + 4, w - 8, Math.max(8, h * 0.28), 8);
       g.lineStyle(3, 0x16304a, 0.35); g.strokeRoundedRect(x, y, w, h, 10);
-      s.add.text(cx, cy, o.icon || '❔', { fontSize: `${Math.min(34, Math.max(20, h * 0.55))}px` }).setOrigin(0.5).setDepth(depth + 1);
+      g.fillStyle(0xffffff); g.fillEllipse(cx, y + 2, w * 0.86, 13);                       // a cap of snow on everything outdoors
+      g.fillStyle(0x16304a, 0.1); g.fillRoundedRect(x + 4, y + h - 12, w - 8, 10, 5);      // base shadow
+      s.add.text(cx, cy + 4, o.icon || '❔', { fontSize: `${Math.min(40, Math.max(24, h * 0.62))}px` }).setOrigin(0.5).setDepth(depth + 1);
       if (!o.walkable) s.walls.add(s.add.rectangle(cx, cy, w, h, 0, 0));
       this.marks.set(o.id, { art: g });
     }

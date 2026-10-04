@@ -3,7 +3,7 @@
 Plain HTML/CSS/JS. Phaser and Supabase load from CDNs. Upload the files as-is to GitHub.
 
 ## Setup (once)
-1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue). All safe to re-run.
+1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue), **then** `supabase/phase10.sql` (the seven world activities). All safe to re-run.
    Deploy the new client files and run `phase6.sql` together: Phase 6 changes how your own profile is loaded (`get_my_profile()`).
    (Auth → Providers → Email: turn off "Confirm email" while testing, or keep it on and do step 1b.)
 1b. **E-mail confirmation links** go to your Supabase *Site URL*, which defaults to `http://localhost:3000` ("site can't be reached"). Fix: Supabase → Authentication → **URL Configuration** → set **Site URL** to where the game runs (e.g. `https://YOUR-USER.github.io/YOUR-REPO/` or `http://localhost:5173/`) and add the same address(es) under **Redirect URLs** (add `http://localhost:5173/**` and your GitHub Pages address with `/**`). The game now also sends the page you signed up from as the redirect, and the sign-up screen has a "Resend confirmation email" button. Links already sent keep the old address: request a new one.
@@ -113,3 +113,39 @@ Controls: WASD / arrows or click. E (or click a building) to enter doors. **Ente
   plaza's cross.
 - One new file (`supabase/phase9.sql`), one new script (`scripts/gen-item-seed.mjs`); everything else is an edit to
   files that already existed. No new dependencies, no new requests, no new realtime channels.
+
+## Phase 10: an activity on every map, livelier houses, a new UI, real fullscreen
+- **One minigame per map** (`src/minigames/worldGames.js`), all built on the Phase 7 `MinigameScene`, so they share the
+  start screen, countdown, pause, server-timed session, result screen and leaderboards — and the Phase 8 **Arcade
+  Master** badge counts them too:
+  ✨ **Firefly Catch** (Deep Forest · tap the sprites, avoid the angry ones) · ☕ **Cocoa Rush** (Snow Camp · serve the
+  order in the right order) · 🎣 **Ice Fishing** (Frozen Lake · strike while the marker is in the green, which keeps
+  shrinking) · 📦 **Crate Stack** (Harbour Village · drop the swinging crate squarely or lose the overhang) ·
+  ⛰️ **Cliff Climb** (Mountain Pass · climb and dodge falling rocks) · 💎 **Crystal Echo** (Ice Caves) and
+  🌟 **Star Link** (Observatory · repeat a pattern that grows every round).
+  You start them from an **activity stand** in the room — board, emoji, your best score, walk up and press **E** — and
+  when you finish you are put back where you were standing instead of in the Arcade. The Arcade screen still lists only
+  the three cabinets. `supabase/phase10.sql` adds the seven rows to the same `minigames` table, so the trust model,
+  the score checks and the shared daily coin cap are unchanged.
+- **More to do everywhere**: 13 new interactive objects — the town tree and the frozen fountain, an empty den and snow
+  berries, the camp flag and a parked sled, a swept rink and a groaning crack in the lake, a beached boat and the
+  harbour map, the lighthouse stairs, a mountain viewpoint, a still pool, the sky model, an echo spot and the
+  astronomer's desk (which has something to say about the hollow).
+- **Houses, properly built**: every building now gets a chimney with drifting smoke, icicles along the eaves, string
+  lights in four colours, a wreath on the door, a stone step, two porch lanterns and a warm pool of light on the snow.
+- **New UI**: glass top bar with an avatar pill and a gold coin pill, a frosted dock that lights up the panel you have
+  open, rounded gradient drawers, and softer prompts and toasts.
+- **Fullscreen that works on every screen** — the point of this phase:
+  * a **⛶ Full** button in the dock uses the Fullscreen API on the whole document, hides the browser UI and, where the
+    device allows it, locks to landscape; the button tracks the real state, so Esc or F11 keeps it in step. On iPhone,
+    where Safari forbids it, the button explains the Add to Home Screen route instead.
+  * the layout fills the **visible** area on any device: `dvh` units with a `-webkit-fill-available` fallback, and every
+    fixed edge padded by `env(safe-area-inset-*)`, so nothing hides under a notch, a home bar or a browser toolbar.
+  * short, wide windows (a phone on its side, a split screen) shrink the dock to icons and tighten the panels; very wide
+    screens keep the HUD within a sane width instead of flinging it into the corners.
+  * pinch-zoom, rubber-band scrolling and tap highlights are off, so the world does not slide around under your finger.
+  * Phaser is resized, not letterboxed: the room camera follows the new size and the screen-space weather and vignette
+    are rebuilt (debounced) on every resize, rotation and fullscreen change; minigames re-fit their 960×540 stage into
+    any window, with the zoom clamped so huge monitors do not blow the art up.
+- `vite.config.js` is new and dev-only: it points the Supabase CDN import at `node_modules` for `npm run dev`, while a
+  production build and the plain-files deployment keep using the CDN.

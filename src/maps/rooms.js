@@ -107,6 +107,7 @@ export const ROOMS = {
     name: 'Deep Forest', w: 1600, h: 1000, floor: 'snow', spawn: { x: 800, y: 700 },
     sky: 0x102a2a, fx: 'snow', wash: [0xcfe0d8, 0.95],
     paths: [[700, 60, 210, 880], [160, 480, 1360, 150]],
+    activities: [{ id: 'firefly_catch', x: 560, y: 660 }],
     portals: [
       { label: 'Plaza ▸',     x: 1540, y: 440, w: 60,  h: 220, to: 'snowy_plaza', spawn: { x: 1460, y: 550 } },
       { label: '▴ Snow Camp', x: 690,  y: 0,   w: 220, h: 60,  to: 'snow_camp',   spawn: { x: 800,  y: 150 } },
@@ -124,6 +125,7 @@ export const ROOMS = {
     name: 'Snow Camp', w: 1400, h: 900, floor: 'snow', spawn: { x: 700, y: 700 },
     sky: 0x1a2b44, fx: 'snow', stars: true,
     paths: [[600, 260, 200, 600], [240, 420, 920, 140]],
+    activities: [{ id: 'cocoa_rush', x: 150, y: 640 }],
     portals: [
       { label: 'Deep Forest ▾', x: 590,  y: 840, w: 220, h: 60,  to: 'deep_forest', spawn: { x: 700,  y: 760 } },
       { label: 'Frozen Lake ▸', x: 1340, y: 380, w: 60,  h: 200, to: 'frozen_lake', spawn: { x: 1260, y: 480 } },
@@ -143,6 +145,7 @@ export const ROOMS = {
   frozen_lake: {
     name: 'Frozen Lake', w: 1600, h: 1000, floor: 'ice', spawn: { x: 800, y: 820 },
     sky: 0x0b2033, fx: 'blizzard', aurora: true, stars: true, wash: [0xd8ecff, 0.95],
+    activities: [{ id: 'ice_fishing', x: 1150, y: 640 }],
     portals: [
       { label: '◂ Snow Camp',       x: 0,   y: 380, w: 60,  h: 200, to: 'snow_camp',      spawn: { x: 120, y: 480 } },
       { label: '▴ Mountain Pass',   x: 690, y: 0,   w: 220, h: 60,  to: 'mountain_pass',  spawn: { x: 800, y: 150 } },
@@ -161,6 +164,7 @@ export const ROOMS = {
     name: 'Harbour Village', w: 1600, h: 1000, floor: 'snow', spawn: { x: 800, y: 820 },
     sky: 0x11263d, fx: 'snow', stars: true,
     paths: [[700, 60, 200, 820], [200, 620, 1200, 140]],
+    activities: [{ id: 'crate_stack', x: 230, y: 420 }],
     buildings: [
       { label: 'Lighthouse', x: 1140, y: 150, w: 190, h: 270, wall: 0xf0f4f7, roof: 0xe8483c, to: 'lighthouse' },
     ],
@@ -197,6 +201,7 @@ export const ROOMS = {
     name: 'Mountain Pass', w: 1400, h: 1000, floor: 'stone', spawn: { x: 700, y: 860 },
     sky: 0x0d1c2b, fx: 'blizzard', aurora: true, stars: true, wash: [0xcdd8e2, 0.95],
     paths: [[590, 340, 220, 620]],
+    activities: [{ id: 'cliff_climb', x: 180, y: 680 }],
     buildings: [
       { label: 'Ice Caves',       x: 140, y: 150, w: 240, h: 200, wall: 0x6f8a9c, roof: 0x3a4d5c, to: 'ice_caves' },
       { label: 'Old Observatory', x: 940, y: 130, w: 260, h: 230, wall: 0xd8c9a3, roof: 0x6a4fb3, to: 'observatory' },
@@ -215,6 +220,7 @@ export const ROOMS = {
   ice_caves: {
     name: 'Ice Caves', w: 1400, h: 900, floor: 'cave', indoor: true, wallColor: 0x24404f, spawn: { x: 700, y: 780 },
     sky: 0x0a1a24, fx: 'sparkle', vignette: true, wash: [0xbcd8e6, 0.9],
+    activities: [{ id: 'crystal_echo', x: 860, y: 560 }],
     sign: 'ICE CAVES',
     props: [
       { type: 'crystal', x: 520, y: 620, s: 1 }, { type: 'crystal', x: 980, y: 420, s: 0.8 }, { type: 'crystal', x: 1260, y: 760, s: 1.2 },
@@ -244,6 +250,7 @@ export const ROOMS = {
   observatory: {
     name: 'Old Observatory', w: 1100, h: 800, floor: 'wood', indoor: true, wallColor: 0x3c3470, spawn: { x: 550, y: 700 },
     sky: 0x161238, fx: 'dust', vignette: true, stars: true, wash: [0xd6cff0, 0.92],
+    activities: [{ id: 'star_link', x: 760, y: 560 }],
     props: [{ type: 'glow', x: 550, y: 300, r: 220, color: 0x9aa7ff }],
     sign: 'OLD OBSERVATORY',
     blocks: [

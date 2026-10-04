@@ -1,4 +1,4 @@
-import { GAME_LIST, GAMES } from '../minigames/registry.js';
+import { ARCADE_GAMES as GAME_LIST, GAMES } from '../minigames/registry.js';
 import { fetchOverview, cachedOverview, bestOf } from '../minigames/scoreSystem.js';
 import { fetchLeaderboard, SCOPES } from '../minigames/leaderboard.js';
 import { maxReward } from '../minigames/rewards.js';
@@ -131,7 +131,7 @@ export function createArcade(root, { game, profile, manager }) {
   }
 
   // coming back from a minigame: reopen the Arcade where the player was (games list, or that game's leaderboard)
-  const onEnd = ({ tab: t, game: g }) => open({ tab: t, game: g });
+  const onEnd = ({ tab: t, game: g, world }) => { if (!world) open({ tab: t, game: g }); };   // Phase 10: world activities drop you back in the world
   game.events.on('minigame-end', onEnd);
 
   return { open, close, isOpen: () => !!el, destroy() { game.events.off('minigame-end', onEnd); if (el) { removeEventListener('keydown', onKey); el.remove(); el = null; } } };
