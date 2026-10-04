@@ -1,3 +1,5 @@
+import { makeItemTextures } from './itemArt.js';
+
 // All art is generated procedurally so the game runs with zero external assets.
 // To use real artwork later, load images in BootScene.preload() under the same keys.
 export function makeTextures(scene) {
@@ -9,26 +11,6 @@ export function makeTextures(scene) {
   gen('av_body', 44, 48, (g) => { g.fillStyle(INK); g.fillEllipse(22, 26, 44, 48); g.fillStyle(0xffffff); g.fillEllipse(22, 26, 39, 43); });
   gen('av_belly', 26, 28, (g) => { g.fillStyle(0xf4fbff); g.fillEllipse(13, 14, 26, 28); });
   gen('av_foot', 16, 8, (g) => { g.fillStyle(INK); g.fillEllipse(8, 4, 16, 8); g.fillStyle(0xff9a3c); g.fillEllipse(8, 4, 13, 6); });
-  gen('face_0', 30, 20, (g) => {
-    g.fillStyle(0xffffff); g.fillCircle(8, 7, 6); g.fillCircle(22, 7, 6);
-    g.fillStyle(INK); g.fillCircle(9, 8, 3); g.fillCircle(21, 8, 3);
-    g.fillStyle(0xff9a3c); g.fillTriangle(10, 12, 20, 12, 15, 19);
-  });
-  gen('face_1', 30, 20, (g) => {
-    g.lineStyle(3, INK); g.beginPath(); g.arc(8, 9, 5, Math.PI, 0, false); g.strokePath();
-    g.beginPath(); g.arc(22, 9, 5, Math.PI, 0, false); g.strokePath();
-    g.fillStyle(0xff9a3c); g.fillTriangle(10, 12, 20, 12, 15, 19);
-  });
-  gen('hat_beanie', 40, 30, (g) => {
-    g.fillStyle(INK); g.fillEllipse(20, 20, 40, 32); g.fillStyle(0xe8483c); g.fillEllipse(20, 19, 35, 28);
-    g.fillStyle(0xffffff); g.fillRoundedRect(2, 19, 36, 9, 4); g.fillStyle(0xe8483c); g.fillRect(8, 20, 4, 7); g.fillRect(18, 20, 4, 7); g.fillRect(28, 20, 4, 7);
-    g.fillStyle(0xffffff); g.fillCircle(20, 4, 5);
-  });
-  gen('shirt_stripe', 38, 22, (g) => {
-    g.fillStyle(0x2f6fb5); g.fillRoundedRect(0, 0, 38, 22, 9);
-    g.fillStyle(0xffffff); g.fillRect(0, 6, 38, 4); g.fillRect(0, 14, 38, 4);
-  });
-
   // --- world ---
   gen('snow', 64, 64, (g) => {
     g.fillStyle(0xe9f4fb); g.fillRect(0, 0, 64, 64);
@@ -49,4 +31,5 @@ export function makeTextures(scene) {
   });
   gen('flake', 6, 6, (g) => { g.fillStyle(0xffffff); g.fillCircle(3, 3, 3); });
   g.destroy();
+  makeItemTextures(scene);
 }

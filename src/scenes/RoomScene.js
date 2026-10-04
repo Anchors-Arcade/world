@@ -1,7 +1,7 @@
-import Phaser from 'phaser';
 import { ROOMS } from '../maps/rooms.js';
 import { Avatar } from '../entities/Avatar.js';
 import { toast } from '../ui/hud.js';
+import { RemotePlayers } from '../multiplayer/RemotePlayers.js';
 
 const DOOR_W = 70, DOOR_H = 56;
 
@@ -38,6 +38,12 @@ export class RoomScene extends Phaser.Scene {
 
     if (!room.indoor) this.addSnowfall();
     this.setupInput();
+
+    // multiplayer (no-op for guests) + live outfit changes from the wardrobe
+    this.mp = new RemotePlayers(this, this.registry.get('net'), profile, this.roomId);
+    this.onOutfit = (av) => { this.player.setOutfit(av); this.mp.outfit(av); };
+    this.game.events.on('outfit-changed', this.onOutfit);
+    this.events.once('shutdown', () => { this.game.events.off('outfit-changed', this.onOutfit); this.mp.destroy(); });
     this.game.events.emit('room-entered', this.roomId, room.name);
   }
 
@@ -141,6 +147,7 @@ export class RoomScene extends Phaser.Scene {
     }
     this.player.move(vx, vy);
     this.player.update(time, this.registry.get('reduceMotion'));
+    this.mp.update(time, delta, this.registry.get('reduceMotion'));
 
     this.nearDoor = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.zone, this.player.x, this.player.y)) || null;
     this.game.events.emit('door-prompt', this.nearDoor ? `Press E to enter ${this.nearDoor.label}` : '');

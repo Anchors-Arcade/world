@@ -1,4 +1,3 @@
-import Phaser from 'phaser';
 import { makeTextures } from '../utils/textures.js';
 
 export class BootScene extends Phaser.Scene {

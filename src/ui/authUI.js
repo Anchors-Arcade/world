@@ -12,7 +12,7 @@ export function mountAuth(root, onEnter) {
     <div class="card">
       <h1 class="logo">Anchors <span>World</span> ⚓</h1>
       <p class="tag">A snowy town full of friends.</p>
-      ${isConfigured ? '' : `<div class="notice"><b>Supabase isn't set up yet.</b> Copy <code>.env.example</code> to <code>.env</code> and add your keys. You can still look around as a guest.</div>`}
+      ${isConfigured ? '' : `<div class="notice"><b>Supabase isn't set up yet.</b> Add your keys in <code>src/config/keys.js</code>. You can still look around as a guest.</div>`}
       <div class="tabs"><button data-m="login" class="${mode === 'login' ? 'on' : ''}">Log in</button><button data-m="register" class="${mode === 'register' ? 'on' : ''}">Create account</button></div>
       <form id="f" novalidate>
         ${mode === 'register' ? `<label>Username</label><input id="u" maxlength="16" autocomplete="username" placeholder="SnowyFox_7">` : ''}

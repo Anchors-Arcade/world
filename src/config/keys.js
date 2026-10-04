@@ -1,0 +1,5 @@
+// ➜ EDIT THESE TWO LINES (Supabase dashboard → Project Settings → API).
+// Both values are PUBLIC by design (security comes from Row Level Security in supabase/schema.sql).
+// NEVER paste a "service_role" key here.
+export const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+export const SUPABASE_ANON_KEY = 'YOUR-PUBLIC-ANON-OR-PUBLISHABLE-KEY';

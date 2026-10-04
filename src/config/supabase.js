@@ -1,9 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './keys.js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY; // public anon/publishable key only
-
-export const isConfigured = Boolean(url && key && !url.includes('YOUR-PROJECT'));
+export const isConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('YOUR-PROJECT'));
 export const supabase = isConfigured
-  ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } })
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true },
+      realtime: { params: { eventsPerSecond: 10 } },
+    })
   : null;
