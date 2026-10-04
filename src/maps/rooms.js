@@ -52,6 +52,22 @@ export const ROOMS = {
     kiosks: [{ label: 'Furniture Shop', x: 400, y: 300, w: 200, h: 60, action: 'furniture', icon: '🛋️ Browse furniture' }],
     portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 580 } }],
   },
+  // The Arcade: walk up to a cabinet and press E (or click it) to pick a game; the board on the right opens the leaderboards.
+  // Cabinets are data (`cabinets`): add a game by adding an entry here + in minigames/registry.js.
+  arcade: {
+    name: 'Arcade', w: 1100, h: 720, floor: 'arcade_floor', indoor: true, wallColor: 0x2d2a5e, spawn: { x: 550, y: 600 }, sign: 'ANCHOR ARCADE',
+    cabinets: [
+      { label: 'Snow Dash',      icon: '🏁', x: 90,  y: 160, w: 150, h: 150, color: 0x3f8fc9, action: 'arcade:snow_dash' },
+      { label: 'Coin Catcher',   icon: '🪙', x: 290, y: 160, w: 150, h: 150, color: 0xe9a23b, action: 'arcade:coin_catcher' },
+      { label: 'Snowball Arena', icon: '☃️', x: 490, y: 160, w: 150, h: 150, color: 0xd9546a, action: 'arcade:snowball_arena' },
+      { label: 'Leaderboards',   icon: '🏆', x: 720, y: 160, w: 290, h: 150, color: 0x6a4fb3, action: 'arcade:leaderboard', board: true, verb: 'view' },
+    ],
+    blocks: [
+      { x: 60,  y: 440, w: 130, h: 80, label: '🧸', color: 0x6a4fb3 }, { x: 910, y: 440, w: 130, h: 80, label: '🎈', color: 0x6a4fb3 },
+      { x: 60,  y: 560, w: 130, h: 80, label: '🎟️', color: 0x3f8fc9 }, { x: 910, y: 560, w: 130, h: 80, label: '🏀', color: 0x3f8fc9 },
+    ],
+    portals: [{ label: 'Exit ▾', x: 470, y: 670, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 550, y: 600 } }],
+  },
   // Player room TEMPLATE: one definition, loaded for any owner. The scene builds the floor/walls/furniture from the
   // owner's saved room (see rooms/HomeRoom.js), so every player gets their own layout without separate map code.
   home: {

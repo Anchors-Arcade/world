@@ -26,7 +26,7 @@ export function createEmoteMenu(root, { game }) {
     if (e.key === 'Escape' && !el.hidden) return close();
     if (e.key === 'q' || e.key === 'Q') return el.hidden ? open() : close();
     const n = /^[1-8]$/.test(e.key) ? Number(e.key) - 1 : -1;
-    if (n >= 0 && !document.body.classList.contains('shop-open')) play(EMOTES[n].key);
+    if (n >= 0 && !locked && !document.body.classList.contains('shop-open')) play(EMOTES[n].key);     // Phase 7: also silent while the Arcade / a minigame has the screen
   };
   addEventListener('keydown', onKey);
   const onLock = (v) => { locked = v; if (v) close(); };

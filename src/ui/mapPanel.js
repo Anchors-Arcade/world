@@ -1,7 +1,7 @@
 import { ROOMS } from '../maps/rooms.js';
 import { esc } from './dom.js';
 
-const ICON = { snowy_plaza: '❄️', cafe: '☕', clothing_shop: '🧥', furniture_shop: '🛋️' };
+const ICON = { snowy_plaza: '❄️', cafe: '☕', clothing_shop: '🧥', furniture_shop: '🛋️', arcade: '🕹️' };
 
 // World map drawer: pick a place and walk there. Shows how many of your friends are in each room (from the shared
 // presence data, no extra subscriptions). Rooms that are not built yet simply do not appear.

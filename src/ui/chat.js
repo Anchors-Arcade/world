@@ -94,7 +94,7 @@ export function createChat(root, { game, profile, social, onUnread }) {
   // Enter opens chat and focuses the box (like most games) unless you are already typing somewhere
   const onKey = (e) => {
     if (e.key !== 'Enter' || e.repeat || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || document.body.classList.contains('shop-open')) return;
-    if (document.getElementById('ui').classList.contains('editing')) return;
+    if (document.getElementById('ui').classList.contains('editing') || document.getElementById('ui').classList.contains('in-minigame') || document.querySelector('.arc-overlay')) return;   // not while editing a room / playing / browsing the Arcade
     e.preventDefault(); open(true);
   };
   addEventListener('keydown', onKey);

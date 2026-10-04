@@ -37,7 +37,8 @@ export class RoomScene extends Phaser.Scene {
     (room.trees || []).forEach(([x, y]) => this.addTree(x, y));
     (room.portals || []).forEach((p) => this.addPortal(p));
     (room.kiosks || []).forEach((k) => this.addKiosk(k));
-    if (room.indoor) { const wall = this.addWall(0, 0, room.w, 150, 0x7a4f2f); if (room.type === 'home') wall.setAlpha(0); }   // homes draw their own themed wall
+    (room.cabinets || []).forEach((c) => this.addCabinet(c));                                   // Phase 7: arcade machines + leaderboard board
+    if (room.indoor) { const wall = this.addWall(0, 0, room.w, 150, room.wallColor ?? 0x7a4f2f); if (room.type === 'home') wall.setAlpha(0); }   // homes draw their own themed wall
 
     const s = this.spawnPoint(room);
     this.player = new Avatar(this, s.x, s.y, profile.avatar_data, profile.display_name);
@@ -46,6 +47,7 @@ export class RoomScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBounds(0, 0, room.w, room.h).startFollow(this.player.hitbox, true, 0.12, 0.12);
 
+    if (room.sign) this.addSign(room);
     if (!room.indoor) this.addSnowfall();
     this.setupInput();
 
@@ -214,6 +216,44 @@ export class RoomScene extends Phaser.Scene {
     this.doors.push({ label: k.label, action: k.action, zone, body: new Phaser.Geom.Rectangle(k.x, k.y, k.w, k.h), below: true });
   }
 
+  // Phase 7: an arcade cabinet (or, with `board`, the wide leaderboard screen). Solid, glowing, with a play zone on the floor in front.
+  addCabinet(c) {
+    const { x, y, w, h } = c, cx = x + w / 2, g = this.add.graphics().setDepth(y + h), calm = this.registry.get('reduceMotion');
+    const glow = this.add.rectangle(cx, y + h / 2, w + 36, h + 36, c.color, 0.2).setDepth(y + h - 2);
+    if (!calm) this.tweens.add({ targets: glow, alpha: 0.07, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    g.fillStyle(0x16304a, 0.2); g.fillEllipse(cx, y + h + 4, w + 24, 28);
+    g.fillStyle(c.color); g.fillRoundedRect(x, y, w, h, 14);
+    g.fillStyle(0x000000, 0.18); g.fillRoundedRect(x, y + h - 28, w, 28, { tl: 0, tr: 0, bl: 14, br: 14 });
+    g.fillStyle(0xffc247); g.fillRoundedRect(x + 8, y + 6, w - 16, 24, 8);
+    g.fillStyle(0x16304a); g.fillRoundedRect(x + 12, y + 36, w - 24, h - 76, 10);
+    g.fillStyle(c.board ? 0x1b2a41 : 0x0b1a2a); g.fillRoundedRect(x + 18, y + 42, w - 36, h - 88, 8);
+    if (!c.board) {
+      g.fillStyle(0xe8483c); g.fillCircle(x + 34, y + h - 15, 6); g.fillStyle(0xffffff); g.fillCircle(x + w - 50, y + h - 15, 5); g.fillStyle(0x6fd08c); g.fillCircle(x + w - 30, y + h - 15, 5);
+    }
+    const t = (str, size, color, px, py, o = 0.5) => this.add.text(px, py, str, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: `${size}px`, fontStyle: 'bold', color }).setOrigin(o).setDepth(y + h + 1);
+    t(c.label, 13, '#4a3200', cx, y + 18);
+    if (c.board) {
+      t('🏆  TOP SCORES', 20, '#ffc247', cx, y + 62);
+      t('🏁 Snow Dash   🪙 Coin Catcher   ☃️ Snowball Arena', 11.5, '#cfeaf7', cx, y + 92);
+      t('Press E to see who is #1', 12, '#8ff0b3', cx, y + 114);
+    } else {
+      const icon = t(c.icon, 46, '#fff', cx, y + 38 + (h - 82) / 2);
+      if (!calm) this.tweens.add({ targets: icon, scale: 1.14, duration: 760, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+      t('PLAY', 11, '#ffc247', cx, y + h - 60);
+    }
+    this.walls.add(this.add.rectangle(cx, y + h / 2, w, h, 0, 0));
+    const zone = new Phaser.Geom.Rectangle(cx - Math.min(80, w / 2), y + h + 2, Math.min(160, w), DOOR_H);
+    this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.16).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
+    this.doors.push({ label: c.label, action: c.action, verb: c.verb || 'play', zone, body: new Phaser.Geom.Rectangle(x, y, w, h), below: true });
+  }
+
+  // neon sign on an indoor back wall
+  addSign(room) {
+    const s = this.add.text(room.w / 2, 70, room.sign, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '46px', fontStyle: 'bold', color: '#ffffff', stroke: '#ff6fae', strokeThickness: 7 })
+      .setOrigin(0.5).setDepth(-400).setShadow(0, 0, '#ff6fae', 18, true, true);
+    if (!this.registry.get('reduceMotion')) this.tweens.add({ targets: s, alpha: 0.72, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+  }
+
   addPortal(p) {
     this.add.rectangle(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h, 0xffffff, 0.35).setStrokeStyle(3, 0x7fb8d8).setDepth(-900);
     this.add.text(p.x + p.w / 2, p.y + p.h / 2, p.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '14px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 6, y: 3 } }).setOrigin(0.5).setDepth(-800);
@@ -281,7 +321,7 @@ export class RoomScene extends Phaser.Scene {
 
     this.nearDoor = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.zone, this.player.x, this.player.y)) || null;
     const nd = this.nearDoor;
-    this.game.events.emit('door-prompt', nd ? `Press E to ${nd.action ? 'browse' : 'enter'} ${nd.label}` : '');
+    this.game.events.emit('door-prompt', nd ? `Press E to ${nd.verb || (nd.action ? 'browse' : 'enter')} ${nd.label}` : '');
     if (this.nearDoor && this.pendingDoor === this.nearDoor) this.enter(this.nearDoor);
   }
 
@@ -297,7 +337,8 @@ export class RoomScene extends Phaser.Scene {
     if (this.leaving) return;
     if (door.action) {                                        // shop counter: open the storefront, stay in the room
       this.target = null; this.pendingDoor = null; this.player.move(0, 0);
-      this.game.events.emit('open-shop', door.action);
+      if (door.action.startsWith('arcade:')) this.game.events.emit('open-arcade', door.action.slice(7));   // Phase 7
+      else this.game.events.emit('open-shop', door.action);
       return;
     }
     if (!ROOMS[door.to]) { this.target = null; this.pendingDoor = null; toast(`${door.label} is coming soon!`); this.nearDoor = null; this.player.move(0, 0); this.bounce(door); return; }

@@ -269,3 +269,81 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 @media (max-width:600px){.chat{bottom:84px;height:36vh}.ew-ring button{width:60px;height:60px;margin:-30px 0 0 -30px}.ew-ring{transform:scale(.88)}}
 @media (prefers-reduced-motion:reduce){.ew-ring button{animation:none}}
 @media (max-width:600px){.drawer:not([hidden]) ~ .chat{display:none}}
+
+.linkbtn{margin-top:6px;border:0;background:none;color:#2a6fa0;font:800 13px var(--font);text-decoration:underline;padding:2px}
+.linkbtn:disabled{opacity:.5}
+
+/* ---------- Phase 7: Arcade + minigames ---------- */
+/* while a minigame runs, the world HUD gets out of the way: the game is the focus */
+#ui.in-minigame .hud-top,#ui.in-minigame .dock,#ui.in-minigame .prompt,#ui.in-minigame .chat,#ui.in-minigame .drawer,#ui.in-minigame .emote-wheel{display:none}
+
+.arc-overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:12px;background:rgba(10,8,34,.72);backdrop-filter:blur(4px);pointer-events:auto;animation:arcfade .18s ease-out}
+@keyframes arcfade{from{opacity:0}}
+.arc{--neon:#ff6fae;width:min(1000px,100%);height:min(680px,100%);display:flex;flex-direction:column;border-radius:26px;overflow:hidden;color:var(--snow);
+  background:radial-gradient(ellipse at 50% -10%,#41377f 0,#24204f 55%,#171538 100%);
+  box-shadow:0 0 0 4px #6a4fb3,0 0 28px rgba(255,111,174,.45),0 28px 60px rgba(0,0,0,.55)}
+.arc-top{display:flex;align-items:center;gap:12px;padding:14px 16px 8px}
+.arc-marquee{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-width:0}
+.arc-marquee h2{margin:0 6px;font-size:clamp(20px,3.4vw,32px);letter-spacing:1px;color:#fff;text-shadow:0 0 6px var(--neon),0 0 18px var(--neon),0 3px 0 #8c2f5f;white-space:nowrap}
+.arc-marquee i{width:10px;height:10px;flex:none;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);animation:bulb 1.2s infinite}
+.arc-marquee i:nth-child(2n){animation-delay:.6s}
+@keyframes bulb{50%{opacity:.25}}
+.arc-top .x{background:rgba(255,255,255,.18);color:#fff}
+.arc-tabs{display:flex;gap:8px;padding:4px 16px 10px}
+.arc-tabs button{flex:1;border:0;border-radius:14px;padding:10px;font-weight:900;font-size:15px;background:rgba(255,255,255,.1);color:#cfeaf7;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.arc-tabs button.on{background:var(--neon);color:#fff;box-shadow:0 3px 0 #a8326c,0 0 14px rgba(255,111,174,.6)}
+.arc-body{flex:1;min-height:0;overflow-y:auto;padding:4px 16px 18px;overscroll-behavior:contain}
+
+.arc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.arc-card{--a:#5bb6e8;--b:#2a6fa0;display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:20px;background:linear-gradient(#f9fdff,#dff1fb);color:var(--ink);
+  box-shadow:0 5px 0 var(--b),0 12px 24px rgba(0,0,0,.35);transition:transform .15s}
+.arc-card:hover{transform:translateY(-3px)}
+.arc-card.focus{outline:4px solid var(--gold);outline-offset:2px}
+.arc-screen{position:relative;height:110px;border-radius:14px;overflow:hidden;display:grid;place-items:center;border:4px solid var(--b);
+  background:radial-gradient(circle at 50% 40%,var(--a),#0b1a2a 85%)}
+.arc-ico{font-size:58px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35));animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) scale(1.06)}}
+.arc-scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.08) 0 2px,transparent 2px 5px);pointer-events:none}
+.arc-card h3{margin:2px 0 0;font-size:20px;letter-spacing:.5px;color:var(--b)}
+.arc-tag{margin:0;font-weight:800;font-size:14px}
+.arc-desc{margin:0;font-size:12.5px;line-height:1.35;color:#44708f;flex:1}
+.arc-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.arc-stats div{display:grid;gap:1px;padding:6px 8px;border-radius:12px;background:#cfe8f5;text-align:center}
+.arc-stats small{font-size:10px;font-weight:900;letter-spacing:.6px;color:#44708f}
+.arc-stats b{font-size:17px}
+.arc-play{border:0;border-radius:14px;padding:12px;font-size:19px;font-weight:900;color:#fff;background:#2f9e5b;box-shadow:0 5px 0 #1f6e3f}
+.arc-play:hover{background:#38b36a}
+.arc-play:active{transform:translateY(3px);box-shadow:0 2px 0 #1f6e3f}
+.arc-link{border:0;border-radius:12px;padding:8px;font-weight:800;font-size:13.5px;background:#fff;color:var(--ink);box-shadow:0 3px 0 #a9d3ea}
+.arc-link:hover{background:#fff1ec}
+.arc-meter{display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.1);font-size:13.5px;font-weight:800}
+.arc-meter .bar{flex:1;height:12px;border-radius:99px;background:rgba(0,0,0,.35);overflow:hidden}
+.arc-meter .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),#ff9a52);transition:width .4s}
+.arc-note{margin:14px 2px 0;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.1);font-size:13.5px;line-height:1.4;font-weight:700}
+.arc-note.err,.arc-empty.err{background:rgba(232,72,60,.25);color:#ffd2cb}
+
+.arc-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.arc-pills button{border:0;border-radius:99px;padding:9px 16px;font-weight:900;font-size:14.5px;background:rgba(255,255,255,.12);color:#e6f4fb;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.arc-pills button.on{background:var(--gold);color:#4a3200;box-shadow:0 3px 0 #c97f12,0 0 12px rgba(255,194,71,.55)}
+.arc-pills.small button{padding:6px 13px;font-size:13px}
+.arc-lbtitle{margin:12px 0 8px;font-size:22px;letter-spacing:1px;color:#fff;text-shadow:0 0 12px var(--neon)}
+.arc-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.arc-row{display:flex;align-items:center;gap:12px;padding:6px 14px 6px 10px;border-radius:16px;background:rgba(255,255,255,.1);animation:rowin .25s ease-out backwards}
+@keyframes rowin{from{opacity:0;transform:translateX(-10px)}}
+.arc-row .rk{width:38px;flex:none;text-align:center;font-weight:900;font-size:20px;color:#cfeaf7}
+.arc-row .nm{flex:1;min-width:0;display:grid}
+.arc-row .nm b{font-size:16.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arc-row .nm small{font-size:12px;color:#cfeaf7;opacity:.85;font-weight:700}
+.arc-row .sc{font-size:20px;font-variant-numeric:tabular-nums;color:var(--gold)}
+.arc-av{width:44px;height:60px;flex:none;border-radius:12px;background:rgba(255,255,255,.14)}
+.arc-row.top1{background:linear-gradient(90deg,rgba(255,194,71,.38),rgba(255,255,255,.1))}
+.arc-row.top2{background:linear-gradient(90deg,rgba(207,226,240,.32),rgba(255,255,255,.1))}
+.arc-row.top3{background:linear-gradient(90deg,rgba(217,144,26,.34),rgba(255,255,255,.1))}
+.arc-row.me{outline:3px solid var(--neon);box-shadow:0 0 16px rgba(255,111,174,.55);background:rgba(255,111,174,.22)}
+.arc-pin{margin-top:10px;padding:10px 14px;border-radius:16px;text-align:center;font-weight:800;background:rgba(255,111,174,.22);outline:3px solid var(--neon)}
+.arc-empty{margin:22px 0;padding:18px;text-align:center;border-radius:16px;background:rgba(255,255,255,.08);font-weight:800;line-height:1.4}
+.arc .row.center{justify-content:center;margin-top:8px}
+
+@media (max-width:820px){.arc-grid{grid-template-columns:1fr}.arc-card{display:grid;grid-template-columns:96px 1fr;gap:4px 12px}.arc-screen{grid-row:1/span 4;height:100%;min-height:96px}
+  .arc-play,.arc-link,.arc-stats{grid-column:2}.arc-ico{font-size:44px}.arc-desc{display:none}}
+@media (prefers-reduced-motion:reduce){.arc-ico,.arc-marquee i,.arc-row,.arc-overlay{animation:none}}

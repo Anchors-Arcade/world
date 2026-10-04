@@ -22,6 +22,12 @@ export function makeTextures(scene) {
     g.fillStyle(0x9c693c); for (let y = 0; y < 64; y += 16) g.fillRect(0, y, 64, 2);
     g.fillRect(20, 0, 2, 16); g.fillRect(44, 16, 2, 16); g.fillRect(12, 32, 2, 16); g.fillRect(36, 48, 2, 16);
   });
+  gen('arcade_floor', 64, 64, (g) => {
+    g.fillStyle(0x2b2757); g.fillRect(0, 0, 64, 64);
+    g.fillStyle(0x34306a); g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32);
+    g.fillStyle(0x5bb6e8, 0.55); g.fillCircle(16, 48, 2); g.fillCircle(48, 16, 2);
+    g.fillStyle(0xff6fae, 0.45); g.fillCircle(48, 48, 1.6); g.fillCircle(16, 16, 1.6);
+  });
   gen('pine', 96, 140, (g) => {
     g.fillStyle(0x6b4428); g.fillRect(42, 110, 12, 28);
     [[4, 70, 60], [18, 50, 50], [32, 30, 36]].forEach(([top, y, hw], i) => {

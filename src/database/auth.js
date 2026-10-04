@@ -3,12 +3,39 @@ import { DEFAULT_AVATAR, AVATAR_COLORS } from '../config/game.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Where the e-mail confirmation link sends the player back to: the page the game is served from RIGHT NOW
+// (e.g. http://localhost:5173/ while developing, https://you.github.io/repo/ when deployed).
+// Without this Supabase falls back to its dashboard "Site URL", which defaults to http://localhost:3000 -> "site can't be reached".
+// This URL must ALSO be listed under Supabase -> Authentication -> URL Configuration -> Redirect URLs (see README).
+export const redirectUrl = () => location.origin + location.pathname.replace(/index\.html$/, '');
+
+// Returns a session, or null when the project requires e-mail confirmation first (the player must click the link in the e-mail).
 export async function register(email, password, username) {
   if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) throw new Error('Username: 3–16 letters, numbers or _');
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username } } });
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username }, emailRedirectTo: redirectUrl() } });
   if (error) throw error;
-  if (!data.session) throw new Error('Check your email to confirm your account, then log in.');
-  return data.session;
+  return data.session || null;
+}
+
+export async function resendConfirmation(email) {
+  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirectUrl() } });
+  if (error) throw error;
+}
+
+// After clicking the e-mail link the browser lands back here with the result in the URL (#access_token=... or #error=...).
+// supabase-js turns a good link into a session by itself; this just reads the outcome so we can say something friendly,
+// and tidies the address bar.
+export function readAuthRedirect() {
+  const raw = (location.hash.startsWith('#') ? location.hash.slice(1) : '') || location.search.slice(1);
+  const q = new URLSearchParams(raw);
+  const out = { confirmed: q.get('type') === 'signup' && !!q.get('access_token'), error: null };
+  if (q.get('error') || q.get('error_code')) {
+    out.error = q.get('error_code') === 'otp_expired'
+      ? 'That confirmation link has expired or was already used. Log in, or request a new e-mail below.'
+      : (q.get('error_description') || 'The confirmation link did not work.').replace(/\+/g, ' ');
+  }
+  if (out.confirmed || out.error || q.get('code')) history.replaceState(null, '', location.pathname);
+  return out;
 }
 
 export async function login(email, password) {
