@@ -2,7 +2,10 @@
 // Item id === texture key === `asset` column. Slot name === category.
 export const SLOTS = ['eyes', 'face', 'hat', 'accessory', 'shirt', 'pants', 'shoes', 'back', 'hand'];
 export const BODY_TYPES = { round: [1, 1], tall: [0.9, 1.14], chubby: [1.14, 0.94] };
-export const BODY_COLORS = ['#4aa8ff', '#ff7a8a', '#ffc247', '#6fd08c', '#b48cff', '#ff9a52', '#59d0c8', '#9aa7b8'];
+export const BODY_COLORS = [
+  '#4aa8ff', '#ff7a8a', '#ffc247', '#6fd08c', '#b48cff', '#ff9a52', '#59d0c8', '#9aa7b8',
+  '#ffffff', '#2f3b52', '#ff5fa2', '#7ce04f', '#ff6b4a', '#00d4ff', '#c9a227', '#d9b8ff',
+];
 export const RARITY = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', event: 'Event' };
 
 // Where each layer sits relative to the avatar's feet (container origin).
@@ -47,6 +50,41 @@ export const ITEMS = [
   I('hand_icecream', 'Ice Cream', 'hand', 'common', 40, 'Yes, in the snow.'),
   I('hand_balloon', 'Balloon', 'hand', 'uncommon', 60, 'Floaty.'),
   I('hand_umbrella', 'Umbrella', 'hand', 'uncommon', 100, 'For snow showers.'),
+
+  // ---- Phase 9: a much bigger wardrobe (same slots, same rules, nothing replaced) ----
+  I('eyes_4', 'Star Eyes', 'eyes', 'rare', 220, 'Seeing stars, in a good way.'),
+  I('eyes_5', 'Wink', 'eyes', 'uncommon', 110, 'Permanently in on the joke.'),
+  I('eyes_6', 'Visor Eyes', 'eyes', 'epic', 420, 'A soft glow, no explanation.'),
+  I('face_mask', 'Snow Mask', 'face', 'uncommon', 120, 'For the really cold days.'),
+  I('face_eyepatch', 'Eye Patch', 'face', 'rare', 190, 'Harbour chic.'),
+  I('face_warpaint', 'Frost Paint', 'face', 'rare', 210, 'Two blue stripes. Very brave.'),
+  I('hat_ushanka', 'Ushanka', 'hat', 'uncommon', 160, 'Ear flaps up or down, your call.'),
+  I('hat_viking', 'Horned Helm', 'hat', 'rare', 320, 'Historically questionable.'),
+  I('hat_santa', 'Winter Hat', 'hat', 'uncommon', 140, 'Red, white and cheerful.'),
+  I('hat_pilot', 'Flight Cap', 'hat', 'rare', 280, 'Goggles included.'),
+  I('hat_flower', 'Snow Blossom', 'hat', 'uncommon', 130, 'It survives the frost somehow.'),
+  I('hat_halo', 'Aurora Halo', 'hat', 'epic', 650, 'Floats a little above you.'),
+  I('hat_astro', 'Star Helmet', 'hat', 'epic', 700, 'Observatory surplus.'),
+  I('accessory_necklace', 'Ice Pendant', 'accessory', 'uncommon', 150, 'One perfect shard.'),
+  I('accessory_medal', 'Explorer Medal', 'accessory', 'rare', 280, 'Worn with great pride.'),
+  I('accessory_compass', 'Neck Compass', 'accessory', 'uncommon', 170, 'Always points somewhere.'),
+  I('shirt_puffer', 'Puffer Jacket', 'shirt', 'common', 160, 'All the air, all the warmth.'),
+  I('shirt_raincoat', 'Yellow Slicker', 'shirt', 'uncommon', 180, 'Harbour weather approved.'),
+  I('shirt_sailor', 'Sailor Coat', 'shirt', 'uncommon', 200, 'Brass buttons and all.'),
+  I('shirt_knight', 'Frost Plate', 'shirt', 'epic', 560, 'Surprisingly light.'),
+  I('shirt_astro', 'Star Suit', 'shirt', 'epic', 620, 'Matches the helmet.'),
+  I('pants_shorts', 'Brave Shorts', 'pants', 'common', 60, 'In this weather? Respect.'),
+  I('pants_plaid', 'Plaid Trousers', 'pants', 'uncommon', 130, 'Loud, but in a nice way.'),
+  I('pants_armor', 'Frost Greaves', 'pants', 'rare', 320, 'Clank, clank, clank.'),
+  I('shoes_flippers', 'Flippers', 'shoes', 'uncommon', 110, 'Slap, slap, slap.'),
+  I('shoes_mukluks', 'Fur Mukluks', 'shoes', 'uncommon', 150, 'Warmest boots in the world.'),
+  I('back_jetpack', 'Snow Jet', 'back', 'epic', 700, 'Mostly decorative. Mostly.'),
+  I('back_sled', 'Sled', 'back', 'rare', 260, 'Strapped on and ready.'),
+  I('back_aurora', 'Aurora Cloak', 'back', 'epic', 760, 'Trails the northern lights.'),
+  I('hand_lantern', 'Keeper Lantern', 'hand', 'uncommon', 140, 'A small warm circle.'),
+  I('hand_rod', 'Fishing Rod', 'hand', 'common', 90, 'For the hole in the lake.'),
+  I('hand_cocoa', 'Hot Cocoa', 'hand', 'common', 50, 'Still steaming.'),
+  I('hand_crystal', 'Cave Crystal', 'hand', 'rare', 300, 'Hums when you waddle.'),
 ];
 export const ITEM_BY_ID = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
 

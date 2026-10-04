@@ -3,7 +3,7 @@
 Plain HTML/CSS/JS. Phaser and Supabase load from CDNs. Upload the files as-is to GitHub.
 
 ## Setup (once)
-1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places). All safe to re-run.
+1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue). All safe to re-run.
    Deploy the new client files and run `phase6.sql` together: Phase 6 changes how your own profile is loaded (`get_my_profile()`).
    (Auth → Providers → Email: turn off "Confirm email" while testing, or keep it on and do step 1b.)
 1b. **E-mail confirmation links** go to your Supabase *Site URL*, which defaults to `http://localhost:3000` ("site can't be reached"). Fix: Supabase → Authentication → **URL Configuration** → set **Site URL** to where the game runs (e.g. `https://YOUR-USER.github.io/YOUR-REPO/` or `http://localhost:5173/`) and add the same address(es) under **Redirect URLs** (add `http://localhost:5173/**` and your GitHub Pages address with `/**`). The game now also sends the page you signed up from as the redirect, and the sign-up screen has a "Resend confirmation email" button. Links already sent keep the old address: request a new one.
@@ -88,3 +88,28 @@ Controls: WASD / arrows or click. E (or click a building) to enter doors. **Ente
   `collectibles` (SQL) + `src/world/collectibles.js`.
 - Tests: `node scripts/test-phase8.mjs` (rooms reachable and escapable, collectibles inside their rooms, every clue has an
   object, secret rooms properly gated and off the map, no NPCs outside shops, client/SQL seeds identical, SQL permissions).
+
+## Phase 9: title screen, bigger wardrobe, better-looking world
+- **Title screen** (`src/ui/authUI.js` + the Phase 9 block in `style.css`): a painted night scene built entirely from
+  CSS — aurora bands, twinkling stars, a moon, three parallax ridges, a lighthouse with a sweeping beam, layered
+  drifting snow and a foreground snowbank. Over it: the logo, a tagline, and three ways in — **Enter the world**,
+  **Create an account**, **Look around as a guest** — plus a strip of what is waiting inside. Log-in and sign-up slide
+  in as their own card with a **Back** button. All the Phase 1–8 auth behaviour is unchanged, including the
+  confirmation-email notice and the **Resend confirmation email** button. Honours `prefers-reduced-motion`.
+- **67 cosmetics** (was 30) and **16 body colours** (was 8). New: Star / Wink / Visor eyes, snow mask, eye patch, frost
+  paint, ushanka, horned helm, winter hat, flight cap, snow blossom, aurora halo, star helmet, ice pendant, explorer
+  medal, neck compass, puffer jacket, yellow slicker, sailor coat, frost plate, star suit, brave shorts, plaid
+  trousers, frost greaves, flippers, fur mukluks, snow jet, sled, aurora cloak, keeper lantern, fishing rod, hot cocoa
+  and a cave crystal. Every one is procedural art in `src/utils/itemArt.js` — still zero downloaded assets.
+  `supabase/phase9.sql` seeds them; prices stay server-side, so `purchase_item()` is still the only way to own one.
+  Regenerate the seed after editing the catalogue: `node scripts/gen-item-seed.mjs`.
+- **Ambience per place** (`addAmbience` / `addWeather` in `RoomScene.js`, data in `src/maps/rooms.js`): each room can now
+  set `sky`, a colour `wash`, `stars`, `aurora`, `vignette` and `fx` — `snow`, `blizzard` (lake and pass), `embers`,
+  `sparkle` (caves, hollow, arcade, star chamber) or `dust` (interiors). The Frozen Lake and Mountain Pass get the
+  northern lights; the caves get a dark vignette and drifting motes; the café, shops and observatory get warm haze.
+- **Scenery props**: `snowman`, `lamp` (with a warm, breathing pool of light), `bush` and `glow` (a bare light source —
+  the campfire, the lighthouse spill, crystal clusters, the observatory dome) join `pond`, `ice`, `rock`, `crystal` and
+  `dock`. Rooms can also define their own trodden `paths`, so each outdoor map has its own shape instead of the
+  plaza's cross.
+- One new file (`supabase/phase9.sql`), one new script (`scripts/gen-item-seed.mjs`); everything else is an edit to
+  files that already existed. No new dependencies, no new requests, no new realtime channels.

@@ -64,6 +64,99 @@ add('hand_icecream', 16, 30, (g) => { g.fillStyle(0xd9a05b); g.fillTriangle(2, 1
 add('hand_balloon', 24, 56, (g) => { g.lineStyle(1.5, 0x666666); g.lineBetween(12, 30, 8, 55); g.fillStyle(INK); g.fillEllipse(12, 14, 24, 28); g.fillStyle(0xe8483c); g.fillEllipse(12, 14, 21, 25); g.fillStyle(0xffffff, 0.5); g.fillEllipse(8, 8, 5, 8); g.fillStyle(0xe8483c); g.fillTriangle(8, 31, 16, 31, 12, 26); });
 add('hand_umbrella', 42, 44, (g) => { g.lineStyle(3, 0x555b66); g.lineBetween(21, 14, 21, 42); g.fillStyle(INK); g.fillEllipse(21, 14, 42, 26); g.fillStyle(0x3b82d9); g.fillEllipse(21, 14, 38, 22); g.fillStyle(0xffffff); g.fillRect(19, 3, 4, 12); g.fillStyle(0x3b82d9); g.fillRect(0, 14, 42, 12); });
 
+
+// ---------------------------------------------------------------------
+// Phase 9: the bigger wardrobe. Same `add(key, w, h, draw)` shape as everything above, same anchors from LAYOUT,
+// so a new item is one entry here plus one line in src/shops/items.js (and one row in supabase/phase9.sql).
+// ---------------------------------------------------------------------
+add('eyes_4', 30, 14, (g) => { eyeBase(g); g.fillStyle(INK); g.fillCircle(8, 7, 4); g.fillCircle(22, 7, 4);
+  g.fillStyle(0xffc247); [[8, 7], [22, 7]].forEach(([x, y]) => { g.fillTriangle(x, y - 5, x - 1.6, y, x + 1.6, y); g.fillTriangle(x, y + 5, x - 1.6, y, x + 1.6, y); g.fillTriangle(x - 5, y, x, y - 1.6, x, y + 1.6); g.fillTriangle(x + 5, y, x, y - 1.6, x, y + 1.6); }); });
+add('eyes_5', 30, 14, (g) => { eyeBase(g); g.fillStyle(INK); g.fillCircle(8, 7, 3.2); g.fillStyle(0xffffff); g.fillCircle(7, 5.8, 1.3);
+  g.lineStyle(3, INK); g.beginPath(); g.arc(22, 9, 5, Math.PI, 0, false); g.strokePath(); });
+add('eyes_6', 30, 14, (g) => { g.fillStyle(INK); g.fillRoundedRect(0, 2, 30, 10, 5); g.fillStyle(0x66e8ff); g.fillRoundedRect(2, 4, 26, 6, 3);
+  g.fillStyle(0xffffff, 0.75); g.fillRect(4, 5, 7, 2); });
+
+add('face_mask', 36, 20, (g) => { g.fillStyle(0x3b5b92); g.fillRoundedRect(3, 10, 30, 10, 5); g.fillStyle(0x2a4270); g.fillRect(3, 13, 30, 2);
+  g.fillStyle(0xffffff, 0.5); g.fillRect(6, 11, 6, 2); });
+add('face_eyepatch', 36, 20, (g) => { g.fillStyle(INK); g.fillRect(0, 5, 36, 3); g.fillRoundedRect(19, 0, 14, 13, 4); g.fillStyle(0x2b2b2b); g.fillRoundedRect(20.5, 1.5, 11, 10, 3); });
+add('face_warpaint', 36, 20, (g) => { g.fillStyle(0x5bb6e8); g.fillRoundedRect(3, 10, 5, 9, 2); g.fillRoundedRect(10, 11, 5, 8, 2);
+  g.fillRoundedRect(21, 11, 5, 8, 2); g.fillRoundedRect(28, 10, 5, 9, 2); });
+
+add('hat_ushanka', 52, 32, (g) => { g.fillStyle(INK); g.fillEllipse(26, 18, 46, 30); g.fillStyle(0x5a4635); g.fillEllipse(26, 17, 41, 26);
+  g.fillStyle(0xd8c9a3); g.fillRoundedRect(4, 14, 44, 12, 6); g.fillStyle(INK); g.fillEllipse(5, 24, 12, 16); g.fillEllipse(47, 24, 12, 16);
+  g.fillStyle(0xd8c9a3); g.fillEllipse(5, 24, 9, 13); g.fillEllipse(47, 24, 9, 13); g.fillStyle(0xe8483c); g.fillCircle(26, 12, 3.5); });
+add('hat_viking', 58, 34, (g) => { g.fillStyle(INK); g.fillEllipse(29, 24, 38, 28); g.fillStyle(0x9aa7b8); g.fillEllipse(29, 23, 33, 24);
+  g.fillStyle(0x7d8c97); g.fillRect(12, 20, 34, 5); g.fillStyle(0xf0e6cf); g.fillTriangle(10, 22, 0, 2, 16, 10); g.fillTriangle(48, 22, 58, 2, 42, 10);
+  g.fillStyle(0xd8c9a3); g.fillTriangle(10, 20, 3, 6, 14, 11); g.fillTriangle(48, 20, 55, 6, 44, 11); });
+add('hat_santa', 42, 36, (g) => { g.fillStyle(INK); g.fillTriangle(10, 26, 20, -1, 40, 18); g.fillStyle(0xe8483c); g.fillTriangle(12, 24, 20, 3, 36, 18);
+  g.fillStyle(0xffffff); g.fillRoundedRect(2, 22, 36, 10, 5); g.fillCircle(38, 17, 5.5); });
+add('hat_pilot', 48, 32, (g) => { g.fillStyle(INK); g.fillEllipse(24, 18, 42, 28); g.fillStyle(0x6b4428); g.fillEllipse(24, 17, 37, 24);
+  g.fillStyle(0x4a3220); g.fillEllipse(6, 23, 11, 15); g.fillEllipse(42, 23, 11, 15);
+  g.fillStyle(0x3a3f4b); g.fillRoundedRect(4, 8, 40, 10, 4); g.fillStyle(0x9fe3ff); g.fillCircle(14, 13, 4.4); g.fillCircle(34, 13, 4.4);
+  g.fillStyle(0xffffff, 0.55); g.fillCircle(12.5, 11.5, 1.6); g.fillCircle(32.5, 11.5, 1.6); });
+add('hat_flower', 40, 26, (g) => { g.fillStyle(0x2f9e5b); g.fillRoundedRect(2, 18, 36, 7, 4);
+  [[12, 12], [26, 10]].forEach(([cx, cy]) => { g.fillStyle(0xfff0f5); [0, 1.26, 2.51, 3.77, 5.03].forEach((a) => g.fillCircle(cx + Math.cos(a) * 5, cy + Math.sin(a) * 5, 3.6)); g.fillStyle(0xffc247); g.fillCircle(cx, cy, 3); }); });
+add('hat_halo', 48, 26, (g) => { g.lineStyle(5, 0x8ff0b3, 0.55); g.strokeEllipse(24, 16, 42, 14); g.lineStyle(3, 0xffffff, 0.9); g.strokeEllipse(24, 16, 40, 12);
+  g.fillStyle(0xb48cff, 0.4); g.fillEllipse(24, 16, 46, 18); });
+add('hat_astro', 48, 38, (g) => { g.fillStyle(INK); g.fillEllipse(24, 20, 44, 36); g.fillStyle(0xf0f4f7); g.fillEllipse(24, 19, 39, 32);
+  g.fillStyle(0x16304a); g.fillEllipse(24, 21, 29, 22); g.fillStyle(0x3b82d9, 0.85); g.fillEllipse(24, 21, 26, 19);
+  g.fillStyle(0xffffff, 0.5); g.fillEllipse(17, 16, 9, 5); g.fillStyle(0xffc247); g.fillRect(2, 16, 5, 7); g.fillRect(41, 16, 5, 7); });
+
+add('accessory_necklace', 36, 20, (g) => { g.lineStyle(2, 0xd8c9a3); g.beginPath(); g.arc(18, 2, 13, 0.2, Math.PI - 0.2, false); g.strokePath();
+  g.fillStyle(INK); g.fillTriangle(18, 20, 12, 10, 24, 10); g.fillStyle(0x9fe3ff); g.fillTriangle(18, 18, 13.5, 11, 22.5, 11); });
+add('accessory_medal', 34, 22, (g) => { g.fillStyle(0x3b5b92); g.fillRoundedRect(11, 0, 12, 10, 2); g.fillStyle(0xe8483c); g.fillRect(11, 3, 12, 3);
+  g.fillStyle(INK); g.fillCircle(17, 15, 7); g.fillStyle(0xffc247); g.fillCircle(17, 15, 5.5); g.fillStyle(0xd99000); g.fillCircle(17, 15, 2.2); });
+add('accessory_compass', 32, 20, (g) => { g.lineStyle(2, 0x6b4428); g.beginPath(); g.arc(16, 1, 12, 0.25, Math.PI - 0.25, false); g.strokePath();
+  g.fillStyle(INK); g.fillCircle(16, 13, 7); g.fillStyle(0xf4fbff); g.fillCircle(16, 13, 5.5); g.fillStyle(0xe8483c); g.fillTriangle(16, 8.5, 14, 13, 18, 13);
+  g.fillStyle(0x3b5b92); g.fillTriangle(16, 17.5, 14, 13, 18, 13); });
+
+add('shirt_puffer', 38, 24, (g) => { g.fillStyle(0x2f9e5b); g.fillRoundedRect(0, 0, 38, 24, 10);
+  g.fillStyle(0x268a4e); [4, 11, 18].forEach((y) => g.fillRect(1, y, 36, 2)); g.fillStyle(0x1f6e3f); g.fillRect(17, 0, 3, 24);
+  g.fillStyle(0xffc247); g.fillRect(17.5, 10, 2, 5); });
+add('shirt_raincoat', 38, 24, (g) => { g.fillStyle(0xffc247); g.fillRoundedRect(0, 0, 38, 24, 10); g.fillStyle(0xd99000); g.fillRect(16, 0, 3, 24);
+  g.fillRoundedRect(4, 13, 10, 7, 2); g.fillRoundedRect(24, 13, 10, 7, 2); g.fillStyle(0xffffff, 0.45); g.fillRect(2, 2, 34, 3); });
+add('shirt_sailor', 38, 24, (g) => { g.fillStyle(0x1f3a63); g.fillRoundedRect(0, 0, 38, 24, 10); g.fillStyle(0xffffff); g.fillTriangle(12, 0, 26, 0, 19, 11);
+  g.fillStyle(0xffc247); [7, 13, 19].forEach((y) => { g.fillCircle(14, y + 2, 1.5); g.fillCircle(24, y + 2, 1.5); }); g.fillStyle(0xe8483c); g.fillRect(0, 20, 38, 3); });
+add('shirt_knight', 38, 24, (g) => { g.fillStyle(0x9fd8ef); g.fillRoundedRect(0, 0, 38, 24, 10); g.fillStyle(0xd9f2ff); g.fillRoundedRect(2, 2, 34, 9, 6);
+  g.fillStyle(0x7fb8d8); g.fillRect(0, 12, 38, 2); g.fillRect(17, 12, 3, 12); g.fillStyle(0xffffff, 0.7); g.fillEllipse(10, 6, 9, 4);
+  g.fillStyle(0xffc247); g.fillCircle(19, 17, 3); });
+add('shirt_astro', 38, 24, (g) => { g.fillStyle(0xf0f4f7); g.fillRoundedRect(0, 0, 38, 24, 10); g.fillStyle(0xdfe7ee); g.fillRect(0, 13, 38, 3);
+  g.fillStyle(0x3b82d9); g.fillRoundedRect(11, 4, 16, 8, 3); g.fillStyle(0x8ff0b3); g.fillCircle(15, 8, 1.8); g.fillStyle(0xe8483c); g.fillCircle(20, 8, 1.8);
+  g.fillStyle(0xffc247); g.fillCircle(25, 8, 1.8); });
+
+add('pants_shorts', 36, 11, (g) => { g.fillStyle(0xe8483c); g.fillRoundedRect(0, 0, 36, 11, { tl: 2, tr: 2, bl: 6, br: 6 }); g.fillStyle(0xffffff); g.fillRect(17, 2, 2, 9); g.fillRect(0, 0, 36, 2); });
+add('pants_plaid', 36, 14, (g) => { g.fillStyle(0xb5703f); g.fillRoundedRect(0, 0, 36, 14, { tl: 2, tr: 2, bl: 7, br: 7 });
+  g.fillStyle(0x8a4f26); [4, 12, 20, 28].forEach((x) => g.fillRect(x, 0, 3, 14)); [4, 10].forEach((y) => g.fillRect(0, y, 36, 2));
+  g.fillStyle(0xf4fbff, 0.5); g.fillRect(8, 0, 1, 14); });
+add('pants_armor', 36, 14, (g) => { g.fillStyle(0x9fd8ef); g.fillRoundedRect(0, 0, 36, 14, { tl: 2, tr: 2, bl: 7, br: 7 });
+  g.fillStyle(0x7fb8d8); g.fillRect(17, 2, 2, 12); g.fillRect(0, 6, 36, 2); g.fillStyle(0xffffff, 0.6); g.fillRect(3, 1, 10, 3); g.fillRect(23, 1, 10, 3); });
+
+add('shoes_flippers', 24, 10, (g) => { g.fillStyle(INK); g.fillEllipse(12, 5, 24, 10); g.fillStyle(0x2f9e5b); g.fillEllipse(12, 5, 20, 7); g.fillStyle(0x268a4e); g.fillRect(2, 4, 20, 1.5); });
+add('shoes_mukluks', 18, 12, (g) => { g.fillStyle(INK); g.fillRoundedRect(0, 2, 18, 10, 4); g.fillStyle(0x6b4428); g.fillRoundedRect(1.5, 3.5, 15, 7, 3);
+  g.fillStyle(0xf0e6cf); g.fillRoundedRect(0, 0, 18, 4, 2); g.fillStyle(0x3a2616); g.fillRect(1.5, 9.5, 15, 2); });
+
+add('back_jetpack', 52, 46, (g) => { g.fillStyle(INK); g.fillRoundedRect(4, 0, 44, 34, 10); g.fillStyle(0xb8c4d0); g.fillRoundedRect(6, 2, 40, 30, 9);
+  g.fillStyle(0x7d8c97); g.fillRect(24, 2, 4, 30); g.fillStyle(0xe8483c); g.fillRoundedRect(10, 6, 12, 8, 3); g.fillRoundedRect(30, 6, 12, 8, 3);
+  g.fillStyle(0xffc247); g.fillTriangle(16, 34, 10, 46, 22, 46); g.fillTriangle(36, 34, 30, 46, 42, 46); g.fillStyle(0xff9a3c); g.fillTriangle(16, 36, 13, 44, 19, 44); g.fillTriangle(36, 36, 33, 44, 39, 44); });
+add('back_sled', 56, 40, (g) => { g.fillStyle(INK); g.fillRoundedRect(2, 0, 52, 32, 8); g.fillStyle(0xb5703f); g.fillRoundedRect(4, 2, 48, 28, 7);
+  g.fillStyle(0x8a4f26); [10, 19, 28] .forEach((y) => g.fillRect(5, y, 46, 2.5)); g.fillStyle(0xd9546a); g.fillRect(4, 2, 48, 4);
+  g.fillStyle(0xb8c4d0); g.fillRoundedRect(0, 32, 56, 4, 2); });
+add('back_aurora', 64, 58, (g) => { [[0x8ff0b3, 0.55, 0], [0x66e8ff, 0.45, 8], [0xb48cff, 0.4, 16]].forEach(([c, a, off]) => {
+    g.fillStyle(c, a); g.fillPoints([{ x: 14 + off * 0.2, y: 0 }, { x: 50 - off * 0.2, y: 0 }, { x: 64 - off, y: 58 }, { x: off, y: 58 }], true); });
+  g.fillStyle(0xffffff, 0.35); g.fillRect(16, 0, 32, 4); });
+
+add('hand_lantern', 20, 34, (g) => { g.lineStyle(2, 0x6b4428); g.beginPath(); g.arc(10, 10, 6, Math.PI, 0, false); g.strokePath();
+  g.fillStyle(INK); g.fillRoundedRect(2, 12, 16, 20, 4); g.fillStyle(0xffc247); g.fillRoundedRect(4, 14, 12, 14, 3);
+  g.fillStyle(0xfff0b0); g.fillCircle(10, 21, 4); g.fillStyle(0x6b4428); g.fillRect(2, 29, 16, 3); });
+add('hand_rod', 16, 48, (g) => { g.fillStyle(0x6b4428); g.fillRoundedRect(6, 26, 4, 22, 2); g.lineStyle(2.5, 0x8a5a36); g.lineBetween(8, 26, 13, 2);
+  g.lineStyle(1, 0xdfeefb); g.lineBetween(13, 2, 3, 20); g.fillStyle(0xb8c4d0); g.fillCircle(3, 21, 2.2); g.fillStyle(0x3a3f4b); g.fillCircle(8, 28, 3); });
+add('hand_cocoa', 18, 20, (g) => { g.fillStyle(INK); g.fillRoundedRect(0, 4, 14, 14, 3); g.fillStyle(0xf4fbff); g.fillRoundedRect(1.5, 5.5, 11, 11, 2);
+  g.fillStyle(0x6b4428); g.fillRoundedRect(2.5, 6.5, 9, 3, 1); g.lineStyle(2, 0xf4fbff); g.strokeCircle(16, 11, 3.5);
+  g.fillStyle(0xffffff, 0.6); g.fillCircle(5, 2, 2); g.fillCircle(9, 0.5, 1.5); });
+add('hand_crystal', 20, 32, (g) => { g.fillStyle(0xb48cff, 0.4); g.fillEllipse(10, 18, 20, 30); g.fillStyle(0x8f6fe0); g.fillTriangle(10, 0, 2, 26, 18, 26);
+  g.fillStyle(0xc7aaff); g.fillTriangle(10, 0, 7, 26, 13, 26); g.fillStyle(0xffffff, 0.6); g.fillTriangle(9, 4, 6, 22, 10, 22);
+  g.fillStyle(0x6a4fb3); g.fillRoundedRect(4, 25, 12, 6, 2); });
+
 export function makeItemTextures(scene) {
   const g = scene.make.graphics({ x: 0, y: 0, add: false });
   for (const [key, [w, h, fn]] of Object.entries(ART)) { g.clear(); fn(g); g.generateTexture(key, w, h); }
