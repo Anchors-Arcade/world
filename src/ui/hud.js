@@ -1,6 +1,7 @@
+// [icon, label, key]. Every dock button is live as of Phase 6.
 const BUTTONS = [
-  ['🗺️', 'Map', 'map', 'Phase 6'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['🏠', 'My Room', 'home'], ['👥', 'Friends', 'friends', 'Phase 6'],
-  ['💬', 'Chat', 'chat', 'Phase 6'], ['😄', 'Emotes', 'emotes', 'Phase 6'], ['🛍️', 'Shop', 'shop'], ['🚪', 'Log out', 'logout'],
+  ['🗺️', 'Map', 'map'], ['🎒', 'Wardrobe', 'wardrobe'], ['🧥', 'Look', 'avatar'], ['🏠', 'My Room', 'home'], ['👥', 'Friends', 'friends'],
+  ['💬', 'Chat', 'chat'], ['😄', 'Emotes', 'emotes'], ['🛍️', 'Shop', 'shop'], ['⚙️', 'Settings', 'settings'], ['🚪', 'Log out', 'logout'],
 ];
 
 export function toast(text) {
@@ -22,7 +23,7 @@ export function mountHUD(root, profile, { onAction }) {
       <div class="pill"><small id="hp2">👥 1 here</small></div>
     </div>
     <div class="prompt" id="hp"></div>
-    <nav class="dock">${BUTTONS.map(([i, l]) => `<button><span>${i}</span>${l}</button>`).join('')}</nav>`;
+    <nav class="dock">${BUTTONS.map(([i, l, k]) => `<button data-key="${k}"><span>${i}</span>${l}</button>`).join('')}</nav>`;
   root.appendChild(el);
   const q = (s) => el.querySelector(s);
   q('#hn').textContent = profile.display_name;
@@ -32,14 +33,21 @@ export function mountHUD(root, profile, { onAction }) {
   q('#hd').onclick = () => onAction('daily');
   q('#hb').onclick = () => onAction('decorate');
   el.querySelectorAll('.dock button').forEach((b, i) => (b.onclick = () => {
-    const [, label, key, soon] = BUTTONS[i];
+    const key = BUTTONS[i][2];
     if (key === 'logout') { if (confirm(profile.guest ? 'Leave the guest session?' : 'Log out?')) onAction('logout'); }
-    else if (soon) toast(`${label} arrives in ${soon}`);
     else onAction(key);
   }));
 
   return {
     setCoins,
+    // small red counter on a dock button (friend requests, unread chat); 0 hides it
+    setBadge: (key, n) => {
+      const b = el.querySelector(`.dock button[data-key="${key}"]`); if (!b) return;
+      let i = b.querySelector('.badge');
+      if (!n) return i?.remove();
+      if (!i) { i = document.createElement('i'); i.className = 'badge'; b.appendChild(i); }
+      i.textContent = n > 9 ? '9+' : n;
+    },
     setLocation: (t) => (q('#hl').textContent = t),
     setDecorate: (on) => { q('#hb').hidden = !on; },
     setPlayers: (n) => (q('#hp2').textContent = `👥 ${n} here`),

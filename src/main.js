@@ -6,17 +6,24 @@ import { createWardrobe } from './ui/wardrobe.js';
 import { createShop } from './ui/shop.js';
 import * as auth from './database/auth.js';
 import { fetchInventory, setInventory, recordPurchase, claimDaily } from './database/inventory.js';
+import { createChat } from './ui/chat.js';
+import { createFriends } from './ui/friends.js';
+import { createSettings } from './ui/settings.js';
+import { createMapPanel } from './ui/mapPanel.js';
+import { createEmoteMenu } from './ui/emoteMenu.js';
+import { SocialState } from './social/SocialState.js';
 import { Network } from './multiplayer/Network.js';
 import { normalizeAvatar, ITEM_BY_ID } from './shops/items.js';
 import { isConfigured, supabase } from './config/supabase.js';
 
 const ui = document.getElementById('ui');
-let game = null, hud = null, wardrobe = null, shop = null, net = null;
+let game = null, hud = null, wardrobe = null, shop = null, net = null, social = null, chat = null, friends = null, settings = null, mapPanel = null, emotes = null;
 
 function startGame(profile) {
   profile.avatar_data = normalizeAvatar(profile.avatar_data);
   profile.owned = new Set(); profile.inv = new Map();     // inv: item id -> quantity (furniture stacks)
   net = new Network(profile);
+  social = new SocialState(profile, net);                 // Phase 6: friends / blocks / presence (inert for guests)
 
   game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#0e2238',
@@ -24,7 +31,7 @@ function startGame(profile) {
     physics: { default: 'arcade', arcade: { debug: false } },
     scene: [BootScene, RoomScene],
     callbacks: { preBoot: (g) => {
-      g.registry.set('profile', profile); g.registry.set('net', net);
+      g.registry.set('profile', profile); g.registry.set('net', net); g.registry.set('social', social);
       g.registry.set('reduceMotion', matchMedia('(prefers-reduced-motion: reduce)').matches);
     } },
   });
@@ -32,6 +39,17 @@ function startGame(profile) {
   hud = mountHUD(ui, profile, { onAction });
   wardrobe = createWardrobe(ui, { game, profile, onCoins: (n) => hud.setCoins(n) });
   shop = createShop(ui, { game, profile, wardrobe, onCoins: (n) => hud.setCoins(n) });
+
+  // Phase 6: social UI. The right-hand drawers (wardrobe, friends, settings, map) are mutually exclusive.
+  const closeDrawers = () => [wardrobe, friends, settings, mapPanel].forEach((d) => d?.close?.());
+  const sp = { game, profile, social, closeOthers: closeDrawers };
+  friends = createFriends(ui, sp);
+  settings = createSettings(ui, sp);
+  mapPanel = createMapPanel(ui, sp);
+  chat = createChat(ui, { game, profile, social, onUnread: (n) => hud.setBadge('chat', n) });
+  emotes = createEmoteMenu(ui, { game });
+  social.on(() => hud.setBadge('friends', social.incoming.length));
+  social.start().catch((e) => toast('Friends & chat unavailable: ' + e.message));
 
   game.events.on('room-entered', (id, name) => {
     hud.setLocation(name);
@@ -50,11 +68,15 @@ function startGame(profile) {
 
   async function onAction(key) {
     if (key === 'logout') return logout();
-    if (key === 'wardrobe') return wardrobe.toggle();
+    if (key === 'wardrobe' || key === 'avatar') { if (!wardrobe.isOpen()) closeDrawers(); return wardrobe.toggle(key === 'avatar' ? 'look' : undefined); }
+    if (key === 'friends') return friends.toggle();
+    if (key === 'chat') return chat.toggle();
+    if (key === 'emotes') return emotes.toggle();
+    if (key === 'settings') return settings.toggle();
+    if (key === 'map') return mapPanel.toggle();
     if (key === 'shop') return shop.open('clothing');
     if (key === 'home') return game.scene.getScene('Room')?.goHome?.();
     if (key === 'decorate') return game.scene.getScene('Room')?.startEdit?.();
-    if (key === 'avatar') return wardrobe.toggle('look');
     if (key === 'daily') {
       if (profile.guest) return toast('Create an account to claim daily rewards');
       try {
@@ -68,8 +90,9 @@ function startGame(profile) {
 }
 
 async function logout() {
-  net?.leave(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
-  game = hud = wardrobe = shop = net = null;
+  [chat, friends, settings, mapPanel, emotes, social].forEach((x) => x?.destroy());
+  net?.destroy(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
+  game = hud = wardrobe = shop = net = social = chat = friends = settings = mapPanel = emotes = null;
   if (isConfigured) await auth.logout();
   mountAuth(ui, startGame);
 }

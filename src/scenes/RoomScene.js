@@ -49,19 +49,32 @@ export class RoomScene extends Phaser.Scene {
     if (!room.indoor) this.addSnowfall();
     this.setupInput();
 
+    // Phase 6: tell the social layer where I am (friends see it only if my privacy setting allows)
+    this.registry.get('social')?.setLocation(this.roomId, this.ownerId);
+
     // multiplayer (no-op for guests) + live outfit changes from the wardrobe
     this.mp = new RemotePlayers(this, this.registry.get('net'), profile, this.channelId);
     this.onOutfit = (av) => { this.player.setOutfit(av); this.mp.outfit(av); };
     this.game.events.on('outfit-changed', this.onOutfit);
     this.onLock = (v) => { this.uiLocked = v; if (v) { this.target = null; this.pendingDoor = null; this.player.move(0, 0); } };
     this.game.events.on('ui-lock', this.onLock);
+    // Phase 6: typing in chat must not walk the avatar (Phaser would also swallow WASD/E keystrokes from the text box)
+    this.onTyping = (v) => {
+      const kb = this.input.keyboard; if (!kb) return;
+      if (v) { kb.enabled = false; kb.disableGlobalCapture(); kb.resetKeys(); } else { kb.enabled = true; kb.enableGlobalCapture(); }
+    };
+    this.onEmote = (key) => !this.leaving && !this.editing && this.mp.myEmote(key);
+    this.onJoinRoom = (req) => this.joinRoom(req);
+    this.game.events.on('typing', this.onTyping); this.game.events.on('emote', this.onEmote); this.game.events.on('join-room', this.onJoinRoom);
     this.events.once('shutdown', () => {
       this.game.events.off('outfit-changed', this.onOutfit); this.game.events.off('ui-lock', this.onLock);
+      this.game.events.off('typing', this.onTyping); this.game.events.off('emote', this.onEmote); this.game.events.off('join-room', this.onJoinRoom);
+      this.input.keyboard && (this.input.keyboard.enabled = true);
       this.editor?.dispose(); this.editor = null; this.home?.destroy(); this.loadToken++;
       this.mp.destroy();
       this.game.events.emit('home-left');
     });
-    this.game.events.emit('room-entered', this.roomId, room.name);
+    this.game.events.emit('room-entered', this.roomId, room.name, this.channelId);
     if (room.type === 'home') this.setupHome(profile);
   }
 
@@ -79,7 +92,10 @@ export class RoomScene extends Phaser.Scene {
       const owner = data.room.owner_name || 'Player', title = data.is_owner ? 'My Room' : `${owner}'s Room`;
       this.home.setTitle(title);
       this.game.events.emit('room-title', title);
-    } catch (e) { toast('Could not load the room: ' + e.message); }
+    } catch (e) {
+      toast('Could not load the room: ' + e.message);
+      if (!isOwner && token === this.loadToken) this.leaveTo('snowy_plaza');       // not allowed in (private / blocked / visits off): back to the plaza
+    }
   }
 
   startEdit() {
@@ -104,6 +120,31 @@ export class RoomScene extends Phaser.Scene {
       return Phaser.Geom.Intersects.RectangleToRectangle(hb, new Phaser.Geom.Rectangle(r.l, r.t, r.r - r.l, r.b - r.t));
     });
     if (stuck) p.hitbox.body.reset(ROOM.w / 2, ROOM.floorBottom + 35);
+  }
+
+  // Phase 6: travel to a room by key (Map, or "Join" on a friend). For another player's home the SERVER decides
+  // (get_room -> can_view_room: friends/visibility/blocks/"allow visits"), and we check BEFORE leaving so a refusal costs nothing.
+  async joinRoom({ room, ownerId = null } = {}) {
+    const profile = this.registry.get('profile');
+    if (this.leaving || this.editing || this.uiLocked) return;
+    if (!ROOMS[room]) return toast('That place is not open yet');
+    const own = room === 'home' ? (ownerId || profile.id) : null;
+    if (room === this.roomId && own === this.ownerId) return toast("You're already here");
+    if (room === 'home' && own !== profile.id) {
+      if (profile.guest) return toast('Create an account to visit rooms');
+      try { await fetchRoom(own); } catch (e) { return toast(e.message || 'You cannot enter that room'); }
+      if (this.leaving || !this.scene.isActive()) return;
+    }
+    this.leaveTo(room, own);
+  }
+
+  leaveTo(room, ownerId = null) {
+    if (this.leaving) return;
+    this.leaving = true; this.target = null; this.pendingDoor = null; this.player.move(0, 0);
+    this.cameras.main.fadeOut(220);
+    const next = { roomId: room };                              // no `from`: the player spawns at the room's default spawn point
+    if (room === 'home') next.ownerId = ownerId || this.registry.get('profile').id;
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart(next));
   }
 
   goHome() {
@@ -206,6 +247,8 @@ export class RoomScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E');
     this.input.on('pointerdown', (p) => {
       if (this.leaving || this.editing || this.uiLocked || p.event?.target?.tagName !== 'CANVAS') return;
+      const who = this.mp.hit(p.worldX, p.worldY);
+      if (who) return this.game.events.emit('open-profile', who);
       const hit = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.body, p.worldX, p.worldY));
       if (hit) { this.pendingDoor = hit; this.target = new Phaser.Math.Vector2(hit.zone.centerX, hit.zone.centerY); }
       else { this.pendingDoor = null; this.target = new Phaser.Math.Vector2(p.worldX, p.worldY); }

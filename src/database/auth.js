@@ -20,12 +20,13 @@ export async function login(email, password) {
 export const logout = () => supabase?.auth.signOut();
 export const getSession = async () => (await supabase.auth.getSession()).data.session;
 
-// Profile is created by a DB trigger; retry briefly in case of lag.
+// Profile is created by a DB trigger; retry briefly in case of lag.  (needs supabase/phase6.sql)
 export async function fetchProfile(userId) {
   for (let i = 0; i < 5; i++) {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    // Phase 6: other players can no longer read coins/current_room from the table, so you fetch your own full row via a function.
+    const { data, error } = await supabase.rpc('get_my_profile');
     if (error) throw error;
-    if (data) return data;
+    if (data && data.id === userId) return data;
     await sleep(400);
   }
   throw new Error('Profile not found. Did you run supabase/schema.sql?');

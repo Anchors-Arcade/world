@@ -95,6 +95,7 @@ export function createWardrobe(root, { game, profile, onCoins }) {
   return {
     open(t) { if (t) tab = t; render(); el.hidden = false; },
     toggle(t) { el.hidden ? this.open(t) : close(); },
+    close, isOpen: () => !el.hidden,
     refresh: () => !el.hidden && render(),
     // used by the shop: equip an owned item / take a slot off. Same validated save path as the wardrobe itself.
     equip(it) { if (owned(it)) apply({ ...profile.avatar_data, [it.category]: it.id }); },

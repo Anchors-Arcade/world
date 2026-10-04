@@ -188,3 +188,84 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 .ed-card.shopcard small{color:#7a5200}
 .ed-empty{align-self:center;margin:0 10px 0 4px;max-width:260px;font-size:13px;opacity:.9}
 @media (max-width:600px){.ed-top{gap:5px;padding-left:10px}.ed-title small{display:none}.sbtn{padding:8px 11px;font-size:13.5px}.ed-hint{display:none}.ed-card{width:88px}}
+
+/* ---------- Phase 6: chat, friends, emotes ---------- */
+.dock button{position:relative}
+.badge{position:absolute;top:2px;right:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--anchor);color:#fff;
+  font:900 11px/18px var(--font);font-style:normal;text-align:center;box-shadow:0 2px 0 #c4472b}
+#ui.editing .chat,#ui.editing .emote-wheel{display:none}
+
+/* chat window: compact, bottom-left, above the dock */
+.chat{position:fixed;left:12px;bottom:96px;width:min(340px,calc(100vw - 24px));height:min(300px,42vh);display:flex;flex-direction:column;
+  background:var(--glass);backdrop-filter:blur(6px);border:2px solid rgba(207,234,247,.35);border-radius:18px;box-shadow:0 5px 0 rgba(0,0,0,.25);overflow:hidden;pointer-events:auto}
+.chat[hidden]{display:none}
+.chat header{display:flex;align-items:center;gap:8px;padding:8px 10px 6px 14px;font-size:15px}
+.chat header small{opacity:.75;margin-right:auto;font-size:12px}
+.chat .x{width:26px;height:26px;line-height:1;background:rgba(207,234,247,.25);color:var(--snow)}
+.ch-log{flex:1;min-height:0;overflow-y:auto;padding:2px 12px 6px;display:flex;flex-direction:column;gap:3px;font-size:13.5px;line-height:1.3;overscroll-behavior:contain}
+.ln{display:flex;gap:6px;align-items:baseline;word-break:break-word}
+.ln time{flex:none;font-size:10.5px;opacity:.5}
+.ln .who{flex:none;border:0;background:none;padding:0;color:var(--gold);font:800 13px var(--font);text-decoration:none}
+.ln button.who:hover{text-decoration:underline}
+.ln.me .who{color:#8fe3ff}
+.ln .tx{color:var(--snow)}
+.ln.pre .tx{font-style:italic;opacity:.92}
+.ch-quick{display:flex;flex-wrap:wrap;gap:5px;padding:4px 10px 6px;border-top:1px solid rgba(207,234,247,.2)}
+.ch-quick[hidden]{display:none}
+.ch-quick button{border:0;border-radius:12px;padding:6px 10px;background:rgba(207,234,247,.2);color:var(--snow);font:800 12.5px var(--font)}
+.ch-quick button:hover{background:var(--gold);color:#4a3200}
+.ch-form{display:flex;gap:6px;padding:8px 10px 10px;background:rgba(0,0,0,.18)}
+.ch-form input{flex:1;min-width:0;padding:8px 11px;border-radius:12px;border:2px solid rgba(207,234,247,.35);background:rgba(255,255,255,.92);color:var(--ink);font:600 14px var(--font)}
+.ch-q{flex:none;width:38px;border:0;border-radius:12px;background:var(--gold);font-size:18px;box-shadow:0 3px 0 #c97f12}
+
+/* friends / settings / map drawers */
+.fr{display:flex;align-items:center;gap:6px;padding:6px 4px;border-bottom:1px solid #bfdff0}
+.fr.slim{padding:4px}
+.fr-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:none;padding:0;text-align:left;color:var(--ink);font:inherit}
+.fr-main:hover .nm b{text-decoration:underline}
+.fav{width:44px;height:60px;flex:none;border-radius:12px;background:#cfe8f5}
+.fav.big{width:96px;height:132px;border-radius:18px}
+.nm{display:grid;min-width:0}
+.nm b{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm small{font-size:12px;color:#44708f;font-weight:700}
+.nm small.on{color:#23805a}
+.x.sm{width:26px;height:26px;font-size:12px}
+.empty{margin:18px 6px;text-align:center;color:#44708f;font-weight:700;line-height:1.4}
+.empty.sm{margin:4px;font-size:13px}
+.hint{margin:6px 2px;font-size:12px;color:#44708f;line-height:1.35}
+.fr-search{display:flex;gap:6px;margin:6px 0 8px}
+.fr-search input,.fr-drawer textarea{flex:1;min-width:0;padding:9px 11px;border-radius:12px;border:2px solid #a9d3ea;background:#fff;color:var(--ink);font:600 14px var(--font)}
+.fr-drawer textarea{width:100%;resize:none;margin:6px 0 10px}
+.chip.back{margin:6px 0 4px;padding:5px 12px}
+.card-p{display:grid;justify-items:center;gap:2px;margin:6px 0 10px;text-align:center}
+.card-p h2{margin:6px 0 0;font-size:22px}
+.card-p small{color:#44708f;font-weight:700}
+.row.center{justify-content:center;margin-bottom:4px}
+.reasons{display:grid;gap:4px;margin:6px 0}
+.reasons label{display:flex;gap:8px;align-items:center;padding:7px 10px;border-radius:12px;background:#fff;border:2px solid #cfe8f5;font-weight:700;font-size:14px}
+.sw-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px;border-bottom:1px solid #bfdff0}
+.sw-row span{display:grid}
+.sw-row small{font-size:12px;color:#44708f}
+.sw-row input{width:44px;height:24px;flex:none;accent-color:var(--anchor)}
+.place{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 8px;padding:10px 12px;border:2px solid #a9d3ea;border-radius:16px;background:#fff;color:var(--ink);text-align:left;font:inherit;box-shadow:0 3px 0 #a9d3ea}
+.place:hover:not(:disabled){background:#fff1ec;border-color:var(--anchor)}
+.place.here{background:#dff1fb;box-shadow:none;cursor:default}
+.place .pi{font-size:28px}
+
+/* radial emote wheel */
+.emote-wheel{position:fixed;inset:0;z-index:15;display:grid;place-items:center;background:rgba(8,20,34,.35);pointer-events:auto}
+.emote-wheel[hidden]{display:none}
+.ew-ring{position:relative;width:0;height:0}
+.ew-ring button{position:absolute;left:0;top:0;width:68px;height:68px;margin:-34px 0 0 -34px;transform:translate(var(--x),var(--y));
+  display:grid;place-items:center;align-content:center;gap:0;border:3px solid #fff;border-radius:50%;background:var(--ink);color:#fff;
+  box-shadow:0 5px 0 rgba(0,0,0,.35);animation:pop .16s ease-out backwards}
+.ew-ring button:hover,.ew-ring button:focus-visible{background:var(--anchor);transform:translate(var(--x),var(--y)) scale(1.12)}
+.ew-ring .ei{font-size:28px;line-height:1}
+.ew-ring small{font-size:10.5px;font-weight:800;line-height:1.1}
+.ew-ring kbd{position:absolute;top:-4px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:#4a3200;font:900 11px/18px var(--font);text-align:center}
+.ew-ring .ew-mid{width:52px;height:52px;margin:-26px 0 0 -26px;transform:none;font-size:18px;font-weight:900;background:rgba(14,34,56,.85)}
+.ew-ring .ew-mid:hover{transform:scale(1.1)}
+@keyframes pop{from{transform:translate(0,0) scale(.3);opacity:0}}
+@media (max-width:600px){.chat{bottom:84px;height:36vh}.ew-ring button{width:60px;height:60px;margin:-30px 0 0 -30px}.ew-ring{transform:scale(.88)}}
+@media (prefers-reduced-motion:reduce){.ew-ring button{animation:none}}
+@media (max-width:600px){.drawer:not([hidden]) ~ .chat{display:none}}
