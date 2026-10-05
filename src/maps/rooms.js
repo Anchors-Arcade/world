@@ -9,6 +9,20 @@
 //
 // Phase 8 note: interactive objects and collectibles are NOT listed here. They come from src/world/interactions.js
 // and from the server's collectible catalogue, keyed by room id, so one room definition serves every system.
+import { SKI_ROUTES } from '../world/skiAreas.js';
+
+// Phase 12 helper: a sled route room is just a tall snow room whose size comes from the route data,
+// so the course and the room can never disagree about where the finish line is.
+const slopeRoom = (key, name, extra = {}) => {
+  const r = SKI_ROUTES[key];
+  return {
+    name, w: r.w, h: r.finishY + 260, floor: 'snow', sled: key,
+    spawn: { x: Math.round(r.trailAt(r.startY).cx), y: r.startY - 40 },
+    sky: 0x0d2033, fx: 'snow', stars: true, wash: [0xdff0fb, 0.95],
+    ...extra,
+  };
+};
+
 export const ROOMS = {
   snowy_plaza: {
     name: 'Snowy Plaza', w: 1800, h: 1100, floor: 'snow', spawn: { x: 900, y: 860 },
@@ -210,6 +224,7 @@ export const ROOMS = {
     ],
     portals: [
       { label: 'Frozen Lake ▾', x: 590, y: 940, w: 220, h: 60, to: 'frozen_lake', spawn: { x: 700, y: 860 } },
+      { label: 'Ski Base ▸',    x: 1340, y: 420, w: 60,  h: 220, to: 'ski_base',   spawn: { x: 160, y: 620 } },
     ],
     props: [
       { type: 'rock', x: 180, y: 560, r: 52 }, { type: 'rock', x: 300, y: 860, r: 44 }, { type: 'rock', x: 560, y: 260, r: 48 },
@@ -272,4 +287,81 @@ export const ROOMS = {
     blocks: [{ x: 60, y: 560, w: 120, h: 70, label: '📜', color: 0x4a3f7a }, { x: 820, y: 560, w: 120, h: 70, label: '🔭', color: 0x4a3f7a }],
     portals: [{ label: 'Exit ▾', x: 420, y: 630, w: 160, h: 50, to: 'observatory', spawn: { x: 500, y: 560 } }],
   },
+
+  // ===================================================================
+  // PHASE 12 — the ski area. Part of the world, not an arcade.
+  //   Mountain Pass ⇄ Ski Base ──(lift)──▸ Summit ──▸ five sled routes
+  //   Each route exits somewhere different, so sledding is genuine travel:
+  //     Beginner ▸ Ski Base · Forest ▸ Deep Forest · Ridge ▸ Mountain Pass
+  //     Extreme ▸ Frozen Lake · Hidden Valley ▸ Snow Camp 🔒
+  // ===================================================================
+  ski_base: {
+    name: 'Anchor Peak Base', w: 1700, h: 1100, floor: 'snow', spawn: { x: 850, y: 900 },
+    sky: 0x102840, fx: 'snow', stars: true, wash: [0xdce9f5, 0.95],
+    paths: [[760, 240, 200, 820], [200, 700, 1300, 140]],
+    // The lift: walk onto the platform, press E, ride the cable to the summit station.
+    lift: {
+      label: 'Summit Gondola', x: 860, y: 320, to: 'ski_summit', seconds: 8,
+      towers: [[860, 330], [860, 150], [860, -40]],
+    },
+    buildings: [
+      { label: 'Warming Hut', x: 240, y: 300, w: 240, h: 190, wall: 0xb5703f, roof: 0x7a3f22, to: 'ski_lodge' },
+    ],
+    portals: [
+      { label: '◂ Mountain Pass', x: 0, y: 520, w: 60, h: 220, to: 'mountain_pass', spawn: { x: 1280, y: 520 } },
+    ],
+    props: [
+      { type: 'peak', x: 300,  y: 150, w: 760, h: 440 },
+      { type: 'peak', x: 1180, y: 110, w: 900, h: 520 },
+      { type: 'rock', x: 1420, y: 760, r: 50 }, { type: 'rock', x: 180, y: 880, r: 42 },
+      { type: 'fence', x: 520, y: 640, w: 300 }, { type: 'fence', x: 1120, y: 640, w: 300 },
+      { type: 'lamp', x: 700, y: 840 }, { type: 'lamp', x: 1020, y: 840 },
+      { type: 'snowman', x: 1320, y: 930 },
+      { type: 'bush', x: 420, y: 980 }, { type: 'bush', x: 1200, y: 1020 },
+    ],
+    trees: [[90,420],[150,620],[1560,420],[1620,660],[80,1020],[1640,980],[420,520],[1300,520]],
+  },
+
+  ski_lodge: {
+    name: 'Warming Hut', w: 900, h: 640, floor: 'wood', indoor: true, spawn: { x: 450, y: 520 },
+    sky: 0x2a1d14, fx: 'dust', wash: [0xffe6c2, 0.9],
+    props: [{ type: 'glow', x: 450, y: 380, r: 160, color: 0xffa63c }],
+    blocks: [
+      { x: 60, y: 200, w: 130, h: 70, label: '🔥 Fire', color: 0xb5703f },
+      { x: 320, y: 220, w: 260, h: 60, label: '🛷 Sled Rack', color: 0x6b4428 },
+      { x: 700, y: 200, w: 130, h: 70, label: '☕', color: 0x8c5a3a },
+    ],
+    portals: [{ label: 'Exit ▾', x: 370, y: 590, w: 160, h: 50, to: 'ski_base', spawn: { x: 450, y: 520 } }],
+  },
+
+  ski_summit: {
+    name: 'Anchor Peak Summit', w: 1800, h: 1150, floor: 'snow', spawn: { x: 900, y: 940 },
+    sky: 0x0a1d31, fx: 'blizzard', stars: true, aurora: true, wash: [0xd6e7f6, 0.95],
+    paths: [[340, 520, 1120, 150]],
+    portals: [
+      { label: '🟢 Beginner Hill ▾', x: 180,  y: 240, w: 230, h: 80, to: 'slope_beginner' },
+      { label: '🌲 Forest Slope ▾',  x: 520,  y: 180, w: 230, h: 80, to: 'slope_forest' },
+      { label: '🏔️ Mountain Ridge ▾', x: 860, y: 150, w: 230, h: 80, to: 'slope_ridge' },
+      { label: '⚫ Extreme Slope ▾', x: 1200, y: 180, w: 230, h: 80, to: 'slope_extreme' },
+      { label: '❄️ Hidden Valley ▾', x: 1520, y: 260, w: 220, h: 80, to: 'slope_hidden', secret: 'buried_cache' },
+      { label: 'Gondola Down ▾',    x: 820,  y: 1090, w: 200, h: 60, to: 'ski_base', spawn: { x: 860, y: 420 } },
+    ],
+    props: [
+      { type: 'peak', x: 220,  y: 60,  w: 820,  h: 400 },
+      { type: 'peak', x: 1320, y: 20,  w: 980,  h: 480 },
+      { type: 'tower', x: 900, y: 1010 },
+      { type: 'sign', x: 900, y: 700, label: 'PICK YOUR ROUTE' },
+      { type: 'fence', x: 380, y: 420, w: 320 }, { type: 'fence', x: 1260, y: 420, w: 320 },
+      { type: 'rock', x: 140, y: 820, r: 54 }, { type: 'rock', x: 1680, y: 860, r: 50 },
+      { type: 'lamp', x: 740, y: 900 }, { type: 'lamp', x: 1060, y: 900 },
+    ],
+    trees: [[60,620],[1740,640],[120,1080],[1700,1080]],
+  },
+
+  slope_beginner: slopeRoom('slope_beginner', 'Beginner Hill', { wash: [0xe6f4ff, 0.95] }),
+  slope_forest:   slopeRoom('slope_forest',   'Forest Slope',   { sky: 0x0d2622, wash: [0xd3e8dd, 0.95] }),
+  slope_ridge:    slopeRoom('slope_ridge',    'Mountain Ridge', { sky: 0x0b1f33, aurora: true, wash: [0xd8e7f6, 0.95] }),
+  slope_extreme:  slopeRoom('slope_extreme',  'Extreme Slope',  { sky: 0x07131f, fx: 'blizzard', wash: [0xcddced, 0.95] }),
+  slope_hidden:   slopeRoom('slope_hidden',   'Hidden Snow Valley', { sky: 0x101a33, hidden: true, wash: [0xdedcf6, 0.95] }),
+
 };

@@ -8,6 +8,7 @@ import { RoomEditor } from '../rooms/RoomEditor.js';
 import { ROOM, rectOf } from '../rooms/roomRules.js';
 import { fetchRoom } from '../database/rooms.js';
 import { WorldLayer } from '../world/WorldLayer.js';
+import { SkiArea } from '../world/SkiArea.js';
 import { GAMES } from '../minigames/registry.js';
 import { bestOf } from '../minigames/scoreSystem.js';
 
@@ -45,7 +46,10 @@ export class RoomScene extends Phaser.Scene {
     (room.portals || []).forEach((p) => { if (!p.secret) this.addPortal(p); else if (this.explore?.isRoomUnlocked(p.to)) this.addSecretPortal(p, true); });
     (room.kiosks || []).forEach((k) => this.addKiosk(k));
     (room.cabinets || []).forEach((c) => this.addCabinet(c));
-    (room.activities || []).forEach((a) => this.addActivity(a));                                 // Phase 10: one minigame per map                                   // Phase 7: arcade machines + leaderboard board
+    (room.activities || []).forEach((a) => this.addActivity(a));
+    // Phase 12: ski lift station / sled route, if this room has one. Same pattern as everything above.
+    this.ski = (room.lift || room.sled) ? new SkiArea(this, room) : null;
+    this.ski?.build();                                 // Phase 10: one minigame per map                                   // Phase 7: arcade machines + leaderboard board
     if (room.indoor) { const wall = this.addWall(0, 0, room.w, 150, room.wallColor ?? 0x7a4f2f); if (room.type === 'home') wall.setAlpha(0); }   // homes draw their own themed wall
 
     const s = this.spawnPoint(room);
@@ -437,6 +441,48 @@ export class RoomScene extends Phaser.Scene {
 
   // Phase 8: scenery. One switch, so a new prop type is a few lines and never a new room system.
   addProp(p) {
+    // ---- Phase 12 scenery ----
+    // Background peaks are deliberately ONE graphics object each and never collide: they are the cheapest
+    // way to make a mountain read as huge without adding draw calls or physics bodies.
+    if (p.type === 'peak') {
+      const g = this.add.graphics().setDepth(-990);
+      const { x, y } = p, w = p.w || 700, h = p.h || 400;
+      g.fillStyle(0x334b66, 0.95); g.fillTriangle(x, y, x - w / 2, y + h, x + w / 2, y + h);
+      g.fillStyle(0x3f5a78, 0.95); g.fillTriangle(x, y, x - w * 0.12, y + h, x + w / 2, y + h);
+      g.fillStyle(0xffffff, 0.92);                                    // snow cap
+      g.fillTriangle(x, y, x - w * 0.17, y + h * 0.33, x + w * 0.17, y + h * 0.33);
+      g.fillStyle(0xdfeefb, 0.9);
+      g.fillTriangle(x, y, x - w * 0.05, y + h * 0.33, x + w * 0.17, y + h * 0.33);
+      return;
+    }
+    if (p.type === 'tower') {                                         // lift tower (summit station side)
+      const { x, y } = p, g = this.add.graphics().setDepth(y);
+      g.fillStyle(0x16304a, 0.2); g.fillEllipse(x, y + 6, 76, 22);
+      g.fillStyle(0x59707f); g.fillRect(x - 10, y - 160, 20, 160);
+      g.fillStyle(0x6f8a9c); g.fillRect(x - 50, y - 160, 100, 15);
+      g.fillStyle(0xffffff, 0.75); g.fillRect(x - 50, y - 163, 100, 5);
+      this.walls.add(this.add.rectangle(x, y - 6, 28, 24, 0, 0));
+      return;
+    }
+    if (p.type === 'fence') {                                         // snow fence: slatted, decorative only
+      const { x, y } = p, w = p.w || 240, g = this.add.graphics().setDepth(y);
+      g.fillStyle(0x6b4428);
+      for (let i = 0; i <= w; i += 26) g.fillRect(x - w / 2 + i, y - 44, 7, 46);
+      g.fillStyle(0x8c5a3a); g.fillRect(x - w / 2, y - 36, w, 6); g.fillRect(x - w / 2, y - 16, w, 6);
+      g.fillStyle(0xffffff, 0.7); g.fillRect(x - w / 2, y - 39, w, 3);
+      return;
+    }
+    if (p.type === 'sign') {
+      const { x, y } = p, g = this.add.graphics().setDepth(y);
+      g.fillStyle(0x16304a, 0.2); g.fillEllipse(x, y + 6, 60, 16);
+      g.fillStyle(0x6b4428); g.fillRect(x - 6, y - 56, 12, 58);
+      g.fillStyle(0xd8c9a3); g.fillRoundedRect(x - 78, y - 100, 156, 48, 8);
+      g.fillStyle(0xffffff, 0.8); g.fillRoundedRect(x - 78, y - 104, 156, 7, 4);
+      this.add.text(x, y - 76, p.label || '', {
+        fontFamily: 'system-ui, sans-serif', fontSize: '13px', color: '#3a2a18', align: 'center',
+      }).setOrigin(0.5).setDepth(y + 1);
+      return;
+    }
     if (p.type === 'pond') return this.addPond(p);
     if (p.type === 'ice') {                                    // a sheet of smoother ice: looks different, walks the same
       const g = this.add.graphics().setDepth(-997);
@@ -540,7 +586,11 @@ export class RoomScene extends Phaser.Scene {
       this.stuck = 0;
     });
     this.input.keyboard.addKey('SPACE', false).on('down', () => !this.editing && !this.uiLocked && !this.leaving && document.activeElement?.tagName !== 'INPUT' && this.player.hop());
-    this.keys.E.on('down', () => this.nearDoor && !this.editing && !this.uiLocked && this.enter(this.nearDoor));
+    this.keys.E.on('down', () => {
+      if (this.editing || this.uiLocked) return;
+      if (this.ski?.nearLift()) return this.ski.boardLift();        // Phase 12: board the gondola
+      if (this.nearDoor) this.enter(this.nearDoor);
+    });
   }
 
   update(time, delta) {
@@ -552,6 +602,14 @@ export class RoomScene extends Phaser.Scene {
       this.game.events.emit('door-prompt', '');
       return;
     }
+    // Phase 12: while riding a lift or a sled the ski area drives the avatar, but the rest of this
+    // loop still runs below it, so multiplayer, outfits and emotes carry on exactly as normal.
+    if (this.ski?.update(time, delta)) {
+      this.player.update(time, this.registry.get('reduceMotion'));
+      this.mp.update(time, delta, this.registry.get('reduceMotion'));
+      return;
+    }
+
     const k = this.keys;
     let vx = (k.D.isDown || k.RIGHT.isDown ? 1 : 0) - (k.A.isDown || k.LEFT.isDown ? 1 : 0);
     let vy = (k.S.isDown || k.DOWN.isDown ? 1 : 0) - (k.W.isDown || k.UP.isDown ? 1 : 0);
@@ -569,7 +627,9 @@ export class RoomScene extends Phaser.Scene {
 
     this.nearDoor = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.zone, this.player.x, this.player.y)) || null;
     const nd = this.nearDoor;
-    this.game.events.emit('door-prompt', nd ? `Press E to ${nd.verb || (nd.action ? 'browse' : 'enter')} ${nd.label}` : '');
+    this.game.events.emit('door-prompt',
+      nd ? `Press E to ${nd.verb || (nd.action ? 'browse' : 'enter')} ${nd.label}`
+         : (this.ski?.hint() || ''));                     // Phase 12: lift / push-off hints
     if (this.nearDoor && this.pendingDoor === this.nearDoor) this.enter(this.nearDoor);
   }
 

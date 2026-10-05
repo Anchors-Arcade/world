@@ -16,6 +16,14 @@ export const WORLD_MAP = [
   P('mountain_pass',  '🏔️', 'Wind, stone and old cairns.',          ['Ice Caves', 'Observatory', 'A secret']),
   P('ice_caves',      '🕳️', 'Cold, dark and marked.',               ['Collectibles', 'A secret']),
   P('observatory',    '🏛️', 'They watched the sky from here.',      ['Collectibles', 'A secret']),
+  // Phase 12 — the ski area. You walk to the base, ride the lift, and sled back down into the world.
+  P('ski_base',       '🎿', 'Lift queue, warm hut, cold nose.',     ['Gondola', 'Warming hut']),
+  P('ski_summit',     '🚡', 'Five routes down. Pick one.',          ['Sled routes', 'The view']),
+  P('slope_beginner', '🟢', 'Wide, gentle, forgiving.',             ['Sledding', 'Coins']),
+  P('slope_forest',   '🌲', 'Tight lines between old pines.',       ['Sledding', 'Coins']),
+  P('slope_ridge',    '🏔️', 'Long sweeping bends, big drop.',       ['Sledding', 'Coins']),
+  P('slope_extreme',  '⚫', 'Steep. Narrow. Unapologetic.',         ['Sledding', 'Coins']),
+  P('slope_hidden',   '❄️', 'Behind the cornice, if you found it.', ['Sledding', 'Rare coins'], { hidden: true }),
   P('crystal_hollow', '💎', 'Behind the wall that was not a wall.', ['Rare collectibles'], { hidden: true }),
   P('star_chamber',   '🪐', 'Sealed until the dials agreed.',       ['Rare collectibles'], { hidden: true }),
 ];
