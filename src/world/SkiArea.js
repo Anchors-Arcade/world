@@ -1,6 +1,7 @@
 import { routeFor, sledScore } from './skiAreas.js';
 import { toast } from '../ui/hud.js';
 import { startRun, submitRun, guestResult } from '../minigames/scoreSystem.js';
+import { invalidateLeaderboards } from '../minigames/leaderboard.js';
 
 // =====================================================================
 // PHASE 12 — ski lifts and sled rides, inside the ordinary world rooms.
@@ -148,6 +149,21 @@ export class SkiArea {
       return { x: cx, y: cy, g: c, taken: false };
     });
 
+    // start gate — what you are about to ride, and the time to beat
+    const sy = route.startY, gateCx = route.trailAt(sy).cx;
+    const best = parseFloat(localStorage.getItem(`aw:besttime:${route.id}`) || '0');
+    const gg = s.add.graphics().setDepth(-700);
+    gg.fillStyle(0xffc247, 0.9); gg.fillRect(gateCx - 170, sy - 8, 340, 8);
+    gg.fillStyle(0x16304a); gg.fillRect(gateCx - 176, sy - 8, 12, 64); gg.fillRect(gateCx + 164, sy - 8, 12, 64);
+    s.add.text(gateCx, sy - 74, `${route.label || s.room.name}`, {
+      fontFamily: 'Trebuchet MS, sans-serif', fontSize: '22px', fontStyle: 'bold', color: '#16304a',
+      backgroundColor: '#f4fbffee', padding: { x: 14, y: 6 },
+    }).setOrigin(0.5).setDepth(-699);
+    s.add.text(gateCx, sy - 40, `Par ${route.par}s${best ? `  ·  your best ${best.toFixed(1)}s` : '  ·  no time set yet'}`, {
+      fontFamily: 'Trebuchet MS, sans-serif', fontSize: '14px', fontStyle: 'bold', color: '#dff1fb',
+      backgroundColor: '#16304acc', padding: { x: 10, y: 4 },
+    }).setOrigin(0.5).setDepth(-699);
+
     // finish banner
     const fy = route.finishY;
     const fg = s.add.graphics().setDepth(-700);
@@ -222,7 +238,7 @@ export class SkiArea {
   // ---------------------------------------------------------------
   startSled() {
     const s = this.scene, route = this.route;
-    if (!route || this.mode === 'sled') return;
+    if (!route || this.mode === 'sled' || this.mode === 'done' || s.leaving || s.uiLocked) return;
     this.mode = 'sled';
     this.sled = { vx: 0, vy: 120, coins: 0, hits: 0, t0: s.time.now, invuln: 0, sessionId: null, airT: 0 };
 
@@ -235,8 +251,13 @@ export class SkiArea {
     // server-timed session, same call the arcade uses. Guests simply skip it.
     const guest = !!this.scene.registry.get('profile')?.guest;
     if (!guest) {
-      startRun(route.id).then((r) => { if (this.sled) this.sled.sessionId = r?.session_id ?? r?.id ?? null; })
-        .catch(() => {});
+      // start_minigame() RETURNS A BARE UUID (see supabase/phase7.sql), not an object. Reading `r.session_id`
+      // left the id null, so the run was never submitted: no score, no coins, no leaderboard entry.
+      startRun(route.id)
+        .then((r) => { if (this.sled) this.sled.sessionId = typeof r === 'string' ? r : (r?.session_id ?? r?.id ?? null); })
+        .catch((e) => {
+          if (/unknown minigame/i.test(e?.message || '')) toast('Sled scores need supabase/phase12.sql — run it to save runs.');
+        });
     }
 
     toast('🛷 Steer with A / D — reach the bottom!');
@@ -321,10 +342,15 @@ export class SkiArea {
     this.board.fillStyle(0x8c5a3a);
     this.board.fillRoundedRect(nx - 26 + lean * 5, ny + 12 - lift, 52, 5, 3);
 
-    // live HUD line, reusing the existing prompt channel rather than a new overlay
+    // Live HUD line, reusing the existing prompt channel rather than adding a second overlay.
+    // Distance is what a rider actually wants to know; speed is shown as a share of this slope's top speed, since
+    // the raw number is pixels per second and meant nothing as a "km/h".
     const secs = (s.time.now - sl.t0) / 1000;
+    const done = Phaser.Math.Clamp((ny - route.startY) / (route.finishY - route.startY), 0, 1);
+    const kmh = Math.round((sl.vy / route.maxSpeed) * 92);
+    const par = secs <= route.par ? '🟢' : '🔴';
     s.game.events.emit('door-prompt',
-      `🛷 ${sl.coins} coins · ${secs.toFixed(1)}s · ${Math.round(sl.vy)} km/h`);
+      `🛷 ${Math.round(done * 100)}%  ·  🪙 ${sl.coins}  ·  ${par} ${secs.toFixed(1)}s / ${route.par}s  ·  ${kmh} km/h${sl.hits ? `  ·  💥 ${sl.hits}` : ''}`);
 
     if (ny >= route.finishY) this.finishSled(secs);
   }
@@ -337,6 +363,7 @@ export class SkiArea {
     s.game.events.emit('door-prompt', '');
 
     const score = sledScore({ coins: sl.coins, seconds, hits: sl.hits, par: route.par });
+    let newBest = false, rank = null;
 
     // personal best time, kept locally — a time is not a score and does not belong in the leaderboard table
     const bestKey = `aw:besttime:${route.id}`;
@@ -353,14 +380,24 @@ export class SkiArea {
           durationMs: Math.round(seconds * 1000),
           stats: { coins: sl.coins, hits: sl.hits, seconds: +seconds.toFixed(2) },
         });
-        coinsEarned = res?.coins_awarded ?? 0;
+        // submit_minigame_score() returns {ok, coins, balance, best, new_best, rank, ...} — `coins`, not `coins_awarded`.
+        if (res?.ok) {
+          coinsEarned = res.coins ?? 0;
+          newBest = !!(res.new_best || res.first_play);
+          rank = res.rank ?? null;
+          invalidateLeaderboards();                                   // the board has a new row on it
+          if (res.balance != null) s.game.events.emit('coins-changed', res.balance);   // wallet + HUD, like the arcade
+        } else if (res?.error) {
+          toast(`Run not saved: ${res.error}`);
+        }
       } else {
         coinsEarned = guestResult(route.id, score)?.coins ?? 0;
       }
-    } catch { /* offline or game not registered yet: the run still counts locally */ }
+    } catch (e) { toast('Could not save that run — your connection dropped.'); }
 
     const bestLine = isBest ? ' · 🏅 new best time!' : '';
-    toast(`🏁 ${seconds.toFixed(1)}s · ${sl.coins} coins · ${score} pts${coinsEarned ? ` · +${coinsEarned} 🪙` : ''}${bestLine}`);
+    const scoreLine = newBest ? ' · 🎉 new best score!' : rank ? ` · #${rank}` : '';
+    toast(`🏁 ${seconds.toFixed(1)}s · ${sl.coins} coins · ${score} pts${coinsEarned ? ` · +${coinsEarned} ⚓` : ''}${bestLine}${scoreLine}`);
 
     s.leaving = true;
     s.cameras.main.fadeOut(300);

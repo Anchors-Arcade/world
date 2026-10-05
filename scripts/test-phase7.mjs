@@ -7,8 +7,8 @@ import { GAMES } from '../src/minigames/registry.js';
 
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok -', name); };
 // Phase 10 adds the seven world activities to the same `minigames` table, so both catalogues count as "the SQL".
-const sql = fs.readFileSync(new URL('../supabase/phase7.sql', import.meta.url), 'utf8')
-  + '\n' + fs.readFileSync(new URL('../supabase/phase10.sql', import.meta.url), 'utf8');
+const sql = ['phase7', 'phase10', 'phase11', 'phase12']            // every file that seeds the `minigames` table
+  .map((f) => fs.readFileSync(new URL(`../supabase/${f}.sql`, import.meta.url), 'utf8')).join('\n');
 
 t('snow dash: faster is better, crashes cost points, partial credit when time runs out', () => {
   const fast = snowDashScore({ timeMs: 24000, crashes: 0 }), slow = snowDashScore({ timeMs: 50000, crashes: 0 });

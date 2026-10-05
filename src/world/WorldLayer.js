@@ -134,7 +134,7 @@ export class WorldLayer {
   revealPortals() {
     for (const p of this.scene.room.portals || []) {
       if (!p.secret || this.scene.secretPortals?.has(p.to)) continue;
-      if (!this.ex.isRoomUnlocked(p.to)) continue;
+      if (!this.scene.secretOpen(p)) continue;              // unlocked room OR the secret itself being found
       this.scene.addSecretPortal(p);
     }
   }

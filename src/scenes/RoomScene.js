@@ -9,6 +9,7 @@ import { ROOM, rectOf } from '../rooms/roomRules.js';
 import { fetchRoom } from '../database/rooms.js';
 import { WorldLayer } from '../world/WorldLayer.js';
 import { SkiArea } from '../world/SkiArea.js';
+import { SKI_ROUTES } from '../world/skiAreas.js';
 import { GAMES } from '../minigames/registry.js';
 import { bestOf } from '../minigames/scoreSystem.js';
 
@@ -43,7 +44,10 @@ export class RoomScene extends Phaser.Scene {
     (room.blocks || []).forEach((b) => this.addBlock(b));
     (room.trees || []).forEach(([x, y]) => this.addTree(x, y));
     // Phase 8: a portal with `secret` is a hidden entrance — it exists only once that secret has been discovered.
-    (room.portals || []).forEach((p) => { if (!p.secret) this.addPortal(p); else if (this.explore?.isRoomUnlocked(p.to)) this.addSecretPortal(p, true); });
+    // A portal with `secret` is a hidden entrance. It opens either because the secret unlocks that room outright
+    // (Crystal Hollow, Star Chamber) or simply because the secret has been discovered (the Hidden Valley slope,
+    // whose secret unlocks no room of its own — it used to be permanently sealed because of that).
+    (room.portals || []).forEach((p) => { if (!p.secret) this.addPortal(p); else if (this.secretOpen(p)) this.addSecretPortal(p, true); });
     (room.kiosks || []).forEach((k) => this.addKiosk(k));
     (room.cabinets || []).forEach((c) => this.addCabinet(c));
     (room.activities || []).forEach((a) => this.addActivity(a));
@@ -427,6 +431,17 @@ export class RoomScene extends Phaser.Scene {
   addPortal(p) {
     this.add.rectangle(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h, 0xffffff, 0.35).setStrokeStyle(3, 0x7fb8d8).setDepth(-900);
     this.add.text(p.x + p.w / 2, p.y + p.h / 2, p.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '14px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 6, y: 3 } }).setOrigin(0.5).setDepth(-800);
+    // Phase 12 polish: a gate that leads to a sled route also shows its difficulty, its par time and your best.
+    if (p.route) {
+      const r = SKI_ROUTES[p.route];
+      if (r) {
+        let best = 0;
+        try { best = parseFloat(localStorage.getItem(`aw:besttime:${p.route}`) || '0'); } catch { /* storage off */ }
+        this.add.text(p.x + p.w / 2, p.y + p.h + 14, `${p.grade || ''} par ${r.par}s${best ? `  ·  best ${best.toFixed(1)}s` : ''}`,
+          { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '12px', fontStyle: 'bold', color: '#dff1fb', backgroundColor: '#16304acc', padding: { x: 8, y: 3 } })
+          .setOrigin(0.5).setDepth(-800);
+      }
+    }
     const zone = new Phaser.Geom.Rectangle(p.x, p.y, p.w, p.h);
     this.doors.push({ label: p.label.replace(/[▸◂▾]/g, '').trim(), to: p.to, spawn: p.spawn, zone, body: zone, below: false });
   }
@@ -447,8 +462,10 @@ export class RoomScene extends Phaser.Scene {
     if (p.type === 'peak') {
       const g = this.add.graphics().setDepth(-990);
       const { x, y } = p, w = p.w || 700, h = p.h || 400;
-      g.fillStyle(0x334b66, 0.95); g.fillTriangle(x, y, x - w / 2, y + h, x + w / 2, y + h);
-      g.fillStyle(0x3f5a78, 0.95); g.fillTriangle(x, y, x - w * 0.12, y + h, x + w / 2, y + h);
+      g.fillStyle(0x334b66, 0.72); g.fillTriangle(x, y, x - w / 2, y + h, x + w / 2, y + h);
+      g.fillStyle(0x45628a, 0.72); g.fillTriangle(x, y, x - w * 0.12, y + h, x + w / 2, y + h);
+      g.lineStyle(3, 0xffffff, 0.14); g.lineBetween(x, y, x - w * 0.5, y + h);                  // ridge line
+      g.fillStyle(0xcfe6f4, 0.16); g.fillRect(x - w / 2, y + h - 70, w, 70);                    // haze at the base, so it reads as distance
       g.fillStyle(0xffffff, 0.92);                                    // snow cap
       g.fillTriangle(x, y, x - w * 0.17, y + h * 0.33, x + w * 0.17, y + h * 0.33);
       g.fillStyle(0xdfeefb, 0.9);
@@ -552,6 +569,12 @@ export class RoomScene extends Phaser.Scene {
       g.lineStyle(3, 0x6b4428, 0.8);
       for (let x = p.x - p.w / 2 + 20; x < p.x + p.w / 2; x += 40) g.lineBetween(x, p.y - p.h / 2 + 4, x, p.y + p.h / 2 - 4);
     }
+  }
+
+  // Is this hidden entrance open for me yet?
+  secretOpen(p) {
+    if (!this.explore) return false;
+    return this.explore.isRoomUnlocked(p.to) || this.explore.isSecretFound(p.secret);
   }
 
   // Phase 8: reveal a hidden entrance. Called while building the room (silent) or the moment its secret is cracked.

@@ -13,12 +13,18 @@ import { SKI_ROUTES } from '../world/skiAreas.js';
 
 // Phase 12 helper: a sled route room is just a tall snow room whose size comes from the route data,
 // so the course and the room can never disagree about where the finish line is.
+// A slope is a long one-way room: you push off at the top and the run spits you out somewhere else in the world.
+// The gate at the top is also a normal portal back to the summit, so changing your mind — or a run that never
+// starts because the server is unreachable — can never strand you halfway up a mountain.
 const slopeRoom = (key, name, extra = {}) => {
   const r = SKI_ROUTES[key];
+  const top = { x: Math.round(r.trailAt(r.startY).cx), y: r.startY - 40 };
   return {
-    name, w: r.w, h: r.finishY + 260, floor: 'snow', sled: key,
-    spawn: { x: Math.round(r.trailAt(r.startY).cx), y: r.startY - 40 },
+    name, w: r.w, h: r.finishY + 260, floor: 'snow', sled: key, route: key,
+    spawn: top,
     sky: 0x0d2033, fx: 'snow', stars: true, wash: [0xdff0fb, 0.95],
+    portals: [{ label: '▴ Back to the summit', x: Math.max(10, top.x - 300), y: Math.max(10, r.startY - 150),
+      w: 180, h: 70, to: 'ski_summit', spawn: top }],
     ...extra,
   };
 };
@@ -339,11 +345,11 @@ export const ROOMS = {
     sky: 0x0a1d31, fx: 'blizzard', stars: true, aurora: true, wash: [0xd6e7f6, 0.95],
     paths: [[340, 520, 1120, 150]],
     portals: [
-      { label: '🟢 Beginner Hill ▾', x: 180,  y: 240, w: 230, h: 80, to: 'slope_beginner' },
-      { label: '🌲 Forest Slope ▾',  x: 520,  y: 180, w: 230, h: 80, to: 'slope_forest' },
-      { label: '🏔️ Mountain Ridge ▾', x: 860, y: 150, w: 230, h: 80, to: 'slope_ridge' },
-      { label: '⚫ Extreme Slope ▾', x: 1200, y: 180, w: 230, h: 80, to: 'slope_extreme' },
-      { label: '❄️ Hidden Valley ▾', x: 1520, y: 260, w: 220, h: 80, to: 'slope_hidden', secret: 'buried_cache' },
+      { label: '🟢 Beginner Hill ▾', x: 180,  y: 240, w: 230, h: 80, to: 'slope_beginner', route: 'slope_beginner', grade: '🟢 Easy' },
+      { label: '🌲 Forest Slope ▾',  x: 520,  y: 180, w: 230, h: 80, to: 'slope_forest', route: 'slope_forest', grade: '🔵 Medium' },
+      { label: '🏔️ Mountain Ridge ▾', x: 860, y: 150, w: 230, h: 80, to: 'slope_ridge', route: 'slope_ridge', grade: '🔴 Hard' },
+      { label: '⚫ Extreme Slope ▾', x: 1200, y: 180, w: 230, h: 80, to: 'slope_extreme', route: 'slope_extreme', grade: '⚫ Expert' },
+      { label: '❄️ Hidden Valley ▾', x: 1520, y: 260, w: 220, h: 80, to: 'slope_hidden', route: 'slope_hidden', grade: '❄️ Secret', secret: 'buried_cache' },
       { label: 'Gondola Down ▾',    x: 820,  y: 1090, w: 200, h: 60, to: 'ski_base', spawn: { x: 860, y: 420 } },
     ],
     props: [

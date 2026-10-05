@@ -15,7 +15,7 @@ export const INTERACTIONS = {
       title: '⛲ Frozen Fountain', text: 'Frozen mid-splash, which is either beautiful or a plumbing emergency. Coins glitter under the ice.' },
     { id: 'plaza_board', label: 'Notice Board', icon: '📋', x: 1080, y: 790, w: 110, h: 70, color: 0x8c5a3a,
       title: '📋 Notice Board',
-      text: 'WELCOME TO ANCHORS WORLD\n\nThe paths west and east are open again. Travellers report strange marks in the ice caves and a light in the old lighthouse.\n\nFound something odd? Press E on it.' },
+      text: 'WELCOME TO ANCHORS WORLD\n\nThe paths west and east are open again. Travellers report strange marks in the ice caves and a light in the old lighthouse.\n\n🎿 ANCHOR PEAK IS OPEN. Take the Mountain Pass to the ski base, ride the gondola, and sled a route back down into the world.\n\nFound something odd? Press E on it.' },
     { id: 'plaza_lamp', label: 'Lamp Post', icon: '🏮', x: 1150, y: 930, w: 44, h: 80, color: 0x34506b,
       title: '🏮 Lamp Post', text: 'A warm little flame behind frosted glass. Something glitters on the cross-bar above you.' },
   ],
@@ -89,6 +89,14 @@ export const INTERACTIONS = {
       title: '📋 Harbour Notice', text: 'BOATS: none today.\nWEATHER: snow.\nLIGHTHOUSE: keeper away — do not touch the lamp.\n\n"do not" has been underlined twice, which is practically an invitation.' },
   ],
 
+  ski_lodge: [
+    { id: 'lodge_board', label: 'Route Board', icon: '🎿', x: 180, y: 330, w: 130, h: 90, color: 0x8c5a3a,
+      title: '🎿 Route Board',
+      text: 'ANCHOR PEAK — FIVE ROUTES\n\n🟢 Beginner Hill — wide and forgiving, ends back at the base\n🔵 Forest Slope — tight through the pines, ends in the Deep Forest\n🔴 Mountain Ridge — long sweeping bends, ends on the Pass\n⚫ Extreme Slope — steep and mean, ends on the Frozen Lake\n❄️ ??? — the board has a fifth line, scratched out\n\nRide the gondola, pick a gate, press S to push off.' },
+    { id: 'lodge_cocoa', label: 'Cocoa Pot', icon: '☕', x: 620, y: 330, w: 110, h: 80, color: 0xb5703f,
+      title: '☕ Cocoa Pot', text: 'Kept hot all day for anyone coming off the mountain. Somebody has written "ONE CUP EACH" on the lid and been roundly ignored.' },
+  ],
+
   lighthouse: [
     { id: 'light_stairs', label: 'Spiral Stairs', icon: '🌀', x: 700, y: 180, w: 110, h: 90, color: 0x5e6f7f,
       title: '🌀 Spiral Stairs', text: 'They go down a very long way. Counting them is a mistake you only make once.' },
@@ -104,7 +112,7 @@ export const INTERACTIONS = {
     { id: 'pass_view', label: 'Viewpoint', icon: '🔭', x: 1180, y: 740, w: 110, h: 80, color: 0x3d5a80,
       title: '🔭 Viewpoint', text: 'From up here you can see the whole world at once: the lake, the harbour lights, the plaza, and the forest going on forever.' },
     { id: 'pass_sign', label: 'Signpost', icon: '🪧', x: 620, y: 700, w: 120, h: 70, color: 0x6b4428,
-      title: '🪧 Signpost', text: '▾ FROZEN LAKE\n◂ ICE CAVES\n▸ OLD OBSERVATORY\n\nA fourth arm has snapped off and lies in the snow, pointing nowhere.' },
+      title: '🪧 Signpost', text: '▾ FROZEN LAKE\n◂ ICE CAVES\n▸ OLD OBSERVATORY\n▸ ANCHOR PEAK — SKI BASE\n\nThe arm for the peak is newer than the others, and somebody has carved a tiny sled under it.' },
     { id: 'cairn_1', label: 'Fallen Cairn', icon: '🪨', x: 420, y: 560, w: 80, h: 70, color: 0x8a9aa6, secret: 'cairn_road', clue: 'cairn_1',
       title: '🪨 Fallen Cairn', text: 'You stack the stones back up, biggest first. It takes a while and your gloves are now soaking.' },
     { id: 'cairn_2', label: 'Fallen Cairn', icon: '🪨', x: 760, y: 400, w: 80, h: 70, color: 0x8a9aa6, secret: 'cairn_road', clue: 'cairn_2',

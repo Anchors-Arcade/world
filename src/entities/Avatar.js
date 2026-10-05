@@ -38,6 +38,22 @@ export class Avatar {
   get x() { return this.hitbox.x; }
   get y() { return this.hitbox.y; }
 
+  // Teleport the avatar. Everything visible (body layers, shadow, name, bubble) is positioned from the hitbox in
+  // update(), so moving the hitbox moves the whole penguin. The physics body is moved by hand rather than through
+  // body.reset(), because the ski lift and the sled deliberately run with the body DISABLED while they drive the
+  // transform themselves — reset() would switch it back on and the player would start colliding mid-ride.
+  setPosition(x, y) {
+    const h = this.hitbox, b = h.body;
+    h.setPosition(x, y);
+    if (b) {
+      b.stop();
+      b.position.set(x - b.halfWidth, y - b.halfHeight);
+      b.prev.copy(b.position);
+      if (b.prevFrame) b.prevFrame.copy(b.position);
+    }
+    return this;
+  }
+
   setOutfit(data) {
     const d = (this.data = normalizeAvatar(data));
     const [sx, sy] = BODY_TYPES[d.bodyType];
