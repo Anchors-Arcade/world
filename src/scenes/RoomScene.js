@@ -1,4 +1,5 @@
 import { ROOMS } from '../maps/rooms.js';
+import { skyTexture, mountainTextures, decorTextures, buildingTexture } from '../utils/worldArt.js';
 import { Avatar } from '../entities/Avatar.js';
 import { toast } from '../ui/hud.js';
 import { RemotePlayers } from '../multiplayer/RemotePlayers.js';
@@ -52,7 +53,8 @@ export class RoomScene extends Phaser.Scene {
     this.physics.add.collider(this.player.hitbox, this.walls);
 
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, room.w, room.h).startFollow(this.player.hitbox, true, 0.12, 0.12);
+    this.setupView(room);
+    cam.startFollow(this.player.hitbox, true, 0.12, 0.12);
 
     if (room.sign) this.addSign(room);
     this.addAmbience(room);                                 // Phase 9: aurora, weather, cave haze, warm light
@@ -172,6 +174,58 @@ export class RoomScene extends Phaser.Scene {
   // ---------- world building ----------
   // Phase 9: floor + trodden paths + a per-room colour wash, so every place reads differently at a glance.
   // `paths: [[x, y, w, h]]` is optional room data; a snow room with none falls back to the Phase 1 plaza paths.
+  // ---------- full-screen view ----------
+  // The camera ZOOMS to cover the whole window (never letterboxes), so there is no empty/black area at any window size.
+  // Outdoor rooms get an extended border (mountains to the north, snowy margins elsewhere) that the camera may look at
+  // but the player cannot walk into (physics bounds stay the room's size).
+  setupView(room) {
+    const outdoor = !room.indoor && room.type !== 'home' && room.floor !== 'cave' && !room.vignette && room.mountains !== false;
+    const T = outdoor ? 380 : 0, M = outdoor ? 170 : 0;
+    this.bounds = { x: -M, y: -T, w: room.w + M * 2, h: room.h + T + M }; this.hasBackdrop = outdoor;
+    if (outdoor) this.addBackdrop(room, this.bounds, M);
+    this.fitView();
+    this.cameras.main.setBounds(this.bounds.x, this.bounds.y, this.bounds.w, this.bounds.h);
+  }
+
+  fitView() {
+    const cam = this.cameras.main, B = this.bounds, W = this.scale.width, H = this.scale.height;
+    const z = Math.min(4, Math.max(1, W / B.w, H / B.h));
+    cam.setZoom(z);
+    // screen-space (scrollFactor 0) objects are scaled about the screen centre by the zoom: this is the rectangle they must cover
+    this.view = { x: W / 2 - W / (2 * z), y: H / 2 - H / (2 * z), w: W / z, h: H / z, z };
+  }
+
+  addBackdrop(room, B, M) {
+    decorTextures(this);
+    const sky = skyTexture(this, room.sky ?? 0x14314f), [far, mid, near] = mountainTextures(this);
+    this.add.image(B.x, B.y, sky).setOrigin(0).setDisplaySize(B.w, -B.y + 8).setDepth(-1200);
+    // snowy margin around the playable area (the map itself is drawn over it)
+    this.add.tileSprite(B.x, 0, B.w, B.y + B.h > 0 ? B.h + B.y : B.h, 'snow').setOrigin(0).setDepth(-1002);
+    if (room.stars) {                                                                  // stars live in the sky, above the mountains
+      const g = this.add.graphics().setDepth(-1195).setScrollFactor(0.1, 1);
+      for (let i = 0; i < 70; i++) { g.fillStyle(0xffffff, 0.25 + Math.random() * 0.6); g.fillCircle(B.x + Math.random() * (B.w + 300), B.y + Math.random() * -B.y * 0.75, Math.random() * 1.6 + 0.5); }
+    }
+    [[far, 0.18, -1190], [mid, 0.34, -1180], [near, 0.5, -1170]].forEach(([k, sx, d]) =>
+      this.add.image(B.x * (1 + sx), 8, k).setOrigin(0, 1).setScale(2).setScrollFactor(sx, 1).setDepth(d));
+    // low-cost scenery in the margins: fences (with gaps for exits), snowbanks, rocks, a few extra pines
+    const r = (() => { let a = room.w + room.h; return () => ((a = (a * 16807) % 2147483647) / 2147483647); })();
+    const gaps = (room.portals || []).map((p) => [p.x - 50, p.x + p.w + 50, p.y - 50, p.y + p.h + 50]);
+    const free = (x, y) => !gaps.some(([a, b, c, d]) => x > a && x < b && y > c && y < d);
+    const fence = (x, y, len, depth) => { if (free(x + len / 2, y)) this.add.tileSprite(x, y, len, 44, 'deco_fence').setOrigin(0, 1).setDepth(depth); };
+    for (let x = 0; x < room.w; x += 256) { fence(x, room.h + 30, 256, room.h + 30); }                          // south fence
+    for (let y = 0; y < room.h; y += 256) { fence(-34, y + 256, 64, y + 256 + 1); fence(room.w - 30, y + 256, 64, y + 256 + 1); }
+    for (let i = 0; i < 16; i++) {
+      const edge = i % 4, x = edge === 0 ? -M * 0.2 - r() * M * 0.7 : edge === 1 ? room.w + M * 0.2 + r() * M * 0.7 : r() * room.w, y = edge < 2 ? r() * room.h : room.h + 60 + r() * (M - 80);
+      if (!free(x, y)) continue;
+      this.add.image(x, y, i % 3 ? 'deco_bank' : 'deco_rock').setOrigin(0.5, 0.9).setDepth(y).setScale(0.8 + r() * 0.7).setFlipX(r() > 0.5);
+    }
+    for (let i = 0; i < 14; i++) {
+      const left = i % 2, x = left ? -20 - r() * (M - 40) : room.w + 20 + r() * (M - 40), y = 60 + r() * (room.h + M - 90);
+      if (!free(x, y)) continue;
+      this.add.image(x, y, 'pine').setOrigin(0.5, 0.97).setDepth(y).setScale(0.75 + r() * 0.55).setTint(0xcfe0ea);
+    }
+  }
+
   drawFloor(room) {
     if (room.type === 'home') return;                       // HomeRoom draws the themed floor and walls
     this.add.tileSprite(0, 0, room.w, room.h, room.floor).setOrigin(0).setDepth(-1000);
@@ -194,13 +248,13 @@ export class RoomScene extends Phaser.Scene {
   //   sky, wash, fx ('snow' | 'blizzard' | 'embers' | 'sparkle' | 'dust' | 'none'), aurora, vignette, stars
   addAmbience(room) {
     const calm = this.registry.get('reduceMotion');
-    if (room.stars) {                                       // night sky showing through a window or a cave mouth
+    if (room.stars && !this.hasBackdrop) {                  // night sky showing through a window or a cave mouth
       const g = this.add.graphics().setDepth(-994).setScrollFactor(0.25);
       for (let i = 0; i < 60; i++) { g.fillStyle(0xffffff, 0.25 + Math.random() * 0.6); g.fillCircle(Math.random() * room.w, Math.random() * room.h * 0.5, Math.random() * 1.8 + 0.5); }
     }
     if (room.aurora) {                                      // northern lights: three soft bands, slow drift
       [[0x8ff0b3, 0.18, 120], [0x66e8ff, 0.14, 190], [0xb48cff, 0.12, 260]].forEach(([c, a, y], i) => {
-        const band = this.add.ellipse(room.w / 2, y, room.w * 1.5, 150 + i * 30, c, a).setDepth(-993).setScrollFactor(0.3).setBlendMode(Phaser.BlendModes.ADD);
+        const band = this.add.ellipse(room.w / 2, this.hasBackdrop ? y - 400 : y, room.w * 1.5, 150 + i * 30, c, a).setDepth(this.hasBackdrop ? -1185 : -993).setScrollFactor(0.3, this.hasBackdrop ? 1 : 0.3).setBlendMode(Phaser.BlendModes.ADD);
         if (!calm) this.tweens.add({ targets: band, x: room.w / 2 + (i % 2 ? 90 : -90), scaleY: 1.3, alpha: a * 0.45, duration: 7000 + i * 1800, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
       });
     }
@@ -212,6 +266,7 @@ export class RoomScene extends Phaser.Scene {
     // changes size — rotating a phone, dragging a window, entering or leaving fullscreen. Debounced, so a drag
     // that fires fifty resize events rebuilds once.
     this.onResize = () => {
+      this.fitView();                                       // cover the new window immediately (cheap); heavy rebuilds are debounced
       clearTimeout(this.resizeT);
       this.resizeT = setTimeout(() => {
         if (!this.scene.isActive()) return;
@@ -227,28 +282,28 @@ export class RoomScene extends Phaser.Scene {
 
   drawVignette() {
     const g = this.add.graphics().setDepth(1.9e6).setScrollFactor(0);
-    const w = this.scale.width, h = this.scale.height;
+    const { x: vx, y: vy, w, h } = this.view;                  // zoom-aware screen rectangle
     for (let i = 0; i < 10; i++) {
       const b = 26 * (10 - i) / 3, sx = 30 * (10 - i) / 3;
       g.fillStyle(0x000000, 0.055);
-      g.fillRect(0, 0, w, b); g.fillRect(0, h - b, w, b); g.fillRect(0, 0, sx, h); g.fillRect(w - sx, 0, sx, h);
+      g.fillRect(vx, vy, w, b); g.fillRect(vx, vy + h - b, w, b); g.fillRect(vx, vy, sx, h); g.fillRect(vx + w - sx, vy, sx, h);
     }
     this.vignette = g;
   }
 
   // Weather and floating motes. One emitter, screen-space, so it costs the same in a big room as a small one.
   addWeather(kind) {
-    const w = this.scale.width, h = this.scale.height;
+    const { x: vx, y: vy, w, h } = this.view;
     const conf = {
       snow:     { key: 'flake',   lifespan: 7000, speedY: { min: 30, max: 75 },  speedX: { min: -25, max: 25 }, scale: { min: 0.4, max: 1.2 }, alpha: { min: 0.5, max: 0.95 }, frequency: 90 },
       blizzard: { key: 'flake',   lifespan: 3200, speedY: { min: 90, max: 190 }, speedX: { min: -220, max: -70 }, scale: { min: 0.3, max: 1.1 }, alpha: { min: 0.35, max: 0.9 }, frequency: 26 },
-      embers:   { key: 'sparkle', lifespan: 2600, speedY: { min: -70, max: -24 }, speedX: { min: -16, max: 16 }, scale: { min: 0.1, max: 0.34 }, alpha: { start: 0.9, end: 0 }, frequency: 130, tint: 0xffa63c, y: h },
-      sparkle:  { key: 'sparkle', lifespan: 4200, speedY: { min: -14, max: 14 }, speedX: { min: -14, max: 14 }, scale: { min: 0.08, max: 0.3 }, alpha: { start: 0, end: 0.85 }, frequency: 180, tint: 0xb6e6ff, y: { min: 0, max: h } },
-      dust:     { key: 'flake',   lifespan: 6000, speedY: { min: -10, max: 18 }, speedX: { min: -14, max: 14 }, scale: { min: 0.15, max: 0.4 }, alpha: { min: 0.1, max: 0.3 }, frequency: 220, y: { min: 0, max: h } },
+      embers:   { key: 'sparkle', lifespan: 2600, speedY: { min: -70, max: -24 }, speedX: { min: -16, max: 16 }, scale: { min: 0.1, max: 0.34 }, alpha: { start: 0.9, end: 0 }, frequency: 130, tint: 0xffa63c, y: vy + h },
+      sparkle:  { key: 'sparkle', lifespan: 4200, speedY: { min: -14, max: 14 }, speedX: { min: -14, max: 14 }, scale: { min: 0.08, max: 0.3 }, alpha: { start: 0, end: 0.85 }, frequency: 180, tint: 0xb6e6ff, y: { min: vy, max: vy + h } },
+      dust:     { key: 'flake',   lifespan: 6000, speedY: { min: -10, max: 18 }, speedX: { min: -14, max: 14 }, scale: { min: 0.15, max: 0.4 }, alpha: { min: 0.1, max: 0.3 }, frequency: 220, y: { min: vy, max: vy + h } },
     }[kind];
     if (!conf) return;
-    const { key, y = -10, ...rest } = conf;
-    this.weather = this.add.particles(0, 0, key, { x: { min: 0, max: w }, y, quantity: 1, ...rest })
+    const { key, y = vy - 10, ...rest } = conf;
+    this.weather = this.add.particles(0, 0, key, { x: { min: vx, max: vx + w }, y, quantity: 1, ...rest })
       .setScrollFactor(0).setDepth(2e6);
   }
 
@@ -265,53 +320,15 @@ export class RoomScene extends Phaser.Scene {
   }
 
   addBuilding(b) {
-    const { x, y, w, h } = b, g = this.add.graphics().setDepth(y + h);
-    g.fillStyle(0x16304a, 0.18); g.fillEllipse(x + w / 2, y + h + 4, w + 30, 34);                       // shadow
-    g.fillStyle(b.wall); g.fillRoundedRect(x, y + 44, w, h - 44, 8);                                     // walls
-    g.fillStyle(0x000000, 0.12); g.fillRect(x, y + h - 14, w, 14);
-    g.fillStyle(b.roof); g.fillTriangle(x - 14, y + 50, x + w / 2, y - 8, x + w + 14, y + 50);          // roof
-    g.fillRect(x - 14, y + 40, w + 28, 14);
-    g.fillStyle(0xffffff); g.fillEllipse(x + w / 2, y + 2, w * 0.45, 20); g.fillRoundedRect(x - 18, y + 36, w + 36, 12, 6); // snow cap
-    const winY = y + 84, n = Math.max(2, Math.floor(w / 90));
-    for (let i = 0; i < n; i++) {                                                                       // warm windows
-      const wx = x + (w / (n + 1)) * (i + 1) - 17;
-      if (Math.abs(wx + 17 - (x + w / 2)) < 36) continue;
-      g.fillStyle(0xfff0b0); g.fillRoundedRect(wx, winY, 34, 34, 6); g.lineStyle(3, 0x5a3b22); g.strokeRoundedRect(wx, winY, 34, 34, 6);
-      g.lineBetween(wx + 17, winY, wx + 17, winY + 34); g.lineBetween(wx, winY + 17, wx + 34, winY + 17);
-    }
-    // --- Phase 10: the details that make a building look lived in ---
-    const cx2 = x + w / 2;
-    g.fillStyle(0x7d6a58); g.fillRect(x + w - 54, y + 4, 26, 44);                                     // chimney
-    g.fillStyle(0x5e4e40); g.fillRect(x + w - 58, y, 34, 10);
-    g.fillStyle(0xffffff); g.fillRoundedRect(x + w - 60, y - 5, 38, 9, 4);
-    g.fillStyle(0xffffff, 0.9);                                                                        // icicles under the eaves
-    for (let ix = x - 6; ix < x + w + 6; ix += 17) g.fillTriangle(ix, y + 52, ix + 7, y + 52, ix + 3.5, y + 52 + (6 + ((ix / 17) % 3) * 6));
-    g.fillStyle(0x3a2616); g.fillRoundedRect(cx2 - 34, y + h - 10, 68, 12, 4);                        // door step
-    g.fillStyle(0x5a3b22); g.fillRoundedRect(cx2 - 24, y + h - 62, 48, 62, { tl: 22, tr: 22, bl: 0, br: 0 });  // door
-    g.fillStyle(0x7a5330); g.fillRoundedRect(cx2 - 18, y + h - 56, 36, 50, { tl: 18, tr: 18, bl: 0, br: 0 });
-    g.fillStyle(0xffc247); g.fillCircle(cx2 + 14, y + h - 30, 3);
-    g.fillStyle(0x2f9e5b); g.fillCircle(cx2, y + h - 60, 9);                                           // door wreath
-    g.fillStyle(b.wall); g.fillCircle(cx2, y + h - 60, 4.5);
-    g.fillStyle(0xe8483c); g.fillCircle(cx2 - 5, y + h - 64, 2); g.fillCircle(cx2 + 6, y + h - 57, 2);
-    [cx2 - 40, cx2 + 40].forEach((lx) => {                                                             // porch lanterns
-      g.fillStyle(0x3a3f4b); g.fillRect(lx - 2, y + h - 74, 4, 10);
-      g.fillStyle(0xfff0b0); g.fillRoundedRect(lx - 7, y + h - 66, 14, 16, 4);
-      g.fillStyle(0x3a3f4b); g.fillRect(lx - 8, y + h - 50, 16, 3);
-    });
+    const { x, y, w, h } = b, t = buildingTexture(this, b), cx2 = x + w / 2;
+    this.add.image(x - t.ox, y - t.oy, t.key).setOrigin(0).setDepth(y + h);          // one baked image per building: walls, roof, windows, door, lights, shadow
     const lamp = this.add.ellipse(cx2, y + h - 30, 170, 70, 0xffc247, 0.14).setDepth(-992).setBlendMode(Phaser.BlendModes.ADD);
     if (!this.registry.get('reduceMotion')) {
       this.tweens.add({ targets: lamp, alpha: 0.07, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-      this.add.particles(x + w - 41, y + 2, 'flake', {                                                 // chimney smoke
+      this.add.particles(x + w - 42, y - 6, 'flake', {                                                 // chimney smoke
         lifespan: 2600, speedY: { min: -46, max: -22 }, speedX: { min: -16, max: 16 },
         scale: { start: 0.5, end: 2.1 }, alpha: { start: 0.35, end: 0 }, frequency: 240, quantity: 1, tint: 0xdfe8ef,
       }).setDepth(y + h - 1);
-    }
-    // string lights along the eaves
-    const lights = ['0xffc247', '0xe8483c', '0x6fd08c', '0x5bb6e8'].map((c) => Number(c));
-    for (let i = 0, lx = x + 8; lx < x + w - 6; lx += 26, i++) {
-      const sag = Math.sin((lx - x) / w * Math.PI) * 7;
-      g.fillStyle(0x3a3f4b); g.fillRect(lx, y + 56 + sag, 2, 5);
-      g.fillStyle(lights[i % 4]); g.fillCircle(lx + 1, y + 63 + sag, 4);
     }
     this.add.text(x + w / 2, y + h + 22, b.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 8, y: 3 } })
       .setOrigin(0.5).setDepth(y + h + 2);
@@ -522,6 +539,7 @@ export class RoomScene extends Phaser.Scene {
       else { this.pendingDoor = null; this.target = new Phaser.Math.Vector2(p.worldX, p.worldY); }
       this.stuck = 0;
     });
+    this.input.keyboard.addKey('SPACE', false).on('down', () => !this.editing && !this.uiLocked && !this.leaving && document.activeElement?.tagName !== 'INPUT' && this.player.hop());
     this.keys.E.on('down', () => this.nearDoor && !this.editing && !this.uiLocked && this.enter(this.nearDoor));
   }
 

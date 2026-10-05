@@ -620,3 +620,18 @@ html,body{height:100%;height:100dvh;overscroll-behavior:none;-webkit-tap-highlig
 .drawer footer{background:linear-gradient(180deg,#dff1fb,#cfe8f5);font-weight:700}
 .place{border-radius:18px;transition:transform .12s,box-shadow .12s}
 .place:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 0 #a9d3ea}
+
+/* ---- Phase 11 polish: loading veil, smoother buttons / panels / toasts. All motion respects reduced-motion. ---- */
+.loading-veil{position:fixed;inset:0;z-index:50;display:grid;place-content:center;justify-items:center;gap:16px;pointer-events:auto;
+  background:radial-gradient(ellipse at 50% 40%,#1d4466 0%,#0e2238 70%);transition:opacity .45s ease}
+.loading-veil.gone{opacity:0;pointer-events:none}
+.ld-ring{width:54px;height:54px;border-radius:50%;border:5px solid #ffffff22;border-top-color:var(--gold,#ffc247);animation:ld-spin .9s linear infinite}
+.ld-text{font-weight:700;letter-spacing:.04em;color:#cfe6f6}
+@keyframes ld-spin{to{transform:rotate(360deg)}}
+button{transition:transform .12s ease,filter .12s ease,background-color .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.08)}
+button:not(:disabled):active{transform:translateY(1px) scale(.97)}
+.drawer{transition:opacity .22s ease,transform .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes pop-in{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.dock,.hud-top{transition:opacity .25s ease}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}.ld-ring{animation:none}}

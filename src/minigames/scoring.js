@@ -4,6 +4,7 @@ export const MAX_SCORE = {
   snow_dash: 10000, coin_catcher: 9000, snowball_arena: 9000,                      // mirrors minigames.max_score in phase7.sql
   firefly_catch: 9000, cocoa_rush: 9000, ice_fishing: 9000, crate_stack: 9000,     // ... and in phase10.sql
   cliff_climb: 9000, crystal_echo: 9000, star_link: 9000,
+  slope_sled: 10000, snow_runner: 10000,                                           // ... and in phase11.sql
 };
 export const clampScore = (game, s) => Math.max(0, Math.min(MAX_SCORE[game] ?? 0, Math.round(Number.isFinite(s) ? s : 0)));
 
@@ -58,3 +59,21 @@ export const climbScore = ({ metres, dodged = 0, survived = false }) =>
 // Ice Caves / Observatory — repeat the pattern. Later rounds are worth more, so one long run beats many short ones.
 export const ECHO = { timeMs: 90000, lives: 3, base: 60, perRound: 45, stepMs: 480, minStepMs: 190 };
 export const echoScore = ({ points }) => clampScore('crystal_echo', points);     // both echo games share one ceiling
+
+
+// =====================================================================
+// PHASE 11 — Slope Sled Run + Snow Runner. Same contract: pure functions, clamped, re-validated by the server.
+// =====================================================================
+// Slope Sled Run: ride the lift (~5 s, part of the run clock), then sled 12 000 px down the hill. Coins, gems and air time add up;
+// a faster descent and a clean run add up to 3 300 more.
+export const SLED = { length: 12000, liftLen: 1900, timeLimitMs: 80000, coin: 30, gem: 90, airPts: 80, finishPts: 800, timePts: 2500, parMs: 22000, zeroMs: 70000, crashPenalty: 150, partialPts: 1200 };
+export function sledScore({ timeMs, coins = 0, gems = 0, airs = 0, crashes = 0, finished = true, progress = 1 }) {
+  const loot = coins * SLED.coin + gems * SLED.gem + airs * SLED.airPts;
+  if (!finished) return clampScore('slope_sled', loot + Math.floor(SLED.partialPts * Math.min(1, Math.max(0, progress))));
+  const t = Math.min(1, Math.max(0, (SLED.zeroMs - timeMs) / (SLED.zeroMs - SLED.parMs)));
+  return clampScore('slope_sled', Math.round(loot + SLED.finishPts + SLED.timePts * t - crashes * SLED.crashPenalty));
+}
+
+// Snow Runner: endless. Score = metres run + coins/gems. Speed eases from 14 to 36 m/s; two hits end the run.
+export const RUNNER = { startSpeed: 14, maxSpeed: 36, rampSecs: 50, lives: 2, jumpV: 640, gravity: 1900, coinPts: 12, gemPts: 60, cap: 9500 };
+export const runnerScore = ({ meters = 0, coins = 0, gems = 0 }) => clampScore('snow_runner', Math.floor(meters) + coins * RUNNER.coinPts + gems * RUNNER.gemPts);

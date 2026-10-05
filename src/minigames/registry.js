@@ -25,6 +25,21 @@ export const GAMES = {
     colors: { a: '#ff7a8a', b: '#b8334a' }, scoreLabel: 'Score', fallbackReward: 110, rewardMinMs: 20000,
   },
 
+  slope_sled: {
+    id: 'slope_sled', scene: 'SledRun', name: 'Slope Sled Run', emoji: '🛷', icon: '🏔️',
+    tagline: 'Ski lift up, sled down the mountain.',
+    description: 'Ride the ski lift to the summit, then race down the hill on your sled. Steer between lanes, launch off snow ramps, grab coins and gems, and dodge rocks, pines and snowmen!',
+    controls: '↑ ↓ change lane · SPACE jump · → tuck (faster) · ← brake · or swipe up/down & tap',
+    colors: { a: '#7cc4f2', b: '#2a5c8f' }, scoreLabel: 'Score', fallbackReward: 110, rewardMinMs: 20000,
+  },
+  snow_runner: {
+    id: 'snow_runner', scene: 'SnowRunner', name: 'Snow Runner', emoji: '🏃', icon: '❄️',
+    tagline: 'Run forever. Faster every second.',
+    description: 'Sprint down the icy causeway between the peaks. Switch lanes, jump the ice barriers, dodge crates and snowmen and collect coins. You get two hits — then the run is over. How far can you go?',
+    controls: '← → change lane · ↑ / SPACE jump · or swipe & tap',
+    colors: { a: '#8ff0b3', b: '#1d4f7a' }, scoreLabel: 'Score', fallbackReward: 110, rewardMinMs: 20000,
+  },
+
   // ---- Phase 10: world activities. `world: true` means it is launched from an object out in the world and
   // returns you there afterwards instead of opening the Arcade. `room` is where its object stands.
   firefly_catch: {

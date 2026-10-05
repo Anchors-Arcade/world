@@ -187,7 +187,7 @@ export class RoomEditor {
     this.grid.destroy(); this.gfx.destroy(); this.el.remove(); this.ui.classList.remove('editing');
     this.home.enableColliders(true);
     const cam = s.cameras.main;
-    cam.setZoom(1); cam.setBounds(0, 0, s.room.w, s.room.h); cam.startFollow(s.player.hitbox, true, 0.12, 0.12);
+    s.fitView(); cam.setBounds(s.bounds.x, s.bounds.y, s.bounds.w, s.bounds.h); cam.startFollow(s.player.hitbox, true, 0.12, 0.12);
     this.onClose?.();
   }
 

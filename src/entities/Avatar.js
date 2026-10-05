@@ -2,14 +2,19 @@ import { SPEED } from '../config/game.js';
 import { SLOTS, LAYOUT, BODY_TYPES, normalizeAvatar } from '../shops/items.js';
 import { EMOTE_BY_KEY, EMOTE_MS } from '../social/emotes.js';
 
+const INTERP_MS = 140;                                   // remote players are drawn this far in the past (>= one 110 ms packet interval)
+
 // Layered avatar. Draw order (back -> front):
 // back, feet, body(tinted), pants, belly, shirt, accessory, eyes, beak, face, hat, hand.
 // Every cosmetic is a separate sprite, so outfits are just texture keys. `remote` avatars have no physics
 // and glide toward network targets instead of being driven by input.
 export class Avatar {
-  constructor(scene, x, y, data, name, { remote = false } = {}) {
+  constructor(scene, x, y, data, name, { remote = false, direct = false } = {}) {
     this.scene = scene; this.dir = 'down'; this.moving = false; this.remote = remote;
     this.tx = x; this.ty = y; this.remoteMoving = false; this._dir = null;
+    this.direct = !!direct;                              // minigame avatars are positioned by the game itself (no network smoothing)
+    this.snaps = []; this.phase = 0; this.blend = 0; this.turn = 0; this.hopT = 0; this.hopped = false;   // animation state
+    this.gs = 1; this.animRate = 1; this.sx = 1; this.sy = 1; this.bodyTop = -50; this.hatY = -57;
     this.fx = { dy: 0, rot: 0, sy: 1 };                 // emote body offsets, tweened; update() adds them on top of walking
     this.bubble = null; this.bubbleTimer = null; this.emoteIcon = null; this.emoteTimer = null; this.emoteTweens = [];
 
@@ -27,6 +32,7 @@ export class Avatar {
     this.label = scene.add.text(x, y, name, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#fff', stroke: '#16304a', strokeThickness: 4 })
       .setOrigin(0.5, 1).setDepth(1e6);
     this.setOutfit(data);
+    if (remote && !direct) this.snaps.push({ t: performance.now() - 1000, x, y, d: 'down', m: false });
   }
 
   get x() { return this.hitbox.x; }
@@ -35,13 +41,16 @@ export class Avatar {
   setOutfit(data) {
     const d = (this.data = normalizeAvatar(data));
     const [sx, sy] = BODY_TYPES[d.bodyType];
+    this.sx = sx; this.sy = sy;
     this.body.setTint(Phaser.Display.Color.HexStringToColor(d.color).color).setScale(sx, sy).setY(-2 - 24 * sy);
-    this.headDy = -48 * (sy - 1);                       // heads move with the body's height
+    this.bodyTop = -2 - 48 * sy;                        // top of the head; heads, hats and faces hang from this
+    this.headDy = -48 * (sy - 1);
     for (const slot of SLOTS) {
       if (slot === 'shoes') continue;
       const spr = this.s[slot];
       if (d[slot]) spr.setTexture(d[slot]).setVisible(true); else spr.setVisible(false);
     }
+    this.hatY = this.bodyTop + 8 - this.s.hat.height / 2;   // brim sits just on the head, clear of the eyes, whatever the hat's height
     const shoe = d.shoes || 'av_foot';
     this.feetL.setTexture(shoe); this.feetR.setTexture(shoe);
     this._dir = null;                                    // force a layout refresh
@@ -55,38 +64,89 @@ export class Avatar {
     if (this.moving) this.dir = Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? 'left' : 'right') : (vy < 0 ? 'up' : 'down');
   }
 
-  setRemoteTarget(x, y, dir, moving) { this.tx = x; this.ty = y; if (dir) this.dir = dir; this.remoteMoving = !!moving; }
+  // Network snapshots go into a short buffer and are replayed ~INTERP_MS late, so motion is interpolated between two real
+  // positions instead of chasing the latest packet (no teleporting, no rubber-banding, no jitter from uneven arrival).
+  setRemoteTarget(x, y, dir, moving, hop = false) {
+    if (dir) this.dir = dir;
+    this.remoteMoving = !!moving;
+    if (hop) this.hop();
+    if (this.direct) return;
+    const b = this.snaps; b.push({ t: performance.now(), x, y, d: dir || this.dir, m: !!moving });
+    if (b.length > 10) b.shift();
+  }
+
+  hop() { if (this.hopT <= 0) { this.hopT = 1; this.hopped = true; } }
+
+  stepRemote(dt) {
+    const b = this.snaps, h = this.hitbox;
+    if (this.direct) { this.moving = this.remoteMoving; return; }
+    const now = performance.now() - INTERP_MS;
+    let k = 0; while (k < b.length && b[k].t <= now) k++;           // first snapshot still in the future
+    let px, py, moving = false;
+    if (k === 0) { px = b[0].x; py = b[0].y; }                       // nothing old enough yet: hold the first one
+    else if (k === b.length) { const l = b[k - 1]; px = l.x; py = l.y; this.dir = l.d; moving = l.m; }   // caught up: hold the last
+    else {
+      const p = b[k - 1], n = b[k], a = Math.min(1, Math.max(0, (now - p.t) / Math.max(1, n.t - p.t))), dist = Math.hypot(n.x - p.x, n.y - p.y);
+      if (dist > 500) { px = n.x; py = n.y; h.x = px; h.y = py; }    // a real teleport (door, respawn): do not slide across the map
+      else { px = p.x + (n.x - p.x) * a; py = p.y + (n.y - p.y) * a; }
+      this.dir = n.d; moving = dist > 1.5 || n.m;
+      if (k > 1) b.splice(0, k - 1);
+    }
+    const e = 1 - Math.exp(-28 * dt);                                  // tiny extra smoothing hides uneven packet timing
+    const dx = px - h.x, dy = py - h.y; h.x += dx * e; h.y += dy * e;
+    this.moving = moving || Math.hypot(dx, dy) > 1.2;
+  }
 
   update(time, reduceMotion = false, delta = 16) {
-    if (this.remote) {                                    // exponential smoothing: no teleporting between packets
-      const dx = this.tx - this.hitbox.x, dy = this.ty - this.hitbox.y;
-      if (Math.hypot(dx, dy) > 500) { this.hitbox.x = this.tx; this.hitbox.y = this.ty; }
-      else { const k = 1 - Math.exp(-14 * (delta / 1000)); this.hitbox.x += dx * k; this.hitbox.y += dy * k; }
-      this.moving = this.remoteMoving || Math.hypot(dx, dy) > 2;
+    const dt = Math.min(delta, 60) / 1000;
+    if (this.remote) this.stepRemote(dt);
+    const calm = reduceMotion, d = this.dir;
+    // blend 0..1 ramps in/out so starting and stopping ease instead of snapping between idle and walk
+    this.blend += ((this.moving ? 1 : 0) - this.blend) * (1 - Math.exp(-(this.moving ? 16 : 10) * dt));
+    this.phase += dt * 14 * this.animRate * this.blend;
+    const walk = calm ? 0 : this.blend, sn = Math.sin(this.phase);
+    const idle = calm ? 0 : Math.sin(time * 0.0028) * (1 - this.blend);               // slow breathing
+    const side = d === 'left' ? -1 : d === 'right' ? 1 : 0;
+    this.turn = Math.max(0, this.turn - dt * 6);                                        // quick squash when turning round
+    let hopY = 0, hopSq = 1;
+    if (this.hopT > 0) {
+      this.hopT = Math.max(0, this.hopT - dt / 0.46);
+      const u = 1 - this.hopT; hopY = -Math.sin(Math.PI * u) * 26; hopSq = 1 + Math.sin(Math.PI * u) * 0.1 - (u < 0.12 || u > 0.88 ? 0.1 : 0);
     }
-    const { x, y } = this.hitbox, t = time, d = this.dir;
-    const bob = this.moving && !reduceMotion ? -Math.abs(Math.sin(t * 0.016)) * 4 : 0;
-    const sway = this.moving && !reduceMotion ? Math.sin(t * 0.016) * 0.09 : 0;
-    this.root.setPosition(x, y + bob + this.fx.dy).setRotation(sway + this.fx.rot).setScale(1, this.fx.sy).setDepth(y);
-    this.shadow.setPosition(x, y - 2).setDepth(y - 1);
+    const { x, y } = this.hitbox;
+    const bob = -Math.abs(sn) * 4 * walk;
+    const stretch = 1 + idle * 0.022 + Math.cos(this.phase * 2) * 0.03 * walk;
+    this.root.setPosition(x, y + bob + this.fx.dy + hopY)
+      .setRotation(sn * 0.08 * walk + side * 0.05 * walk + this.fx.rot)
+      .setScale(this.gs * (1 - 0.16 * this.turn) / Math.sqrt(stretch), this.gs * this.fx.sy * stretch * hopSq).setDepth(y);
+    this.shadow.setPosition(x, y - 2).setDepth(y - 1).setScale(1 + (bob + hopY) * 0.012);
     this.label.setPosition(x, y - 78 + (this.headDy || 0));
     if (this.emoteIcon) this.emoteIcon.setPosition(x, this.label.y - 20);
     if (this.bubble) this.bubble.setPosition(x, this.label.y - 20 - (this.emoteIcon ? 44 : 0));
-    const step = this.moving && !reduceMotion ? Math.sin(t * 0.016) * 4 : 0;
-    this.feetL.setPosition(-8, -4 - step); this.feetR.setPosition(8, -4 + step);
+    const sx = this.sx, lift = 4 * walk;                                                  // feet: alternate lift + fore/aft swing
+    this.feetL.setPosition(-8 * sx + side * sn * 3 * walk, -4 - Math.max(0, sn) * lift);
+    this.feetR.setPosition(8 * sx - side * sn * 3 * walk, -4 - Math.max(0, -sn) * lift);
 
     if (d === this._dir) return;                          // layout only changes when facing changes
+    if (this._dir !== null && !calm) this.turn = 1;
     this._dir = d;
-    const back = d === 'up', side = d === 'left' ? -1 : d === 'right' ? 1 : 0, hy = this.headDy || 0, s = this.s;
-    s.back.setPosition(LAYOUT.back.x, LAYOUT.back.y);
-    s.pants.setPosition(0, LAYOUT.pants.y); s.shirt.setPosition(0, LAYOUT.shirt.y);
-    this.belly.setPosition(side * 3, -20).setVisible(!back);
-    s.accessory.setPosition(0, LAYOUT.accessory.y + hy * 0.3);
-    s.eyes.setPosition(side * 8, LAYOUT.eyes.y + hy).setVisible(!back);
-    this.beak.setPosition(side * 8, -28 + hy).setVisible(!back);
-    s.face.setPosition(side * 8, LAYOUT.face.y + hy).setVisible(!back && !!this.data.face);
-    s.hat.setPosition(side * 2, LAYOUT.hat.y + hy);
-    s.hand.setPosition(side === -1 ? -LAYOUT.hand.x : LAYOUT.hand.x, LAYOUT.hand.y);
+    this.layout(d);
+  }
+
+  // Every layer is placed relative to the BODY (scaled by the body type), so clothes follow tall / chubby bodies instead of floating.
+  layout(d) {
+    const back = d === 'up', side = d === 'left' ? -1 : d === 'right' ? 1 : 0, hy = this.headDy || 0, s = this.s, { sx, sy } = this;
+    const by = (y) => -2 + (y + 2) * sy, narrow = side ? 0.9 : 1;                         // by(): body-relative y; narrow: side-on view
+    s.back.setPosition(-side * 7 + LAYOUT.back.x, by(LAYOUT.back.y)).setScale(sx, sy);
+    s.pants.setPosition(side * 3, by(LAYOUT.pants.y)).setScale(sx * narrow, sy);
+    s.shirt.setPosition(side * 3, by(LAYOUT.shirt.y)).setScale(sx * narrow, sy);
+    this.belly.setPosition(side * 3, by(-20)).setScale(sx, sy).setVisible(!back);
+    s.accessory.setPosition(side * 2, by(LAYOUT.accessory.y)).setScale(sx * narrow, sy);
+    s.eyes.setPosition(side * 8 * sx, LAYOUT.eyes.y + hy).setVisible(!back);
+    this.beak.setPosition(side * 8 * sx, -28 + hy).setVisible(!back);
+    s.face.setPosition(side * 8 * sx, LAYOUT.face.y + hy).setVisible(!back && !!this.data.face);
+    s.hat.setPosition(side * 3, this.hatY);
+    s.hand.setPosition((side === -1 ? -1 : 1) * (22 * sx + 5), by(LAYOUT.hand.y));
     if (back) this.root.bringToTop(s.back); else this.root.sendToBack(s.back);
   }
 

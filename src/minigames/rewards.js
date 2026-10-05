@@ -4,6 +4,9 @@ export const FALLBACK_TIERS = {   // used only when the overview RPC is unavaila
   snow_dash:      [{ min: 1, coins: 10 }, { min: 3000, coins: 25 }, { min: 5500, coins: 50 }, { min: 7500, coins: 80 }, { min: 9000, coins: 125 }],
   coin_catcher:   [{ min: 1, coins: 8 }, { min: 800, coins: 20 }, { min: 1800, coins: 40 }, { min: 3000, coins: 70 }, { min: 4500, coins: 110 }],
   snowball_arena: [{ min: 1, coins: 8 }, { min: 500, coins: 20 }, { min: 1200, coins: 40 }, { min: 2200, coins: 70 }, { min: 3500, coins: 110 }],
+  // Phase 11 (mirrors phase11.sql)
+  slope_sled:     [{ min: 1, coins: 8 }, { min: 1000, coins: 20 }, { min: 2500, coins: 40 }, { min: 4000, coins: 70 }, { min: 5500, coins: 110 }],
+  snow_runner:    [{ min: 1, coins: 8 }, { min: 800, coins: 20 }, { min: 1800, coins: 40 }, { min: 3200, coins: 70 }, { min: 5000, coins: 110 }],
   // Phase 10 world activities (mirrors phase10.sql)
   firefly_catch:  [{ min: 1, coins: 8 }, { min: 600, coins: 20 }, { min: 1400, coins: 40 }, { min: 2400, coins: 70 }, { min: 3600, coins: 110 }],
   cocoa_rush:     [{ min: 1, coins: 8 }, { min: 600, coins: 20 }, { min: 1400, coins: 40 }, { min: 2400, coins: 70 }, { min: 3600, coins: 110 }],

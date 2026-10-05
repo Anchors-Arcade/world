@@ -61,14 +61,14 @@ export class MinigameScene extends Phaser.Scene {
   fit() {
     const cam = this.cameras.main;
     const z = Math.min(this.scale.width / W, this.scale.height / H);
-    cam.setZoom(Phaser.Math.Clamp(z, 0.3, 2));
+    cam.setZoom(Phaser.Math.Clamp(z, 0.3, 6));      // no upper cap below 6x: a cap leaves empty bars on big/wide monitors
     cam.centerOn(W / 2, H / 2);
   }
   shake(ms = 120, power = 0.006) { if (!this.reduce) this.cameras.main.shake(ms, power); }
   flash(r, g, b) { if (!this.reduce) this.cameras.main.flash(120, r, g, b); }
 
   makeAvatar(x, y) {
-    const av = new Avatar(this, x, y, this.profile.avatar_data, '', { remote: true });     // the player's own outfit, no physics needed
+    const av = new Avatar(this, x, y, this.profile.avatar_data, '', { remote: true, direct: true });     // the player's own outfit, no physics needed
     av.label.setVisible(false);
     return av;
   }

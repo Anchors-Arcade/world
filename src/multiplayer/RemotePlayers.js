@@ -41,7 +41,7 @@ export class RemotePlayers {
     const r = m && this.map.get(m.id);
     if (!r || !Number.isFinite(m.x) || !Number.isFinite(m.y)) return;
     const room = this.scene.room;
-    r.av.setRemoteTarget(Math.min(Math.max(m.x, 0), room.w), Math.min(Math.max(m.y, 0), room.h), m.d, m.m === 1);
+    r.av.setRemoteTarget(Math.min(Math.max(m.x, 0), room.w), Math.min(Math.max(m.y, 0), room.h), m.d, m.m === 1, m.j === 1);
   }
 
   // ---------- Phase 6: emotes + chat bubbles ----------
@@ -88,8 +88,10 @@ export class RemotePlayers {
     this.acc += delta;
     if (this.acc < SEND_MS) return;
     const p = this.scene.player, x = Math.round(p.x), y = Math.round(p.y), m = p.moving ? 1 : 0, l = this.last;
-    if (x !== l.x || y !== l.y || m !== l.m || p.dir !== l.d) {          // only send on change; last packet always has m=0
-      this.net.sendPos({ id: this.profile.id, x, y, d: p.dir, m });
+    const hop = p.hopped;
+    if (x !== l.x || y !== l.y || m !== l.m || p.dir !== l.d || hop) {   // only send on change; last packet always has m=0
+      p.hopped = false;
+      this.net.sendPos(hop ? { id: this.profile.id, x, y, d: p.dir, m, j: 1 } : { id: this.profile.id, x, y, d: p.dir, m });
       this.last = { x, y, m, d: p.dir }; this.acc = 0;
     }
   }

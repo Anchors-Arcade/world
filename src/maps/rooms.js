@@ -76,10 +76,12 @@ export const ROOMS = {
     sky: 0x191636, fx: 'sparkle', vignette: true,
     props: [{ type: 'glow', x: 550, y: 300, r: 220, color: 0xff6fae }],
     cabinets: [
-      { label: 'Snow Dash',      icon: '🏁', x: 90,  y: 160, w: 150, h: 150, color: 0x3f8fc9, action: 'arcade:snow_dash' },
-      { label: 'Coin Catcher',   icon: '🪙', x: 290, y: 160, w: 150, h: 150, color: 0xe9a23b, action: 'arcade:coin_catcher' },
-      { label: 'Snowball Arena', icon: '☃️', x: 490, y: 160, w: 150, h: 150, color: 0xd9546a, action: 'arcade:snowball_arena' },
-      { label: 'Leaderboards',   icon: '🏆', x: 720, y: 160, w: 290, h: 150, color: 0x6a4fb3, action: 'arcade:leaderboard', board: true, verb: 'view' },
+      { label: 'Snow Dash',      icon: '🏁', x: 40,  y: 160, w: 140, h: 150, color: 0x3f8fc9, action: 'arcade:snow_dash' },
+      { label: 'Coin Catcher',   icon: '🪙', x: 200, y: 160, w: 140, h: 150, color: 0xe9a23b, action: 'arcade:coin_catcher' },
+      { label: 'Snowball Arena', icon: '☃️', x: 360, y: 160, w: 140, h: 150, color: 0xd9546a, action: 'arcade:snowball_arena' },
+      { label: 'Slope Sled Run', icon: '🛷', x: 520, y: 160, w: 140, h: 150, color: 0x4f9fd8, action: 'arcade:slope_sled' },
+      { label: 'Snow Runner',    icon: '🏃', x: 680, y: 160, w: 140, h: 150, color: 0x2f9e7b, action: 'arcade:snow_runner' },
+      { label: 'Leaderboards',   icon: '🏆', x: 840, y: 160, w: 220, h: 150, color: 0x6a4fb3, action: 'arcade:leaderboard', board: true, verb: 'view' },
     ],
     blocks: [
       { x: 60,  y: 440, w: 130, h: 80, label: '🧸', color: 0x6a4fb3 }, { x: 910, y: 440, w: 130, h: 80, label: '🎈', color: 0x6a4fb3 },

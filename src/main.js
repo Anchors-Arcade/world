@@ -35,6 +35,9 @@ function startGame(profile) {
 
   game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', backgroundColor: '#0e2238',
+    render: { powerPreference: 'high-performance', antialias: true, batchSize: 4096, clearBeforeRender: true },   // one fast WebGL context; the camera zooms to fill the window
+    fps: { target: 60, smoothStep: true },
+    disableContextMenu: true,
     scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' },
     physics: { default: 'arcade', arcade: { debug: false } },
     scene: [BootScene, RoomScene, ...MINIGAME_SCENES],       // Phase 7: minigames are registered scenes, launched on demand by MinigameManager
@@ -45,6 +48,8 @@ function startGame(profile) {
     } },
   });
 
+  const veil = document.createElement('div'); veil.className = 'loading-veil'; veil.innerHTML = '<div class="ld-ring"></div><div class="ld-text">Entering Anchors World…</div>'; ui.appendChild(veil);
+  game.events.once('room-entered', () => { veil.classList.add('gone'); setTimeout(() => veil.remove(), 500); });
   hud = mountHUD(ui, profile, { onAction });
   wardrobe = createWardrobe(ui, { game, profile, onCoins: (n) => hud.setCoins(n) });
   shop = createShop(ui, { game, profile, wardrobe, onCoins: (n) => hud.setCoins(n) });
