@@ -68,6 +68,9 @@ t('interactive objects are inside their room and none of them is an NPC', () => 
     for (const o of list) {
       assert(o.x >= 0 && o.x + o.w <= r.w && o.y >= 0 && o.y + o.h <= r.h, `${o.id} outside ${room}`);
       assert(o.title && o.text, `${o.id} needs something to say`);
+      // Phase 17: one deliberate exception, asked for by name — a hidden character in a secret room, with no
+      // shop, no quest and no wandering. Everything else must still not be an NPC.
+      if (o.id === 'jonas_mc_fort') { assert.equal(room, 'crystal_hollow', 'the hidden character stays hidden'); continue; }
       assert(!/npc|villager|shopkeeper|penguin keeper/i.test(o.id + o.label), `${o.id} looks like an NPC`);
     }
   }

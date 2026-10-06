@@ -533,7 +533,33 @@ export const SPRITES = {
       g.lineStyle(3, 0x0a1cf0, 1);
       g.beginPath(); g.moveTo(p0[0].x, p0[0].y); g.lineTo(p0[1].x, p0[1].y); g.lineTo(p0[2].x, p0[2].y); g.closePath(); g.strokePath();
     }
+    // Phase 16: the keypad, bolted on under the star lock
+    const kx = cx - w * 0.16, ky = y + h * 0.1;
+    g.fillStyle(0x1b2a41); g.fillRoundedRect(kx, ky, w * 0.32, h * 0.36, 4);
+    g.fillStyle(0x8ff0b3); g.fillRect(kx + 3, ky + 3, w * 0.26, h * 0.07);          // little green display
+    g.fillStyle(0x4a5b6b);
+    for (let r = 0; r < 3; r++) for (let c2 = 0; c2 < 3; c2++) {
+      g.fillRect(kx + 4 + c2 * (w * 0.095), ky + h * 0.14 + r * (h * 0.068), w * 0.07, h * 0.045);
+    }
     g.fillStyle(SNOW, 0.9); g.fillRoundedRect(x + 2, y - 6, w - 4, 10, 5);
+  },
+
+  // Phase 17: a standing character (used for the one hidden visitor in the world).
+  character(g, x, y, w, h, o = {}) {
+    const cx = x + w / 2, base = y + h, bw = w * 0.86, bh = h * 0.92;
+    shadow(g, cx, base + 2, bw + 10, 14);
+    g.fillStyle(0x1b2a41); g.fillEllipse(cx, base - bh * 0.46, bw, bh);                   // body
+    g.fillStyle(o.color ?? 0x3b4a63); g.fillEllipse(cx, base - bh * 0.46, bw - 7, bh - 7);
+    g.fillStyle(0xf4fbff); g.fillEllipse(cx, base - bh * 0.34, bw * 0.56, bh * 0.56);     // belly
+    g.fillStyle(0x1b2a41); g.fillCircle(cx - bw * 0.15, base - bh * 0.7, 4.5); g.fillCircle(cx + bw * 0.15, base - bh * 0.7, 4.5);
+    g.fillStyle(0xffffff); g.fillCircle(cx - bw * 0.17, base - bh * 0.73, 1.7); g.fillCircle(cx + bw * 0.13, base - bh * 0.73, 1.7);
+    g.fillStyle(0xff9a3c); g.fillTriangle(cx, base - bh * 0.6, cx - 6, base - bh * 0.66, cx + 6, base - bh * 0.66);
+    g.fillStyle(0x16304a); g.fillEllipse(cx - bw * 0.24, base - 2, 15, 7); g.fillEllipse(cx + bw * 0.24, base - 2, 15, 7);
+    // headset
+    g.fillStyle(0x2b3a47); g.fillRoundedRect(cx - bw * 0.34, base - bh * 0.96, bw * 0.68, 7, 4);
+    g.fillStyle(0xe8483c); g.fillEllipse(cx - bw * 0.34, base - bh * 0.8, 13, 17); g.fillEllipse(cx + bw * 0.34, base - bh * 0.8, 13, 17);
+    g.fillStyle(0x2b3a47); g.fillEllipse(cx - bw * 0.34, base - bh * 0.8, 8, 11); g.fillEllipse(cx + bw * 0.34, base - bh * 0.8, 8, 11);
+    g.fillStyle(0xffc247); g.fillCircle(cx + bw * 0.4, base - bh * 0.62, 3);
   },
 
   snowGlobeProp(g, x, y, w, h) {                                                             // generic "nice thing on a stand"

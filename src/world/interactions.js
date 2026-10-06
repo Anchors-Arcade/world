@@ -139,6 +139,12 @@ export const INTERACTIONS = {
   ],
 
   crystal_hollow: [
+    // Phase 17: the one person out in the world who is not a shopkeeper. He is tucked into the back of a secret
+    // room behind a secret wall, so finding him is the whole joke. He has nothing to sell and no quest.
+    { id: 'jonas_mc_fort', label: 'Jonas Mc Fort', icon: '🎧', art: 'character', x: 740, y: 180, w: 70, h: 96,
+      color: 0x3b4a63,
+      title: '🎧 Jonas Mc Fort',
+      text: 'A penguin in a headset, sitting very still in the deepest part of the hollow. He looks up as you come in.\n\n"fortnite we need to talk"\n\nHe does not elaborate.' },
     { id: 'hollow_echo', label: 'Echo Spot', icon: '🔊', x: 440, y: 560, w: 110, h: 70, color: 0x6a4fb3, flat: true, walkable: true,
       title: '🔊 Echo Spot', text: 'You say hello. The cave says it back four times, and the fourth one is not quite yours.' },
     { id: 'hollow_core', label: 'Great Crystal', icon: '💎', x: 440, y: 180, w: 130, h: 140, color: 0xb48cff,
@@ -179,7 +185,7 @@ export const INTERACTIONS = {
     { id: 'founder_cache', label: 'Sealed Crate', icon: '🔒', art: 'vault', x: 150, y: 470, w: 120, h: 95,
       color: 0x6b4428, claim: 'founder',
       title: '🔒 Sealed Crate',
-      text: 'Iron-bound, frosted over, and fastened with a blue six-pointed lock that has no keyhole.\n\nYou put a hand on it.' },
+      text: 'Iron-bound, frosted over, and fastened with a blue six-pointed lock that has no keyhole — only a small keypad, its display still faintly lit after all this time.' },
     { id: 'star_desk', label: 'Astronomer Desk', icon: '🪶', x: 180, y: 300, w: 120, h: 80, color: 0x4a3f7a,
       title: '🪶 Astronomer\'s Desk', text: 'Ink dried in the pot, a half-finished sentence: "if the dials are right then the light we saw in the hollow is—"' },
     { id: 'star_orrery', label: 'Orrery', icon: '🪐', x: 420, y: 170, w: 160, h: 140, color: 0x6a4fb3,

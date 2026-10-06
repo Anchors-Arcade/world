@@ -7,8 +7,18 @@ import { supabase } from '../config/supabase.js';
 //                  plus postgres_changes for friend requests / friendships addressed to you.
 // Nothing here polls the database.
 export class Network {
-  constructor(profile) { this.profile = profile; this.channel = null; this.active = false; this.me = null; this.social = null; this.socialActive = false; this.where = { r: null }; }
-  get enabled() { return !!supabase && !this.profile.guest; }
+  constructor(profile) { this.profile = profile; this.channel = null; this.active = false; this.me = null; this.social = null; this.socialActive = false; this.where = { r: null }; this.inbox = null; }
+
+  // Phase 17: GUESTS ARE IN THE WORLD. Presence and broadcast (who is here, where they are, emotes) need no
+  // database rows at all, so a guest joins the same room channel as everyone else with the anon key and is seen
+  // by, and sees, every other player.
+  //   `enabled`        — may I use the room channel at all?           guests: yes
+  //   `account`        — may I use features that need a real account?  guests: no
+  // Everything that reads or writes the database (chat history, friends, the social channel, the moderation
+  // inbox) is gated on `account`, so a guest can never pick up a registered player's permissions: their id
+  // matches no row, and every RPC keys off auth.uid(), which a guest does not have.
+  get enabled() { return !!supabase; }
+  get account() { return !!supabase && !this.profile.guest; }
 
   // ---------- room channel ----------
   join(roomId, me, cb) {
@@ -24,8 +34,9 @@ export class Network {
     ch.on('presence', { event: 'join' }, ({ key }) => { if (key !== id) cb.onJoin?.(key); });
     ch.on('broadcast', { event: 'pos' }, ({ payload }) => cb.onPos(payload));
     ch.on('broadcast', { event: 'emote' }, ({ payload }) => cb.onEmote?.(payload));
-    // Chat: Realtime pushes only rows of this room, and only rows Row Level Security lets us see (not blocked/muted/hidden).
-    if (cb.onChat) ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${roomId}` }, ({ new: row }) => cb.onChat(row));
+    // Chat: Realtime pushes only rows of this room, and only rows Row Level Security lets us see (not blocked/muted/
+    // hidden). Guests have no database identity, so they do not subscribe to it at all.
+    if (cb.onChat && this.account) ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${roomId}` }, ({ new: row }) => cb.onChat(row));
     ch.subscribe((status) => { if (status === 'SUBSCRIBED') { this.active = true; ch.track(this.me); } });
     this.channel = ch; this.me = me;
   }
@@ -42,7 +53,7 @@ export class Network {
   // ---------- social channel (online status + friend notifications) ----------
   // Presence payload is deliberately tiny and public-safe: {r: room key | 'home' (own home) | 'private' (someone else's home) | null (location hidden)}.
   joinSocial(cb) {
-    if (!this.enabled || this.social) return;
+    if (!this.account || this.social) return;                 // friends and online status need a real account
     const id = this.profile.id;
     const ch = supabase.channel('social', { config: { presence: { key: id } } });
     ch.on('presence', { event: 'sync' }, () => cb.onPresence(ch.presenceState()));
@@ -58,5 +69,23 @@ export class Network {
   setWhere(where) { this.where = where; if (this.socialActive) this.social.track(where); }
 
   leaveSocial() { if (this.social) supabase.removeChannel(this.social); this.social = null; this.socialActive = false; }
-  destroy() { this.leave(); this.leaveSocial(); }
+
+  // ---------- Phase 17: the moderation inbox ----------
+  // A kick, a ban or a timeout is a ROW the server wrote (public.mod_actions), delivered over Realtime and
+  // filtered to this player. That matters: a player cannot fake one by broadcasting on a channel, because the
+  // row has to exist, and only the admin functions can create one. Announcements arrive the same way.
+  joinInbox({ onAction, onAnnounce }) {
+    if (!this.account || this.inbox) return;
+    const id = this.profile.id;
+    const ch = supabase.channel(`inbox:${id}`);
+    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mod_actions', filter: `target_id=eq.${id}` },
+      ({ new: row }) => onAction?.(row));
+    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' },
+      ({ new: row }) => onAnnounce?.(row));
+    ch.subscribe();
+    this.inbox = ch;
+  }
+  leaveInbox() { if (this.inbox) supabase.removeChannel(this.inbox); this.inbox = null; }
+
+  destroy() { this.leave(); this.leaveSocial(); this.leaveInbox(); }
 }

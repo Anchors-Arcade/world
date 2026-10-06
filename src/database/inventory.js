@@ -19,7 +19,9 @@ export const saveAvatar = (avatar) => rpc('save_avatar', { p: avatar });
 export const claimDaily = () => rpc('claim_daily_reward');                     // -> {day,coins,item,balance}
 // Phase 14: the founder's cache. The server reads the caller's own verified e-mail from their auth token and
 // compares it with the founder_accounts allow-list; the browser sends nothing and cannot influence the answer.
-export const claimFounderItem = () => rpc('claim_founder_item');               // -> {ok,item,name,already} | {ok:false,error}
+// Phase 16: the crate has a keypad. The browser posts the digits somebody typed and nothing else — the real code
+// lives in a table no player can read (supabase/phase16.sql), so it never reaches the client bundle.
+export const claimFounderItem = (code) => rpc('claim_founder_item', { p_code: String(code || '') });
 
 // ---- local mirror of the server's inventory (UI convenience only; the server stays the authority) ----
 export function setInventory(profile, map) {

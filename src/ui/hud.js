@@ -30,6 +30,22 @@ export async function toggleFullscreen() {
   } catch { return false; }
 }
 
+// Phase 17: picking something up used to use the full-size toast, which covered a chunk of the screen for a
+// snowflake worth 15 coins. Pickups now get their own small chip that stacks in the corner and fades quickly.
+export function pickup(text, coins = 0) {
+  const ui = document.getElementById('ui');
+  let rack = ui.querySelector('.pickups');
+  if (!rack) { rack = document.createElement('div'); rack.className = 'pickups'; ui.appendChild(rack); }
+  const p = document.createElement('div');
+  p.className = 'pickup';
+  p.innerHTML = `<b></b>${coins ? `<i>+${coins} ⚓</i>` : ''}`;
+  p.querySelector('b').textContent = text;
+  rack.appendChild(p);
+  while (rack.children.length > 4) rack.firstChild.remove();
+  setTimeout(() => p.classList.add('go'), 1700);
+  setTimeout(() => p.remove(), 2200);
+}
+
 export function toast(text) {
   const t = document.createElement('div');
   t.className = 'toast';

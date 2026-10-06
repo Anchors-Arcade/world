@@ -98,6 +98,9 @@ export class RemotePlayers {
 
   emitCount() { this.scene.game.events.emit('room-players', this.map.size + 1); }
 
+  // Phase 17: the name a player is showing right now (presence meta), guests included.
+  nameOf(id) { return this.map.get(id)?.av?.label?.text || null; }
+
   destroy() {
     this.unsub?.();
     this.net.leave();

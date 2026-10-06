@@ -117,6 +117,7 @@ export function mountAuth(root, onEnter, { notice = null, noticeOk = false } = {
           : await auth.register(email, pw, ui.querySelector('#u').value.trim());
         if (!session) return msg('Account created! Click the link we emailed you to confirm it — it brings you straight back here. Then log in.', true, true);
         const profile = await auth.fetchProfile(session.user.id);
+        profile.email = session.user.email || null;
         el.remove();
         onEnter(profile);
       } catch (e) {

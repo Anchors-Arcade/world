@@ -157,7 +157,15 @@ export function createFriends(root, { game, profile, social, closeOthers }) {
 
   // ---------- lifecycle ----------
   const onRoom = (_i, _n, channelId) => { room = channelId; };
-  const onProfile = (id) => openProfile(id);
+  // Phase 17: guests are real players in the world but have no database row, so their card is a short local one
+  // rather than a lookup that would always fail.
+  const onProfile = (id) => {
+    if (typeof id === 'string' && id.startsWith('guest_')) {
+      const name = game.scene.getScene('Room')?.mp?.nameOf?.(id) || 'A guest';
+      return toast(`${name} is playing as a guest — no account to add yet.`);
+    }
+    openProfile(id);
+  };
   game.events.on('room-entered', onRoom); game.events.on('open-profile', onProfile);
   const off = social.on((ev) => {
     if (ev.type === 'changed' || ev.type === 'presence') render();

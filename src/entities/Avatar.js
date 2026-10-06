@@ -1,5 +1,5 @@
 import { SPEED } from '../config/game.js';
-import { SLOTS, LAYOUT, BODY_TYPES, normalizeAvatar } from '../shops/items.js';
+import { SLOTS, LAYOUT, FIT, BODY_TYPES, ITEM_BY_ID, normalizeAvatar } from '../shops/items.js';
 import { EMOTE_BY_KEY, EMOTE_MS } from '../social/emotes.js';
 
 const INTERP_MS = 140;                                   // remote players are drawn this far in the past (>= one 110 ms packet interval)
@@ -66,7 +66,23 @@ export class Avatar {
       const spr = this.s[slot];
       if (d[slot]) spr.setTexture(d[slot]).setVisible(true); else spr.setVisible(false);
     }
-    this.hatY = this.bodyTop + 8 - this.s.hat.height / 2;   // brim sits just on the head, clear of the eyes, whatever the hat's height
+    // Phase 17: measure each garment ONCE per outfit change. Anything wider than its slot allows is scaled down
+    // to fit the penguin (never scaled up, so small pieces keep their natural size), the sprite is pinned by the
+    // part of it that should touch the body (a hat by its brim, a shirt by its collar), and the item's own nudge
+    // is applied. This is what makes clothes look worn instead of pasted on.
+    this.fit = {};
+    for (const slot of SLOTS) {
+      if (slot === 'shoes') continue;
+      const base = FIT[slot]; if (!base) continue;
+      const spr = this.s[slot], id = d[slot];
+      const extra = (id && ITEM_BY_ID[id]?.fit) || {};
+      let k = 1;
+      if (id && spr.width > 0 && base.maxW) k = Math.min(1, base.maxW / spr.width);
+      k *= extra.s ?? 1;
+      spr.setOrigin(base.ax, base.ay);
+      this.fit[slot] = { k, x: (base.x ?? 0) + (extra.dx ?? 0), y: base.y + (extra.dy ?? 0) };
+    }
+    this.hatY = this.bodyTop + 8;                           // the head line: hats are pinned by their brim to it
     const shoe = d.shoes || 'av_foot';
     this.feetL.setTexture(shoe); this.feetR.setTexture(shoe);
     this._dir = null;                                    // force a layout refresh
@@ -149,20 +165,38 @@ export class Avatar {
     this.layout(d);
   }
 
-  // Every layer is placed relative to the BODY (scaled by the body type), so clothes follow tall / chubby bodies instead of floating.
+  // Every layer is placed relative to the BODY (and scaled by the body type), so clothes follow tall and chubby
+  // penguins instead of floating. Phase 17: each layer also uses its own anchor and fitted scale from setOutfit(),
+  // so the SAME code hangs a tiny bow tie and a huge aurora cloak correctly.
   layout(d) {
-    const back = d === 'up', side = d === 'left' ? -1 : d === 'right' ? 1 : 0, hy = this.headDy || 0, s = this.s, { sx, sy } = this;
-    const by = (y) => -2 + (y + 2) * sy, narrow = side ? 0.9 : 1;                         // by(): body-relative y; narrow: side-on view
-    s.back.setPosition(-side * 7 + LAYOUT.back.x, by(LAYOUT.back.y)).setScale(sx, sy);
-    s.pants.setPosition(side * 3, by(LAYOUT.pants.y)).setScale(sx * narrow, sy);
-    s.shirt.setPosition(side * 3, by(LAYOUT.shirt.y)).setScale(sx * narrow, sy);
-    this.belly.setPosition(side * 3, by(-20)).setScale(sx, sy).setVisible(!back);
-    s.accessory.setPosition(side * 2, by(LAYOUT.accessory.y)).setScale(sx * narrow, sy);
-    s.eyes.setPosition(side * 8 * sx, LAYOUT.eyes.y + hy).setVisible(!back);
-    this.beak.setPosition(side * 8 * sx, -28 + hy).setVisible(!back);
-    s.face.setPosition(side * 8 * sx, LAYOUT.face.y + hy).setVisible(!back && !!this.data.face);
-    s.hat.setPosition(side * 3, this.hatY);
-    s.hand.setPosition((side === -1 ? -1 : 1) * (22 * sx + 5), by(LAYOUT.hand.y));
+    const back = d === 'up', side = d === 'left' ? -1 : d === 'right' ? 1 : 0, hy = this.headDy || 0;
+    const s = this.s, { sx, sy } = this;
+    const by = (y) => -2 + (y + 2) * sy;                   // body-relative y
+    const narrow = side ? 0.9 : 1;                          // side-on view: the body reads narrower
+    const f = this.fit || {};
+    // place(slot, extraX, squash) — hangs a body layer from its own anchor at its own fitted scale
+    const place = (slot, ex = 0, squash = narrow) => {
+      const cfg = f[slot]; if (!cfg) return;
+      s[slot].setPosition(ex + cfg.x * sx, by(cfg.y)).setScale(sx * cfg.k * squash, sy * cfg.k);
+    };
+
+    place('back', -side * 7, 1);
+    place('pants', side * 3);
+    place('shirt', side * 3);
+    this.belly.setOrigin(0.5, 0.5).setPosition(side * 3, by(-20)).setScale(sx, sy).setVisible(!back);
+    place('accessory', side * 2);
+    // head layers: eyes, beak and face track the head, which moves with the body type
+    s.eyes.setPosition(side * 8 * sx, (f.eyes?.y ?? -36) + hy).setScale(sx * (f.eyes?.k ?? 1), sy * (f.eyes?.k ?? 1)).setVisible(!back);
+    this.beak.setOrigin(0.5, 0.5).setPosition(side * 8 * sx, -28 + hy).setVisible(!back);
+    s.face.setPosition(side * 8 * sx, (f.face?.y ?? -33) + hy).setScale(sx * (f.face?.k ?? 1), sy * (f.face?.k ?? 1))
+      .setVisible(!back && !!this.data.face);
+    // the hat is pinned by its brim to the head line, so its height no longer matters
+    if (f.hat) s.hat.setPosition(side * 3, this.hatY + (f.hat.y - FIT.hat.y)).setScale(sx * f.hat.k, sy * f.hat.k);
+    // the held item sits at the end of the flipper on whichever side the penguin faces
+    if (f.hand) {
+      s.hand.setPosition((side === -1 ? -1 : 1) * (f.hand.x * sx + 5), by(f.hand.y)).setScale(sx * f.hand.k, sy * f.hand.k);
+      s.hand.setVisible(!back && !!this.data.hand);          // holding nothing must not show the empty sprite
+    }
     if (back) this.root.bringToTop(s.back); else this.root.sendToBack(s.back);
   }
 

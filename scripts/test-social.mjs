@@ -10,7 +10,9 @@ globalThis.__sb = { rpc: async (fn, args) => { calls.push([fn, args]); return { 
 const { SocialState } = await import('../src/social/SocialState.js');
 
 const F = (id, name) => ({ id, username: name, display_name: name, avatar_data: {}, since: '2026-01-01' });
-const mkNet = () => ({ enabled: true, where: null, setWhere(w) { this.where = w; }, joinSocial(cb) { this.cb = cb; } });
+// Phase 17: Network now distinguishes `enabled` (the room channel — guests included) from `account` (features
+// that need a real account). The friends/presence layer is gated on `account`.
+const mkNet = () => ({ enabled: true, account: true, where: null, setWhere(w) { this.where = w; }, joinSocial(cb) { this.cb = cb; } });
 let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('ok -', name); };
 
 overview = { settings: { allow_friend_requests: true, allow_friend_joins: true, allow_messages: true, allow_room_visits: true },
@@ -75,4 +77,16 @@ await t('guests get an inert instance (no requests, nothing online, nothing bloc
   assert.equal(calls.length, 0); assert.equal(g.isHidden('x'), false); assert.equal(g.statusOf('a').online, false);
 });
 s.destroy();
+
+
+// Phase 17: a guest gets an inert social layer even though the world itself is open to them.
+await t('guests join the world but not the friends system', async () => {
+  const gNet = mkNet(); gNet.account = false;
+  const g = new SocialState({ id: 'guest_abc', guest: true }, gNet);
+  await g.start();
+  assert.equal(g.enabled, false);
+  assert.equal(gNet.cb, undefined, 'a guest must not subscribe to the social channel');
+  assert.equal(g.friends.length, 0);
+});
+
 console.log(`\n${n} checks passed`);

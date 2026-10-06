@@ -1,6 +1,5 @@
 import { esc } from './dom.js';
 import { toast } from './hud.js';
-import { claimFounderItem } from '../database/inventory.js';
 
 // Phase 8 — the little card you get when you press E on something in the world.
 // It shows the object's text and, when the object is a clue, the server's answer: how many clues are in, whether the
@@ -52,22 +51,11 @@ export function createWorldDialog(root, { game, explore }) {
     // Phase 15: an object that opens a panel of its own (the Town Hall picture desk).
     if (o.opens) { close(); game.events.emit(`open-${o.opens}`, {}); return; }
 
-    // Phase 14: the sealed crate. The browser asks; the server answers from the caller's own verified identity.
+    // Phase 14 + 16: the sealed crate. Reading it shows what it is; the keypad does the rest, and the server
+    // decides both the code and who the crate belongs to.
     if (o.claim === 'founder') {
-      pending = true;
-      show({ ...base, note: { text: 'The lock warms under your hand…' } });
-      let r = null;
-      try { r = await claimFounderItem(); } catch (e) { r = { ok: false, error: 'offline' }; }
-      pending = false;
-      if (!el) return;
-      if (r?.ok) {
-        show({ ...base, note: { text: r.already
-          ? `The crate is already yours — the ${r.name} is in your wardrobe.`
-          : `The lock turns. Inside, folded in oilcloth: the ${r.name}. It is yours.`, kind: 'ok' } });
-        if (!r.already) { toast(`🚀 ${r.name} unlocked!`); game.events.emit('founder-claimed', r); }
-      } else {
-        show({ ...base, note: { text: 'The lock does not move. Whatever is in here, it is not for you.', kind: '' } });
-      }
+      close();
+      game.events.emit('open-keypad', { object: o.id });
       return;
     }
 

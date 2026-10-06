@@ -8,7 +8,7 @@ const DEFAULTS = { allow_friend_requests: true, allow_friend_joins: true, allow_
 // Guests get an inert instance, so UI and scene code never need to special-case them.
 export class SocialState {
   constructor(profile, net) {
-    this.profile = profile; this.net = net; this.enabled = !profile.guest && net.enabled;
+    this.profile = profile; this.net = net; this.enabled = !profile.guest && net.account;   // Phase 17: friends/presence need an account, the world does not
     this.settings = { ...DEFAULTS }; this.friends = []; this.incoming = []; this.outgoing = []; this.blocked = []; this.muted = [];
     this.blockedIds = new Set(); this.mutedIds = new Set(); this.friendIds = new Set();
     this.online = new Map(); this.rawPresence = null;               // friendId -> presence meta ({r})

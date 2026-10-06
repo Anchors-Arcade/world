@@ -1,7 +1,7 @@
 import { BootScene } from './scenes/BootScene.js';
 import { RoomScene } from './scenes/RoomScene.js';
 import { mountAuth } from './ui/authUI.js';
-import { mountHUD, toast, toggleFullscreen, fsSupported } from './ui/hud.js';
+import { mountHUD, toast, pickup, toggleFullscreen, fsSupported } from './ui/hud.js';
 import { createWardrobe } from './ui/wardrobe.js';
 import { createShop } from './ui/shop.js';
 import * as auth from './database/auth.js';
@@ -15,6 +15,8 @@ import { createArcade } from './ui/arcade.js';
 import { createJournal } from './ui/journal.js';
 import { createWorldDialog } from './ui/worldDialog.js';
 import { createWallPanel } from './ui/wallPanel.js';
+import { createKeypad } from './ui/keypad.js';
+import { createAdminPanel } from './ui/adminPanel.js';
 import { setWallState } from './database/wallCache.js';
 import { ExplorationState } from './world/ExplorationState.js';
 import { MINIGAME_SCENES, MinigameManager } from './minigames/index.js';
@@ -26,7 +28,8 @@ import { ROOMS } from './maps/rooms.js';
 
 const ui = document.getElementById('ui');
 let game = null, hud = null, wardrobe = null, shop = null, net = null, social = null, chat = null, friends = null, settings = null, mapPanel = null, emotes = null, arcade = null, minigames = null;
-let explore = null, journal = null, worldDialog = null, wallPanel = null;   // Phase 8: exploration state + journal + interaction cards
+let explore = null, journal = null, worldDialog = null, wallPanel = null, keypad = null, adminPanel = null;
+let offAuth = null;                                    // Phase 17: unsubscribes the auth listener on logout   // Phase 8: exploration state + journal + interaction cards
 
 function startGame(profile) {
   profile.avatar_data = normalizeAvatar(profile.avatar_data);
@@ -74,6 +77,27 @@ function startGame(profile) {
 
   // Phase 15: the Town Hall picture wall. One panel for adding a picture and for looking at one; the hall itself
   // keeps its own state, and the cached total is what lets the room size itself the moment you walk in.
+  keypad = createKeypad(ui, { game });                 // Phase 16: the Sealed Crate's code lock
+  adminPanel = createAdminPanel(ui, { game, profile }); // Phase 17: P opens it, but only for staff (server-checked)
+
+  // Phase 17: moderation and announcements arrive as ROWS the server wrote, over Realtime, filtered to this
+  // player. A kick ends the session; a ban or a timeout is applied immediately rather than at the next login.
+  if (!profile.guest) {
+    net.joinInbox({
+      onAction: (row) => {
+        if (row.kind === 'kick') { toast('👢 You were removed from the world by a moderator.'); setTimeout(() => logout(), 1200); }
+        else if (row.kind === 'ban') { toast('🔨 You have been banned.'); setTimeout(() => logout(), 1500); }
+        else if (row.kind === 'timeout') { profile.muted_until = Date.now() + 1; toast('🤐 You have been timed out — you cannot chat for a while.'); }
+        else if (row.kind === 'untimeout') toast('Your timeout was lifted.');
+        else if (row.kind === 'coins' || row.kind === 'item') {
+          fetchInventory().then((m) => { setInventory(profile, m); wardrobe.refresh(); }).catch(() => {});
+          auth.fetchProfile(profile.id).then((p) => { profile.coins = p.coins; hud.setCoins(p.coins); }).catch(() => {});
+          toast(row.kind === 'coins' ? '⚓ Your coins were updated by an admin.' : '🎁 An admin sent you something — check your wardrobe!');
+        }
+      },
+      onAnnounce: (row) => { if (row?.body) announce(row.body); },
+    });
+  }
   wallPanel = createWallPanel(ui, { game, profile });
   game.events.on('open-wall', (what) => wallPanel.open(what));
   game.events.on('wall-state', (st) => setWallState(st));
@@ -83,7 +107,7 @@ function startGame(profile) {
   explore.on((ev) => {
     if (ev.type === 'collected') {
       if (typeof ev.balance === 'number') { profile.coins = ev.balance; hud.setCoins(ev.balance); }
-      toast(ev.coins ? `⭐ ${ev.name} found! +${ev.coins} Anchor Coins` : `⭐ ${ev.name} found!`);
+      pickup(`⭐ ${ev.name}`, ev.coins || 0);                 // Phase 17: small chip, not a full-width toast
       bumpJournal();
     } else if (ev.type === 'clue') {
       if (typeof ev.balance === 'number' && ev.coins) { profile.coins = ev.balance; hud.setCoins(ev.balance); }
@@ -168,24 +192,65 @@ function startGame(profile) {
   }
 }
 
+// Phase 17: a world-wide announcement banner.
+function announce(text) {
+  const old = document.querySelector('.announce'); if (old) old.remove();
+  const b = document.createElement('div');
+  b.className = 'announce';
+  b.innerHTML = `<span>📢</span><p></p>`;
+  b.querySelector('p').textContent = text;
+  ui.appendChild(b);
+  setTimeout(() => b.classList.add('go'), 9000);
+  setTimeout(() => b.remove(), 10000);
+}
+
 async function logout() {
-  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, explore].forEach((x) => x?.destroy());
+  offAuth?.(); offAuth = null;
+  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, keypad, adminPanel, explore].forEach((x) => x?.destroy());
   ui.classList.remove('in-minigame');
   net?.destroy(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
   game = hud = wardrobe = shop = net = social = chat = friends = settings = mapPanel = emotes = arcade = minigames = null;
-  explore = journal = worldDialog = wallPanel = null;
+  explore = journal = worldDialog = wallPanel = keypad = adminPanel = null;
   if (isConfigured) await auth.logout();
-  mountAuth(ui, startGame);
+  mountAuth(ui, enter);
+}
+
+// =====================================================================
+// PHASE 17 — start-up.
+// The session is restored before anything is drawn, an expired token is refreshed once, a missing profile is
+// retried, and a banned account is told why instead of being dropped on a blank login form. If the account signs
+// out in another tab (or its token is revoked), this session follows it out rather than carrying on half-dead.
+// =====================================================================
+function watchAuth() {
+  offAuth?.();
+  offAuth = auth.onAuthChange((event) => {
+    if (event === 'SIGNED_OUT' || event === 'USER_DELETED') { if (game) logout(); }
+  });
 }
 
 (async function init() {
   const back = isConfigured ? auth.readAuthRedirect() : { confirmed: false, error: null };   // returning from the e-mail confirmation link?
   if (isConfigured) {
-    const session = await auth.getSession();
+    const session = await auth.restoreSession();
     if (session) {
-      try { const p = await auth.fetchProfile(session.user.id); startGame(p); if (back.confirmed) toast('Email confirmed — welcome to Anchors World!'); return; }
-      catch { await supabase.auth.signOut(); }
+      try {
+        const p = await auth.fetchProfile(session.user.id);
+        p.email = session.user.email || null;
+        watchAuth();
+        startGame(p);
+        if (back.confirmed) toast('Email confirmed — welcome to Anchors World!');
+        return;
+      } catch (e) {
+        await auth.logout();
+        return mountAuth(ui, enter, { notice: e.banned ? e.message : (e.message || 'Could not load your profile — log in again.') });
+      }
     }
   }
-  mountAuth(ui, startGame, back.error ? { notice: back.error } : back.confirmed ? { notice: 'Email confirmed! Log in to enter the world.', noticeOk: true } : {});
+  mountAuth(ui, enter, back.error ? { notice: back.error } : back.confirmed ? { notice: 'Email confirmed! Log in to enter the world.', noticeOk: true } : {});
 })();
+
+// The title screen hands the profile here, whether it came from a login, a sign-up or the guest button.
+function enter(p) {
+  if (!p.guest) watchAuth();
+  startGame(p);
+}
