@@ -13,7 +13,7 @@ let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok -', name); };
 const sql = fs.readFileSync(new URL('../supabase/phase8.sql', import.meta.url), 'utf8');
 
 // Doors that were already "coming soon" before Phase 8 (RoomScene toasts and bounces the player back).
-const COMING_SOON = new Set(['library', 'school', 'town_hall']);
+const COMING_SOON = new Set(['library', 'school']);          // the Town Hall opened in Phase 15
 
 t('every room id used by a door, portal or secret actually exists', () => {
   for (const [key, r] of Object.entries(ROOMS)) {

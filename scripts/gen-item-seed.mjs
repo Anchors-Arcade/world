@@ -4,7 +4,8 @@ import { ITEMS } from '../src/shops/items.js';
 
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
 console.log('insert into public.items (id, name, category, rarity, asset, description, price, starter, kind) values');
-console.log(ITEMS.map((i) =>
+console.log(ITEMS.filter((i) => !i.secret).map((i) =>   // secret items are seeded by their own phase file, not here
+  
   `  (${q(i.id)}, ${q(i.name)}, ${q(i.category)}, ${q(i.rarity)}, ${q(i.id)}, ${q(i.description)}, ${i.price}, ${!!i.starter}, 'clothing')`
 ).join(',\n'));
 console.log(`on conflict (id) do update set name = excluded.name, category = excluded.category, rarity = excluded.rarity,

@@ -157,6 +157,44 @@ add('hand_crystal', 20, 32, (g) => { g.fillStyle(0xb48cff, 0.4); g.fillEllipse(1
   g.fillStyle(0xc7aaff); g.fillTriangle(10, 0, 7, 26, 13, 26); g.fillStyle(0xffffff, 0.6); g.fillTriangle(9, 4, 6, 22, 10, 22);
   g.fillStyle(0x6a4fb3); g.fillRoundedRect(4, 25, 12, 6, 2); });
 
+// ---------------------------------------------------------------------
+// Phase 14
+// ---------------------------------------------------------------------
+// The Blue Star — two interlocking outlined triangles with an open hexagon in the middle, worn on a chain.
+// Drawn as outlines (thick strokes) so the hollow centre reads exactly like the symbol it is.
+add('accessory_star', 44, 30, (g) => {
+  g.lineStyle(2.5, 0xd8c9a3, 1);                                        // chain
+  g.beginPath(); g.arc(22, 1, 14, 0.25, Math.PI - 0.25, false); g.strokePath();
+  const cx = 22, cy = 15, R = 9.5;
+  const tri = (flip) => {
+    const pts = [0, 1, 2].map((i) => {
+      const a = -Math.PI / 2 + i * (Math.PI * 2 / 3) + (flip ? Math.PI / 3 : 0);
+      return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R };
+    });
+    g.lineStyle(2.8, 0x0a1cf0, 1);
+    g.beginPath(); g.moveTo(pts[0].x, pts[0].y);
+    g.lineTo(pts[1].x, pts[1].y); g.lineTo(pts[2].x, pts[2].y); g.closePath(); g.strokePath();
+  };
+  tri(false); tri(true);
+});
+
+// The Aurora Jetpack — the founder's jetpack. Twin tanks, a ribbed spine, warning stripes and a live aurora flame.
+add('back_jetpack_x', 56, 52, (g) => {
+  g.fillStyle(0x16304a); g.fillRoundedRect(4, 0, 48, 36, 11);
+  g.fillStyle(0x2e4a6b); g.fillRoundedRect(6, 2, 44, 32, 10);
+  g.fillStyle(0x9fd8ef); g.fillRoundedRect(9, 5, 15, 26, 7);            // left tank
+  g.fillRoundedRect(32, 5, 15, 26, 7);                                   // right tank
+  g.fillStyle(0xffffff, 0.45); g.fillRoundedRect(11, 7, 5, 20, 3); g.fillRoundedRect(34, 7, 5, 20, 3);
+  g.fillStyle(0x6a4fb3); g.fillRect(26, 2, 4, 32);                       // spine
+  g.fillStyle(0xffc247); g.fillRect(9, 16, 15, 3); g.fillRect(32, 16, 15, 3);
+  g.fillStyle(0x8ff0b3); g.fillCircle(16.5, 11, 3); g.fillStyle(0x66e8ff); g.fillCircle(39.5, 11, 3);
+  // aurora exhaust
+  g.fillStyle(0x8ff0b3, 0.75); g.fillTriangle(16.5, 36, 10, 52, 23, 52);
+  g.fillStyle(0x66e8ff, 0.75); g.fillTriangle(39.5, 36, 33, 52, 46, 52);
+  g.fillStyle(0xffffff, 0.85); g.fillTriangle(16.5, 38, 13, 48, 20, 48);
+  g.fillTriangle(39.5, 38, 36, 48, 43, 48);
+});
+
 export function makeItemTextures(scene) {
   const g = scene.make.graphics({ x: 0, y: 0, add: false });
   for (const [key, [w, h, fn]] of Object.entries(ART)) { g.clear(); fn(g); g.generateTexture(key, w, h); }

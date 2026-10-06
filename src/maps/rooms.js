@@ -328,6 +328,24 @@ export const ROOMS = {
     trees: [[90,420],[150,620],[1560,420],[1620,660],[80,1020],[1640,980],[420,520],[1300,520]],
   },
 
+  // ===================================================================
+  // PHASE 15 — the Town Hall. A long civic hall whose north wall is the players' picture wall: it is built in
+  // bays of ten pictures and gains another bay (and real floor space) every time the tenth is hung, so it never
+  // runs out of room. `gallery: true` is all the room needs; src/world/GalleryWall.js does the rest.
+  // ===================================================================
+  town_hall: {
+    name: 'Town Hall', w: 1700, h: 820, floor: 'wood', indoor: true, gallery: true,
+    wallColor: 0x6b5a46, spawn: { x: 250, y: 680 },
+    sky: 0x2a2113, fx: 'dust', wash: [0xffeccd, 0.95],
+    props: [{ type: 'glow', x: 260, y: 520, r: 190, color: 0xffc247 }],
+    blocks: [
+      { x: 60,  y: 620, w: 150, h: 70, label: '🪑', color: 0x6b4428 },
+      { x: 300, y: 620, w: 150, h: 70, label: '🪑', color: 0x6b4428 },
+      { x: 60,  y: 300, w: 120, h: 80, label: '🪴', color: 0x2a8a63 },
+    ],
+    portals: [{ label: 'Exit ▾', x: 170, y: 760, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 250, y: 680 } }],
+  },
+
   ski_lodge: {
     name: 'Warming Hut', w: 900, h: 640, floor: 'wood', indoor: true, spawn: { x: 450, y: 520 },
     sky: 0x2a1d14, fx: 'dust', wash: [0xffe6c2, 0.9],

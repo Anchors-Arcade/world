@@ -162,7 +162,24 @@ export const INTERACTIONS = {
       title: '📚 Lens Shelf', text: 'Forty lenses in forty velvet pockets, and one pocket empty.' },
   ],
 
+  town_hall: [
+    // Phase 15: the desk where you hang a picture. `opens` sends the interaction straight to a panel instead of a
+    // dialogue card — no NPC, no shop counter, just a desk with a camera on it.
+    { id: 'wall_desk', label: 'Picture Desk', icon: '📷', art: 'desk', opens: 'wall',
+      x: 150, y: 470, w: 150, h: 80, color: 0x6b4428,
+      title: '📷 Picture Desk', text: 'A clerk\'s desk with a camera, a stack of blank frames and a pot of glue.' },
+    { id: 'hall_board', label: 'Hall Notice', icon: '📋', x: 360, y: 500, w: 110, h: 70, color: 0x8c5a3a,
+      title: '📋 Hall Notice',
+      text: 'THE PEOPLE OF ANCHORS WORLD\n\nAnyone may hang a picture, up to three each. Every tenth picture, the hall is extended by one bay — it has never yet run out of wall.\n\nKeep it friendly. Anything unkind comes straight down.' },
+  ],
+
   star_chamber: [
+    // Phase 14: the founder's cache. Everyone can find it; the SERVER decides who can open it
+    // (claim_founder_item() in supabase/phase14.sql checks the caller's own verified e-mail).
+    { id: 'founder_cache', label: 'Sealed Crate', icon: '🔒', art: 'vault', x: 150, y: 470, w: 120, h: 95,
+      color: 0x6b4428, claim: 'founder',
+      title: '🔒 Sealed Crate',
+      text: 'Iron-bound, frosted over, and fastened with a blue six-pointed lock that has no keyhole.\n\nYou put a hand on it.' },
     { id: 'star_desk', label: 'Astronomer Desk', icon: '🪶', x: 180, y: 300, w: 120, h: 80, color: 0x4a3f7a,
       title: '🪶 Astronomer\'s Desk', text: 'Ink dried in the pot, a half-finished sentence: "if the dials are right then the light we saw in the hollow is—"' },
     { id: 'star_orrery', label: 'Orrery', icon: '🪐', x: 420, y: 170, w: 160, h: 140, color: 0x6a4fb3,

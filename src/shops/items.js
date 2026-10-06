@@ -85,6 +85,12 @@ export const ITEMS = [
   I('hand_rod', 'Fishing Rod', 'hand', 'common', 90, 'For the hole in the lake.'),
   I('hand_cocoa', 'Hot Cocoa', 'hand', 'common', 50, 'Still steaming.'),
   I('hand_crystal', 'Cave Crystal', 'hand', 'rare', 300, 'Hums when you waddle.'),
+
+  // ---- Phase 14 ----
+  I('accessory_star', 'Blue Star', 'accessory', 'rare', 260, 'A six-pointed blue star on a fine chain.'),
+  // The founder's jetpack. `secret: true` keeps it out of both shops, and the server refuses to sell it
+  // (purchasable = false in supabase/phase14.sql); the ONLY way it reaches an inventory is claim_founder_item().
+  I('back_jetpack_x', 'Aurora Jetpack', 'back', 'event', 0, 'One of a kind. It still smells faintly of ozone.', { secret: true }),
 ];
 export const ITEM_BY_ID = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
 

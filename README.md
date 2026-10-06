@@ -3,7 +3,7 @@
 Plain HTML/CSS/JS. Phaser and Supabase load from CDNs. Upload the files as-is to GitHub.
 
 ## Setup (once)
-1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue), **then** `supabase/phase10.sql` (the seven world activities). Then **`supabase/phase11.sql`** (Slope Sled Run + Snow Runner) and **`supabase/phase12.sql`** (the five sled routes). All safe to re-run.
+1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue), **then** `supabase/phase10.sql` (the seven world activities). Then **`supabase/phase15.sql`** (the Town Hall picture wall — read its moderation note first), **`supabase/phase14.sql`** (the Blue Star + the founder's jetpack), **`supabase/phase11.sql`** (Slope Sled Run + Snow Runner) and **`supabase/phase12.sql`** (the five sled routes). All safe to re-run.
    Deploy the new client files and run `phase6.sql` together: Phase 6 changes how your own profile is loaded (`get_my_profile()`).
    (Auth → Providers → Email: turn off "Confirm email" while testing, or keep it on and do step 1b.)
 1b. **E-mail confirmation links** go to your Supabase *Site URL*, which defaults to `http://localhost:3000` ("site can't be reached"). Fix: Supabase → Authentication → **URL Configuration** → set **Site URL** to where the game runs (e.g. `https://YOUR-USER.github.io/YOUR-REPO/` or `http://localhost:5173/`) and add the same address(es) under **Redirect URLs** (add `http://localhost:5173/**` and your GitHub Pages address with `/**`). The game now also sends the page you signed up from as the redirect, and the sign-up screen has a "Resend confirmation email" button. Links already sent keep the old address: request a new one.
@@ -220,3 +220,57 @@ ski lift and multiplayer all behave identically.
 - Verified in a headless browser: every room still builds with its doors intact, a house door still enters its room,
   a counter still opens the shop, an object still fires its interaction, a collectible still collects, and the lift
   still boards. All five test suites pass.
+
+## Phase 14: the Blue Star, and the founder's jetpack
+- **Blue Star** — a six-pointed blue star on a fine chain, drawn as two interlocking outlined triangles with the
+  open hexagon in the middle, so it reads as the symbol itself. An ordinary accessory: 260 Anchor Coins in Snowy
+  Threads, wearable by anyone.
+- **Aurora Jetpack** — twin tanks, a ribbed spine, warning stripes and a live aurora exhaust. **Exactly one account
+  can ever own it.** It is locked in four independent places, none of which the browser can influence:
+  1. the item row is `purchasable = false`, so `purchase_item()` refuses it outright;
+  2. players have no insert rights on `inventory`, so nothing can write it directly;
+  3. the only door is `claim_founder_item()`, which compares the caller's **own verified e-mail from their auth
+     token** against the `founder_accounts` allow-list — the browser never states who it is, so editing the client,
+     replaying the request or calling the RPC from a console all get the same flat refusal;
+  4. `founder_accounts` has RLS on with **no policy and no grant**: nobody can read the list, let alone add
+     themselves to it. Only the SQL editor / service role can change who is on it.
+- **How you get it in-world**: a **Sealed Crate** — iron-bound, frosted, fastened with a blue six-pointed lock that
+  has no keyhole — sits in the **Star Chamber**, itself a secret room behind the Observatory's dial puzzle. Anyone
+  who finds it can put a hand on it; for everyone else the lock simply does not move. For you it opens, and the
+  jetpack goes straight into your wardrobe.
+- To move or share the privilege later, edit one row in `founder_accounts`. Nothing else needs changing.
+
+## Phase 15: the Town Hall and its endless picture wall
+The Town Hall was one of the three "coming soon" doors from Phase 1. It is open now, and its north wall belongs to
+the players: anyone with an account can hang their own picture on it.
+
+- **It grows by itself.** The hall is built in **bays of ten pictures** (5 across, 2 high). Hang the tenth picture in
+  a bay and the hall gains another one — the room bounds, the camera bounds, the floor, the panelling, the pilasters
+  and the lamps all extend with it, and a toast tells everyone the hall just grew. There is always one empty bay
+  waiting at the far end, so the wall never runs out.
+- **Adding one**: walk to the picture desk and press **E**. The file you choose is re-drawn on a canvas at 768px and
+  re-encoded as JPEG *in your browser* before anything is sent — which keeps every picture small, makes the hall
+  cheap to load, and **strips the EXIF block, so a photo's GPS location and camera serial never leave your device**.
+  Then it goes into Supabase Storage and `add_wall_picture()` registers it.
+- **Looking at one**: stand in front of a picture and press **E** for a closer look, who hung it, and the take-down
+  (yours) or report (anyone else's) buttons.
+- **Performance**: only the pictures you are standing near are ever downloaded. Frames are drawn immediately, a
+  texture loads when you walk within ~1200px and is dropped again past ~1900px, so walking a thousand-picture hall
+  costs the same as walking past ten.
+- **Trust model**: the storage policy only lets an account write inside `wall/<its own uid>/`; `add_wall_picture()`
+  re-checks that the path is really the caller's, confirms the file exists, cleans the caption with the Phase 6 chat
+  rules (length, no links/e-mails/phone numbers, word filter), and applies a limit of **3 pictures per player** and a
+  60-second cool-down. Nobody can insert, update or delete `wall_pictures` directly — RLS is on with no write policy.
+
+### ⚠️ Moderating the wall
+This is the only part of Anchors World where players publish **images**, and a picture is far harder to filter than a
+line of chat. Before you open it to anyone beyond your friends:
+
+- Watch the reports: `select * from public.reports where room_id = 'town_hall' and status = 'open' order by created_at desc;`
+  Every report records the picture id, its storage path and its caption as evidence.
+- Hide one instantly: `update public.wall_pictures set hidden = true where id = '<uuid>';` — it disappears for
+  everyone on their next visit, exactly like hiding a chat line in Phase 6.
+- Delete the file too: `delete from storage.objects where bucket_id = 'wall' and name = '<path>';`
+- **Run an approval queue** if the game is public: `alter table public.wall_pictures alter column approved set default false;`
+  Nothing then appears until you flip `approved` yourself. This is the setting to use if children play.
+- Tighten the taps: `wall_picture_limit()` and `wall_cooldown()` are one-line functions at the top of phase15.sql.

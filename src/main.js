@@ -14,6 +14,8 @@ import { createEmoteMenu } from './ui/emoteMenu.js';
 import { createArcade } from './ui/arcade.js';
 import { createJournal } from './ui/journal.js';
 import { createWorldDialog } from './ui/worldDialog.js';
+import { createWallPanel } from './ui/wallPanel.js';
+import { setWallState } from './database/wallCache.js';
 import { ExplorationState } from './world/ExplorationState.js';
 import { MINIGAME_SCENES, MinigameManager } from './minigames/index.js';
 import { SocialState } from './social/SocialState.js';
@@ -24,7 +26,7 @@ import { ROOMS } from './maps/rooms.js';
 
 const ui = document.getElementById('ui');
 let game = null, hud = null, wardrobe = null, shop = null, net = null, social = null, chat = null, friends = null, settings = null, mapPanel = null, emotes = null, arcade = null, minigames = null;
-let explore = null, journal = null, worldDialog = null;   // Phase 8: exploration state + journal + interaction cards
+let explore = null, journal = null, worldDialog = null, wallPanel = null;   // Phase 8: exploration state + journal + interaction cards
 
 function startGame(profile) {
   profile.avatar_data = normalizeAvatar(profile.avatar_data);
@@ -69,6 +71,13 @@ function startGame(profile) {
   // after that the state is kept fresh by the return values of collect / find_clue / visit_room.
   journal = createJournal(ui, { game, profile, explore, closeOthers: closeDrawers });
   worldDialog = createWorldDialog(ui, { game, explore });
+
+  // Phase 15: the Town Hall picture wall. One panel for adding a picture and for looking at one; the hall itself
+  // keeps its own state, and the cached total is what lets the room size itself the moment you walk in.
+  wallPanel = createWallPanel(ui, { game, profile });
+  game.events.on('open-wall', (what) => wallPanel.open(what));
+  game.events.on('wall-state', (st) => setWallState(st));
+  game.events.on('wall-changed', () => game.scene.getScene('Room')?.gallery?.refresh?.());
   let unseen = 0;
   const bumpJournal = () => hud.setBadge('journal', ++unseen);
   explore.on((ev) => {
@@ -94,7 +103,13 @@ function startGame(profile) {
   minigames = new MinigameManager(game);
   arcade = createArcade(ui, { game, profile, manager: minigames });
   game.events.on('open-arcade', (what) => arcade.open(what));
-  game.events.on('minigame-play', (id) => minigames.start(id));       // Phase 10: activity stands out in the world
+  game.events.on('minigame-play', (id) => minigames.start(id));
+  // Phase 14: a claimed founder item lands in the inventory server-side; refresh so it is wearable right away.
+  game.events.on('founder-claimed', () => {
+    if (profile.guest) return;
+    fetchInventory().then((m) => { setInventory(profile, m); wardrobe.refresh(); game.events.emit('inventory-changed'); })
+      .catch(() => {});
+  });       // Phase 10: activity stands out in the world
   game.events.on('minigame-start', () => { closeDrawers(); chat.close(); emotes.close(); ui.classList.add('in-minigame'); });
   game.events.on('minigame-end', () => ui.classList.remove('in-minigame'));
   game.events.on('coins-changed', (n) => { profile.coins = n; hud.setCoins(n); });     // reward from the server -> wallet/HUD immediately
@@ -154,11 +169,11 @@ function startGame(profile) {
 }
 
 async function logout() {
-  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, explore].forEach((x) => x?.destroy());
+  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, explore].forEach((x) => x?.destroy());
   ui.classList.remove('in-minigame');
   net?.destroy(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
   game = hud = wardrobe = shop = net = social = chat = friends = settings = mapPanel = emotes = arcade = minigames = null;
-  explore = journal = worldDialog = null;
+  explore = journal = worldDialog = wallPanel = null;
   if (isConfigured) await auth.logout();
   mountAuth(ui, startGame);
 }

@@ -514,6 +514,28 @@ export const SPRITES = {
     g.fillStyle(0xffc247); g.fillCircle(cx - w * 0.22, cy + h * 0.12, 3.5); g.fillCircle(cx + w * 0.26, cy + h * 0.2, 3);
   },
 
+  vault(g, x, y, w, h) {                                                                   // Phase 14: the sealed crate
+    const cx = x + w / 2, base = y + h;
+    shadow(g, cx, base + 3, w + 16, 16);
+    g.fillStyle(0x3a2616); g.fillRoundedRect(x, y, w, h, 7);
+    g.fillStyle(0x6b4428); g.fillRoundedRect(x + 3, y + 3, w - 6, h - 6, 5);
+    g.fillStyle(0x7d5536); g.fillRoundedRect(x + 6, y + 6, w - 12, h * 0.34, 4);
+    g.fillStyle(0x9aa7b8); g.fillRect(x + 2, y + h * 0.44, w - 4, 9);                       // iron bands
+    g.fillRect(x + w * 0.44, y + 2, 10, h - 4);
+    g.fillStyle(0xb8c4d0); g.fillRect(x + 2, y + h * 0.44, w - 4, 3);
+    const sx = cx, sy = y + h * 0.62, R = Math.min(w, h) * 0.17;                            // the star lock
+    g.fillStyle(0x0a1cf0, 0.18); g.fillCircle(sx, sy, R * 1.7);
+    for (const flip of [0, 1]) {
+      const p0 = [0, 1, 2].map((i) => {
+        const a = -Math.PI / 2 + i * (Math.PI * 2 / 3) + (flip ? Math.PI / 3 : 0);
+        return { x: sx + Math.cos(a) * R, y: sy + Math.sin(a) * R };
+      });
+      g.lineStyle(3, 0x0a1cf0, 1);
+      g.beginPath(); g.moveTo(p0[0].x, p0[0].y); g.lineTo(p0[1].x, p0[1].y); g.lineTo(p0[2].x, p0[2].y); g.closePath(); g.strokePath();
+    }
+    g.fillStyle(SNOW, 0.9); g.fillRoundedRect(x + 2, y - 6, w - 4, 10, 5);
+  },
+
   snowGlobeProp(g, x, y, w, h) {                                                             // generic "nice thing on a stand"
     const cx = x + w / 2;
     g.fillStyle(INK, 0.16); g.fillEllipse(cx, y + h + 4, w, 12);

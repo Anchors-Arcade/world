@@ -11,6 +11,8 @@ import { WorldLayer } from '../world/WorldLayer.js';
 import { SkiArea } from '../world/SkiArea.js';
 import { SKI_ROUTES } from '../world/skiAreas.js';
 import { drawSprite, spriteFor, captionOf } from '../utils/sprites.js';
+import { GalleryWall } from '../world/GalleryWall.js';
+import { wallTotal } from '../database/wallCache.js';
 import { GAMES } from '../minigames/registry.js';
 import { bestOf } from '../minigames/scoreSystem.js';
 
@@ -36,6 +38,8 @@ export class RoomScene extends Phaser.Scene {
     this.room = room; this.doors = [];
     this.explore = this.registry.get('exploration') || null;                // Phase 8: collectibles / secrets / achievements
     this.cameras.main.setBackgroundColor(room.sky ?? 0x0e2238).fadeIn(250);
+    // Phase 15: a gallery room is as long as its picture count requires (and always has one spare bay).
+    if (room.gallery) room.w = GalleryWall.hallWidth(wallTotal());
     this.physics.world.setBounds(0, 0, room.w, room.h);
     this.walls = this.physics.add.staticGroup();
 
@@ -69,6 +73,9 @@ export class RoomScene extends Phaser.Scene {
     this.addAmbience(room);                                 // Phase 9: aurora, weather, cave haze, warm light
     this.setupInput();
 
+    // Phase 15: the picture wall, if this room has one.
+    if (room.gallery) { this.gallery = new GalleryWall(this, room); this.gallery.build(); }
+
     // Phase 8: build THIS room's interactive objects and collectibles (and nothing from any other room).
     if (this.explore && room.type !== 'home') this.world = new WorldLayer(this, this.explore);
 
@@ -95,6 +102,7 @@ export class RoomScene extends Phaser.Scene {
       this.input.keyboard && (this.input.keyboard.enabled = true);
       this.editor?.dispose(); this.editor = null; this.home?.destroy(); this.loadToken++;
       this.world?.destroy(); this.world = null;
+      this.gallery?.destroy(); this.gallery = null;
       this.mp.destroy();
       this.game.events.emit('home-left');
     });
@@ -672,6 +680,9 @@ export class RoomScene extends Phaser.Scene {
     });
     this.input.keyboard.addKey('SPACE', false).on('down', () => !this.editing && !this.uiLocked && !this.leaving && document.activeElement?.tagName !== 'INPUT' && this.player.hop());
     this.keys.E.on('down', () => {
+      if (!this.editing && !this.uiLocked && !this.nearDoor && this.nearPic) {                 // Phase 15
+        return this.game.events.emit('open-wall', { pic: this.nearPic.pic });
+      }
       if (this.editing || this.uiLocked) return;
       if (this.ski?.nearLift()) return this.ski.boardLift();        // Phase 12: board the gondola
       if (this.nearDoor) this.enter(this.nearDoor);
@@ -709,11 +720,15 @@ export class RoomScene extends Phaser.Scene {
     this.mp.update(time, delta, this.registry.get('reduceMotion'));
 
     this.world?.update();                                   // Phase 8: collectible pickups (a few distance checks)
+    this.gallery?.update();                                 // Phase 15: load only the pictures you are standing near
 
     this.nearDoor = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.zone, this.player.x, this.player.y)) || null;
+    // Phase 15: standing in front of a hung picture, with no door in range, offers a closer look.
+    this.nearPic = !this.nearDoor && this.gallery ? this.gallery.nearest() : null;
     const nd = this.nearDoor;
     this.game.events.emit('door-prompt',
-      nd ? `Press E to ${nd.verb || (nd.action ? 'browse' : 'enter')} ${nd.label}`
+      this.nearPic ? `Press E to look at this picture`
+      : nd ? `Press E to ${nd.verb || (nd.action ? 'browse' : 'enter')} ${nd.label}`
          : (this.ski?.hint() || ''));                     // Phase 12: lift / push-off hints
     if (this.nearDoor && this.pendingDoor === this.nearDoor) this.enter(this.nearDoor);
   }

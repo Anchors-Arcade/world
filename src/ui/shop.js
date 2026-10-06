@@ -13,7 +13,7 @@ const CLOTHING_TABS = [
 const SHOPS = {
   clothing: {
     tone: 'teal', name: 'Snowy Threads', sub: 'Clothing Shop', blurb: 'Try anything on. Pay only for what you love.',
-    tabs: CLOTHING_TABS, items: ITEMS.filter((i) => !i.starter),
+    tabs: CLOTHING_TABS, items: ITEMS.filter((i) => !i.starter && !i.secret),      // Phase 14: secret items are never on a shelf
     inTab: (it, tab) => CLOTHING_TABS.find((t) => t[0] === tab)[2].includes(it.category),
   },
   furniture: {
