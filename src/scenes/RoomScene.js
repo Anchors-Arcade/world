@@ -10,6 +10,7 @@ import { fetchRoom } from '../database/rooms.js';
 import { WorldLayer } from '../world/WorldLayer.js';
 import { SkiArea } from '../world/SkiArea.js';
 import { SKI_ROUTES } from '../world/skiAreas.js';
+import { drawSprite, spriteFor, captionOf } from '../utils/sprites.js';
 import { GAMES } from '../minigames/registry.js';
 import { bestOf } from '../minigames/scoreSystem.js';
 
@@ -241,12 +242,22 @@ export class RoomScene extends Phaser.Scene {
     const paths = room.paths || (room.floor === 'snow' && !room.indoor
       ? [[room.w / 2 - 140, 300, 280, room.h - 300], [150, 430, room.w - 300, 110]]
       : null);
+    // Phase 13: a path is trodden snow, not a translucent box. Three softening passes and a scatter of
+    // boot prints, with no hard outline, so walkways read as ground rather than as UI.
     if (paths) {
       const g = this.add.graphics().setDepth(-999);
       for (const [x, y, w, h] of paths) {
-        const r = Math.min(50, Math.min(w, h) / 2);
-        g.fillStyle(0xcfe6f4, 0.7); g.fillRoundedRect(x, y, w, h, r);
-        g.lineStyle(6, 0xb4d4e6, 0.45); g.strokeRoundedRect(x, y, w, h, r);
+        const r = Math.min(60, Math.min(w, h) / 2);
+        g.fillStyle(0xdceefa, 0.3); g.fillRoundedRect(x - 10, y - 10, w + 20, h + 20, r + 10);
+        g.fillStyle(0xcfe6f4, 0.45); g.fillRoundedRect(x, y, w, h, r);
+        g.fillStyle(0xc3dcee, 0.4); g.fillRoundedRect(x + 12, y + 12, w - 24, h - 24, Math.max(4, r - 12));
+        g.fillStyle(0xaecbe0, 0.35);                                        // boot prints down the middle
+        const along = w > h, n = Math.floor((along ? w : h) / 54);
+        for (let i = 0; i < n; i++) {
+          const t = (i + 0.5) / n, px = along ? x + w * t : x + w / 2 + (i % 2 ? 11 : -11);
+          const py = along ? y + h / 2 + (i % 2 ? 11 : -11) : y + h * t;
+          g.fillEllipse(px, py, 13, 9);
+        }
       }
     }
     if (room.wash) this.add.rectangle(0, 0, room.w, room.h, room.wash[0], room.wash[1]).setOrigin(0).setDepth(-995).setBlendMode(Phaser.BlendModes.MULTIPLY);
@@ -321,10 +332,35 @@ export class RoomScene extends Phaser.Scene {
     return r;
   }
 
+  // Phase 13: a block is no longer a coloured rectangle with an emoji on it. The footprint (and therefore the
+  // collision body, which every room in Phases 1-12 was built around) is unchanged — only the art is. The sprite
+  // is chosen from `b.art`, or inferred from the emoji the room data already uses in its label.
+  // Phase 13: a standing spot used to be a bright yellow rectangle, which read as a placeholder. It is now a soft
+  // trodden-snow oval with a faint rim — still obvious when you are near it, invisible as clutter from a distance.
+  markZone(zone) {
+    const e = this.add.ellipse(zone.centerX, zone.centerY + 6, zone.width * 1.15, zone.height * 0.95, 0xffffff, 0.3)
+      .setDepth(-930);
+    this.add.ellipse(zone.centerX, zone.centerY + 6, zone.width * 1.15, zone.height * 0.95, 0xffc247, 0)
+      .setStrokeStyle(2, 0xffc247, 0.35).setDepth(-929);
+    return e;
+  }
+
   addBlock(b) {
-    const r = this.add.rectangle(b.x + b.w / 2, b.y + b.h / 2, b.w, b.h, b.color || 0xe9d3b0).setStrokeStyle(4, 0x6b4428).setDepth(b.y + b.h);
-    this.walls.add(r);
-    this.add.text(r.x, r.y, b.label || '', { fontSize: '24px', color: '#fff' }).setOrigin(0.5).setDepth(b.y + b.h + 1);
+    const depth = b.y + b.h, cx = b.x + b.w / 2;
+    const g = this.add.graphics().setDepth(depth);
+    const drew = drawSprite(g, spriteFor(b.art || b.label), b.x, b.y, b.w, b.h, { color: b.color, neat: b.neat });
+    if (!drew) {                                                        // never reached with the current rooms, kept as a safety net
+      g.fillStyle(b.color || 0xe9d3b0); g.fillRoundedRect(b.x, b.y, b.w, b.h, 8);
+      g.lineStyle(4, 0x6b4428); g.strokeRoundedRect(b.x, b.y, b.w, b.h, 8);
+    }
+    this.walls.add(this.add.rectangle(cx, b.y + b.h / 2, b.w, b.h, 0, 0));
+
+    // The words of the label (if any) become a small caption under the object; the emoji is now the picture itself.
+    const caption = captionOf(b.label);
+    if (caption) {
+      this.add.text(cx, b.y + b.h + 10, caption, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffcc', padding: { x: 7, y: 2 } })
+        .setOrigin(0.5, 0).setDepth(depth + 1);
+    }
   }
 
   addBuilding(b) {
@@ -338,6 +374,17 @@ export class RoomScene extends Phaser.Scene {
         scale: { start: 0.5, end: 2.1 }, alpha: { start: 0.35, end: 0 }, frequency: 240, quantity: 1, tint: 0xdfe8ef,
       }).setDepth(y + h - 1);
     }
+    // Phase 13: a hanging sign beside the door, so a cafe reads differently from a clothes shop at a glance.
+    // Buildings themselves are baked images (src/utils/worldArt.js), so the sign gets its own small graphics.
+    if (b.icon) {
+      const sx = x + w - 4, sy = y + h - 104, sg = this.add.graphics().setDepth(y + h + 1);
+      sg.fillStyle(0x3a2616); sg.fillRect(sx - 14, sy, 40, 7); sg.fillRect(sx + 20, sy, 5, 14);
+      sg.fillStyle(0x7a4f2f); sg.fillRoundedRect(sx + 1, sy + 12, 42, 38, 8);
+      sg.fillStyle(0xe4d6b4); sg.fillRoundedRect(sx + 5, sy + 16, 34, 30, 6);
+      sg.fillStyle(0xffffff, 0.92); sg.fillRoundedRect(sx - 1, sy + 8, 46, 8, 4);
+      this.add.text(sx + 22, sy + 31, b.icon, { fontSize: '21px' }).setOrigin(0.5).setDepth(y + h + 2);
+    }
+
     this.add.text(x + w / 2, y + h + 22, b.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 8, y: 3 } })
       .setOrigin(0.5).setDepth(y + h + 2);
     this.walls.add(this.add.rectangle(x + w / 2, y + 40 + (h - 40) / 2, w, h - 40, 0, 0));
@@ -345,13 +392,24 @@ export class RoomScene extends Phaser.Scene {
   }
 
   // A shop counter: solid, with a "browse" zone in front. Entering the zone + E (or clicking the counter) opens the storefront.
+  // Phase 13: a shop counter is now a real counter — a wooden front, a stone worktop, a till and a little sign —
+  // with the shopkeeper penguin standing behind it. The action, the zone and the body are unchanged.
   addKiosk(k) {
-    const r = this.add.rectangle(k.x + k.w / 2, k.y + k.h / 2, k.w, k.h, 0xe9d3b0).setStrokeStyle(4, 0x6b4428).setDepth(k.y + k.h);
-    this.walls.add(r);
-    this.add.text(r.x, r.y, k.icon || k.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '17px', fontStyle: 'bold', color: '#4a3200' }).setOrigin(0.5).setDepth(k.y + k.h + 1);
-    this.add.text(r.x, k.y + 10, '🐧', { fontSize: '38px' }).setOrigin(0.5, 1).setDepth(k.y + k.h - 1);             // shopkeeper behind the counter
+    const cx = k.x + k.w / 2, depth = k.y + k.h;
+    const g = this.add.graphics().setDepth(depth);
+    drawSprite(g, 'counter', k.x, k.y, k.w, k.h, { color: 0x7a4f2f });
+    g.fillStyle(0x3a3f4b); g.fillRoundedRect(cx + k.w * 0.22, k.y - 16, 38, 20, 4);                 // till
+    g.fillStyle(0x9aa7b8); g.fillRoundedRect(cx + k.w * 0.25, k.y - 12, 32, 9, 3);
+    g.fillStyle(0xffc247); g.fillCircle(cx + k.w * 0.41, k.y - 20, 4);
+    this.walls.add(this.add.rectangle(cx, k.y + k.h / 2, k.w, k.h, 0, 0));
+    this.add.text(cx, k.y + 10, '🐧', { fontSize: '40px' }).setOrigin(0.5, 1).setDepth(depth - 1);   // shopkeeper behind the counter
+    // a small propped sign on the counter instead of floating text
+    const sg = this.add.graphics().setDepth(depth + 1);
+    sg.fillStyle(0x6b4428); sg.fillRoundedRect(cx - 86, k.y + 16, 172, 34, 8);
+    sg.fillStyle(0xeee3c8); sg.fillRoundedRect(cx - 82, k.y + 20, 164, 26, 6);
+    this.add.text(cx, k.y + 33, k.icon || k.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#4a3200' }).setOrigin(0.5).setDepth(depth + 2);
     const zone = new Phaser.Geom.Rectangle(k.x + k.w / 2 - 70, k.y + k.h + 2, 140, DOOR_H);
-    this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.18).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
+    this.markZone(zone);
     this.doors.push({ label: k.label, action: k.action, zone, body: new Phaser.Geom.Rectangle(k.x, k.y, k.w, k.h), below: true });
   }
 
@@ -382,7 +440,7 @@ export class RoomScene extends Phaser.Scene {
     }
     this.walls.add(this.add.rectangle(cx, y + h / 2, w, h, 0, 0));
     const zone = new Phaser.Geom.Rectangle(cx - Math.min(80, w / 2), y + h + 2, Math.min(160, w), DOOR_H);
-    this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.16).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
+    this.markZone(zone);
     this.doors.push({ label: c.label, action: c.action, verb: c.verb || 'play', zone, body: new Phaser.Geom.Rectangle(x, y, w, h), below: true });
   }
 
@@ -417,7 +475,7 @@ export class RoomScene extends Phaser.Scene {
 
     this.walls.add(this.add.rectangle(cx, y + h / 2, w, h - 20, 0, 0));
     const zone = new Phaser.Geom.Rectangle(cx - 85, y + h + 4, 170, DOOR_H);
-    this.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.16).setStrokeStyle(2, 0xffc247, 0.6).setDepth(-900);
+    this.markZone(zone);
     this.doors.push({ label: def.name, action: `play:${def.id}`, verb: 'play', zone, body: new Phaser.Geom.Rectangle(x, y, w, h), below: true });
   }
 
@@ -589,8 +647,12 @@ export class RoomScene extends Phaser.Scene {
     }
   }
 
+  // Phase 13: two baked pine variants, picked deterministically from the tree's position with a little scale
+  // jitter, so a forest reads as a forest instead of the same triangle stamped twenty times. Still one image each.
   addTree(x, y) {
-    this.add.image(x, y, 'pine').setOrigin(0.5, 0.97).setDepth(y);
+    const seed = (Math.abs(Math.round(x * 31 + y * 17)) % 100) / 100;
+    const key = this.textures.exists('pine2') && seed > 0.5 ? 'pine2' : 'pine';
+    this.add.image(x, y, key).setOrigin(0.5, 0.97).setDepth(y).setScale(0.9 + seed * 0.3);
     this.walls.add(this.add.rectangle(x, y - 8, 22, 14, 0, 0));
   }
 

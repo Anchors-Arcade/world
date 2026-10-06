@@ -33,6 +33,7 @@ export class SkiArea {
   // build
   // ---------------------------------------------------------------
   build() {
+    this.buildLiftArt();
     if (this.room.lift) this.buildLift(this.room.lift);
     if (this.route) this.buildRoute(this.route);
   }
@@ -78,6 +79,7 @@ export class SkiArea {
     }).setOrigin(0.5).setDepth(by + 1);
 
     this.lift = { ...def, zone: new Phaser.Geom.Rectangle(bx - 95, by - 40, 190, 90) };
+    this.scene.markZone?.(this.lift.zone);                 // Phase 13: soft standing spot instead of a bright box
   }
 
   // Draw the sled course. Everything is a graphics primitive and a plain rectangle hit test —
@@ -172,6 +174,67 @@ export class SkiArea {
       fontFamily: 'system-ui, sans-serif', fontSize: '22px', color: '#eaf6ff',
       backgroundColor: '#14543fcc', padding: { x: 14, y: 6 },
     }).setOrigin(0.5).setDepth(-699);
+  }
+
+  // Phase 13: the lift is now visibly a lift — steel towers with cross-arms, a cable strung between them, and
+  // chairs hanging off it that drift up the mountain. Purely decorative: boarding still works exactly as before
+  // (walk onto the platform, press E), and the chair you ride is still drawn by boardLift().
+  buildLiftArt() {
+    const s = this.scene, def = this.lift;
+    if (!def) return;
+    const pts = (def.towers && def.towers.length >= 2) ? def.towers : [[def.x, def.y], [def.x, def.y - 600]];
+    const calm = s.registry.get('reduceMotion');
+
+    // --- cable: one line through every tower top, drawn behind the towers ---
+    const cable = s.add.graphics().setDepth(-640);
+    cable.lineStyle(4, 0x2b3a47, 0.95);
+    for (let i = 0; i < pts.length - 1; i++) {
+      cable.lineBetween(pts[i][0] - 2, pts[i][1] - 150, pts[i + 1][0] - 2, pts[i + 1][1] - 150);
+      cable.lineBetween(pts[i][0] + 2, pts[i][1] - 150, pts[i + 1][0] + 2, pts[i + 1][1] - 150);
+    }
+
+    // --- towers ---
+    for (const [tx, ty] of pts) {
+      const g = s.add.graphics().setDepth(ty);
+      g.fillStyle(0x16304a, 0.2); g.fillEllipse(tx, ty + 6, 92, 26);
+      g.fillStyle(0x4e5f6d); g.fillRect(tx - 13, ty - 150, 26, 150);                 // mast
+      g.fillStyle(0x62768a); g.fillRect(tx - 9, ty - 150, 9, 150);                   // lit side
+      g.fillStyle(0x3b4a57);                                                          // lattice
+      for (let y = ty - 140; y < ty - 10; y += 26) { g.fillRect(tx - 13, y, 26, 5); g.fillRect(tx - 3, y, 6, 26); }
+      g.fillStyle(0x6f8a9c); g.fillRoundedRect(tx - 54, ty - 162, 108, 15, 5);       // cross-arm
+      g.fillStyle(0xffffff, 0.85); g.fillRoundedRect(tx - 54, ty - 166, 108, 6, 3);  // snow on the arm
+      g.fillStyle(0x2b3a47);                                                          // sheave wheels
+      g.fillCircle(tx - 40, ty - 146, 8); g.fillCircle(tx + 40, ty - 146, 8);
+      g.fillStyle(0x9aa7b8); g.fillCircle(tx - 40, ty - 146, 4); g.fillCircle(tx + 40, ty - 146, 4);
+      s.walls.add(s.add.rectangle(tx, ty - 6, 40, 20, 0, 0));
+    }
+
+    // --- boarding platform, so the lift zone reads as somewhere you stand ---
+    const [bx, by] = pts[0];
+    const pg = s.add.graphics().setDepth(by - 1);
+    pg.fillStyle(0x8a6240); pg.fillRoundedRect(bx - 90, by - 6, 180, 46, 10);
+    pg.lineStyle(3, 0x6b4428, 0.85);
+    for (let x = bx - 78; x < bx + 84; x += 24) pg.lineBetween(x, by - 2, x, by + 36);
+    pg.fillStyle(0xffffff, 0.75); pg.fillRoundedRect(bx - 90, by - 10, 180, 8, 4);
+
+    // --- chairs riding the cable ---
+    const chairs = s.add.graphics().setDepth(-630);
+    const top = pts[pts.length - 1], draw = (t) => {
+      chairs.clear();
+      for (let i = 0; i < 4; i++) {
+        const f = (t + i / 4) % 1;
+        const x = Phaser.Math.Linear(bx, top[0], f), y = Phaser.Math.Linear(by, top[1], f) - 150;
+        chairs.lineStyle(3, 0x24364a); chairs.lineBetween(x, y, x, y + 26);
+        chairs.fillStyle(0x4f9fd8); chairs.fillRoundedRect(x - 17, y + 26, 34, 8, 3);
+        chairs.fillStyle(0x3b7fae); chairs.fillRoundedRect(x - 17, y + 44, 34, 9, 3);
+        chairs.fillStyle(0x6f8a9c); chairs.fillRect(x - 18, y + 34, 36, 4);
+      }
+    };
+    draw(0);
+    if (!calm) {
+      const rider = { t: 0 };
+      s.tweens.add({ targets: rider, t: 1, duration: 16000, repeat: -1, ease: 'Linear', onUpdate: () => draw(rider.t) });
+    }
   }
 
   // ---------------------------------------------------------------

@@ -34,14 +34,14 @@ export const ROOMS = {
     name: 'Snowy Plaza', w: 1800, h: 1100, floor: 'snow', spawn: { x: 900, y: 860 },
     sky: 0x14314f, fx: 'snow', stars: true,
     buildings: [
-      { label: 'Library',       x: 90,   y: 130, w: 230, h: 190, wall: 0x8c5a3a, roof: 0x3d5a80, to: 'library' },
-      { label: 'School',        x: 370,  y: 140, w: 250, h: 180, wall: 0xc9553d, roof: 0x2e4057, to: 'school' },
-      { label: 'Town Hall',     x: 720,  y: 70,  w: 360, h: 250, wall: 0xd8c9a3, roof: 0x4a6fa5, to: 'town_hall' },
-      { label: 'Arcade',        x: 1180, y: 140, w: 250, h: 180, wall: 0x6a4fb3, roof: 0x2d2a5e, to: 'arcade' },
-      { label: 'Café',          x: 1480, y: 150, w: 220, h: 170, wall: 0xb5703f, roof: 0xe8483c, to: 'cafe' },
-      { label: 'Clothing Shop', x: 250,  y: 560, w: 220, h: 170, wall: 0x2a9d8f, roof: 0x1d6f66, to: 'clothing_shop' },
+      { label: 'Library', icon: '📚',       x: 90,   y: 130, w: 230, h: 190, wall: 0x8c5a3a, roof: 0x3d5a80, to: 'library' },
+      { label: 'School', icon: '🔔',        x: 370,  y: 140, w: 250, h: 180, wall: 0xc9553d, roof: 0x2e4057, to: 'school' },
+      { label: 'Town Hall', icon: '🏛️',     x: 720,  y: 70,  w: 360, h: 250, wall: 0xd8c9a3, roof: 0x4a6fa5, to: 'town_hall' },
+      { label: 'Arcade', icon: '🕹️',        x: 1180, y: 140, w: 250, h: 180, wall: 0x6a4fb3, roof: 0x2d2a5e, to: 'arcade' },
+      { label: 'Café', icon: '☕',          x: 1480, y: 150, w: 220, h: 170, wall: 0xb5703f, roof: 0xe8483c, to: 'cafe' },
+      { label: 'Clothing Shop', icon: '🧥', x: 250,  y: 560, w: 220, h: 170, wall: 0x2a9d8f, roof: 0x1d6f66, to: 'clothing_shop' },
       { label: 'Furniture Shop',x: 1330, y: 560, w: 230, h: 170, wall: 0xe9a23b, roof: 0x9c5f12, to: 'furniture_shop' },
-      { label: 'My Home',       x: 780,  y: 780, w: 240, h: 150, wall: 0x7fa6c9, roof: 0x34506b, to: 'home' },
+      { label: 'My Home', icon: '🏠',       x: 780,  y: 780, w: 240, h: 150, wall: 0x7fa6c9, roof: 0x34506b, to: 'home' },
     ],
     portals: [
       { label: '◂ Deep Forest', x: 0,    y: 440, w: 60, h: 220, to: 'deep_forest',    spawn: { x: 120,  y: 550 } },
@@ -86,7 +86,7 @@ export const ROOMS = {
       { x: 600, y: 230, w: 150, h: 60, label: '💡 Lamps', color: 0xe9a23b }, { x: 790, y: 230, w: 150, h: 60, label: '🪴 Plants', color: 0xe9a23b },
       { x: 80, y: 440, w: 90, h: 120, label: '📚', color: 0x9c5f12 }, { x: 830, y: 440, w: 90, h: 120, label: '🧶', color: 0x9c5f12 },
     ],
-    kiosks: [{ label: 'Furniture Shop', x: 400, y: 300, w: 200, h: 60, action: 'furniture', icon: '🛋️ Browse furniture' }],
+    kiosks: [{ label: 'Furniture Shop', icon: '🛋️', x: 400, y: 300, w: 200, h: 60, action: 'furniture', icon: '🛋️ Browse furniture' }],
     portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 580 } }],
   },
   // The Arcade: walk up to a cabinet and press E (or click it) to pick a game; the board on the right opens the leaderboards.
@@ -188,7 +188,7 @@ export const ROOMS = {
     paths: [[700, 60, 200, 820], [200, 620, 1200, 140]],
     activities: [{ id: 'crate_stack', x: 230, y: 420 }],
     buildings: [
-      { label: 'Lighthouse', x: 1140, y: 150, w: 190, h: 270, wall: 0xf0f4f7, roof: 0xe8483c, to: 'lighthouse' },
+      { label: 'Lighthouse', icon: '🗼', x: 1140, y: 150, w: 190, h: 270, wall: 0xf0f4f7, roof: 0xe8483c, to: 'lighthouse' },
     ],
     portals: [
       { label: '◂ Snowy Plaza', x: 0,   y: 440, w: 60,  h: 220, to: 'snowy_plaza', spawn: { x: 120, y: 550 } },
@@ -225,8 +225,8 @@ export const ROOMS = {
     paths: [[590, 340, 220, 620]],
     activities: [{ id: 'cliff_climb', x: 180, y: 680 }],
     buildings: [
-      { label: 'Ice Caves',       x: 140, y: 150, w: 240, h: 200, wall: 0x6f8a9c, roof: 0x3a4d5c, to: 'ice_caves' },
-      { label: 'Old Observatory', x: 940, y: 130, w: 260, h: 230, wall: 0xd8c9a3, roof: 0x6a4fb3, to: 'observatory' },
+      { label: 'Ice Caves', icon: '🧊',       x: 140, y: 150, w: 240, h: 200, wall: 0x6f8a9c, roof: 0x3a4d5c, to: 'ice_caves' },
+      { label: 'Old Observatory', icon: '🔭', x: 940, y: 130, w: 260, h: 230, wall: 0xd8c9a3, roof: 0x6a4fb3, to: 'observatory' },
     ],
     portals: [
       { label: 'Frozen Lake ▾', x: 590, y: 940, w: 220, h: 60, to: 'frozen_lake', spawn: { x: 700, y: 860 } },
@@ -311,7 +311,7 @@ export const ROOMS = {
       towers: [[860, 330], [860, 150], [860, -40]],
     },
     buildings: [
-      { label: 'Warming Hut', x: 240, y: 300, w: 240, h: 190, wall: 0xb5703f, roof: 0x7a3f22, to: 'ski_lodge' },
+      { label: 'Warming Hut', icon: '🔥', x: 240, y: 300, w: 240, h: 190, wall: 0xb5703f, roof: 0x7a3f22, to: 'ski_lodge' },
     ],
     portals: [
       { label: '◂ Mountain Pass', x: 0, y: 520, w: 60, h: 220, to: 'mountain_pass', spawn: { x: 1280, y: 520 } },

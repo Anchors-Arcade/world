@@ -182,3 +182,41 @@ Polish in the same pass:
 - **The ski area is findable**: the Mountain Pass signpost and the plaza notice board both point at Anchor Peak, and
   the Warming Hut now has a route board describing all five runs and a cocoa pot.
 - Background peaks got a ridge line and base haze so they read as distant mountains rather than flat wedges.
+
+## Phase 13: real world visuals
+Everything in the world used to be a coloured rectangle with an emoji sitting on it. Phase 13 replaces those with
+original drawn sprites, without touching a single interaction: **every footprint, collision body, door, zone and
+action is exactly what Phases 1-12 defined** — only the art changed, so shops, portals, secrets, collectibles, the
+ski lift and multiplayer all behave identically.
+
+- **`src/utils/sprites.js`** (new) — the drawing library: tents with fabric, poles and a doorway; campfires with a
+  stone ring, logs and flame; notice boards with pinned notes; signposts; crates, barrels and fish crates; sleds;
+  harbour bells; lanterns; mooring posts with coiled rope; a beached boat; skates; cairns; snow piles; snow berries;
+  carved glowing marks; crystal clusters; ice holes and frozen bubbles; shop counters, clothes racks, shelves,
+  sofas, beds, plants, books, desks, charts, telescopes, dials, scrolls, globes, orreries, ladders, buckets,
+  toolboxes, clocks, café tables with a steaming mug, cakes, a decorated town tree and a frozen fountain.
+  Each sprite is a few hundred bytes of code: no textures to download, no atlas, nothing to load.
+- **How it attaches to the old data**: the rooms and interactions of Phases 1-12 identify their objects with an emoji
+  in the label. `spriteFor()` maps those emoji onto the sprites above, so nothing had to be re-authored, and an
+  explicit `art: 'tent'` overrides it. The words of a label become a small caption *under* the object; the picture is
+  the object itself. Anything unmapped falls back to a wooden crate rather than a bare rectangle.
+- **Collectibles** (`src/utils/collectibleArt.js`, new) — all 32 were the same sparkle in a different tint. They are
+  now snowflakes, crystals, a compass, a skate key, a locket, logbooks, a medal, a badge, an orrery gear, a comet
+  fragment, a brass lens, a star chart, a kettle, a sailor's charm, a piton and a marker stone, each with its rarity
+  glow behind it.
+- **Trees** — two baked pine variants (broad and tall) with a trunk, layered tiers, a lit side and snow on every
+  tier, picked deterministically from each tree's position with a little scale jitter. Still one image per tree.
+- **Buildings** keep their baked art from Phase 12 and gain a **hanging sign** by the door with the shop's own
+  pictogram, so a café reads differently from a clothes shop before you read the name.
+- **Shop counters** are real counters — wooden front, stone worktop, a till and a propped sign — with the shopkeeper
+  penguin behind them (still the only NPCs in the world).
+- **The ski lift** is now visibly a lift: steel lattice towers with cross-arms and sheave wheels, a cable strung
+  between them, chairs drifting up the mountain and a plank boarding platform. Riding it is unchanged.
+- **Standing spots** (shop counters, arcade cabinets, activity stands, interactive objects, the lift platform) were
+  bright yellow rectangles that read as placeholder UI. They are now one shared soft oval of trodden snow.
+- **Paths** are trodden snow with soft edges and boot prints instead of translucent boxes.
+- **Hover feedback**: interactive objects lift slightly and show a soft ring under them on hover or tap. Walking up
+  and pressing **E** is unchanged.
+- Verified in a headless browser: every room still builds with its doors intact, a house door still enters its room,
+  a counter still opens the shop, an object still fires its interaction, a collectible still collects, and the lift
+  still boards. All five test suites pass.

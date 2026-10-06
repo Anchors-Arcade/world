@@ -52,14 +52,24 @@ export function makeTextures(scene) {
     g.fillTriangle(0, 17, 17, 12, 17, 22); g.fillTriangle(34, 17, 17, 12, 17, 22);
     g.fillCircle(17, 17, 6);
   });
-  gen('pine', 96, 140, (g) => {
-    g.fillStyle(0x6b4428); g.fillRect(42, 110, 12, 28);
-    [[4, 70, 60], [18, 50, 50], [32, 30, 36]].forEach(([top, y, hw], i) => {
-      const cy = 18 + i * 34;
-      g.fillStyle(0x1f6b4f); g.fillTriangle(48, cy, 48 - hw / 1.2 - 12, cy + 52, 48 + hw / 1.2 + 12, cy + 52);
-      g.fillStyle(0xffffff); g.fillTriangle(48, cy, 48 - 14 - i * 4, cy + 22, 48 + 14 + i * 4, cy + 22);
-    });
-  });
+  // Phase 13: proper cartoon pines — a trunk, layered tiers with a lit side, and a load of snow on every tier.
+  // Baked twice (a broad one and a tall one) so a forest has variety while still costing one image per tree.
+  const pine = (tall) => (g) => {
+    const W = tall ? 84 : 96, H = tall ? 160 : 140, cx = W / 2;
+    g.fillStyle(0x5a3b22); g.fillRect(cx - 7, H - 34, 14, 34);
+    g.fillStyle(0x6b4428); g.fillRect(cx - 7, H - 34, 6, 34);
+    const tiers = tall ? 4 : 3;
+    for (let i = 0; i < tiers; i++) {
+      const t = i / tiers, cy = H - 26 - (H - 50) * t * 0.82, hw = (W / 2 - 4) * (1 - t * 0.5), th = (H - 40) * 0.44;
+      g.fillStyle(i % 2 ? 0x1b5f46 : 0x1f6b4f); g.fillTriangle(cx, cy - th, cx - hw, cy, cx + hw, cy);
+      g.fillStyle(0x2a8a63, 0.6); g.fillTriangle(cx, cy - th, cx - hw * 0.34, cy, cx + hw * 0.12, cy);
+      g.fillStyle(0xffffff, 0.95); g.fillTriangle(cx, cy - th, cx - hw * 0.52, cy - th * 0.34, cx + hw * 0.52, cy - th * 0.34);
+      g.fillStyle(0xdfeefb, 0.9); g.fillTriangle(cx, cy - th, cx - hw * 0.2, cy - th * 0.3, cx + hw * 0.52, cy - th * 0.34);
+    }
+    g.fillStyle(0xffc247); g.fillCircle(cx, 6, 3);
+  };
+  gen('pine', 96, 140, pine(false));
+  gen('pine2', 84, 160, pine(true));
   gen('flake', 6, 6, (g) => { g.fillStyle(0xffffff); g.fillCircle(3, 3, 3); });
   g.destroy();
   makeItemTextures(scene);

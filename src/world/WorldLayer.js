@@ -1,5 +1,7 @@
 import { interactionsIn } from './interactions.js';
 import { RARITY } from './collectibles.js';
+import { drawSprite, spriteFor } from '../utils/sprites.js';
+import { drawCollectible } from '../utils/collectibleArt.js';
 
 // Phase 8 — everything exploration-related inside ONE room, built when the room is entered and thrown away when it
 // is left. Nothing is loaded for rooms you are not standing in, there is no polling and no extra realtime channel.
@@ -29,38 +31,42 @@ export class WorldLayer {
     for (const o of interactionsIn(this.roomId)) this.addObject(o);
   }
 
+  // Phase 13: an interactive object is now drawn as the THING it is (a campfire, a notice board, a cairn, a
+  // glowing mark) instead of a tinted box with an emoji on it. The footprint, the collision body and the
+  // interaction zone are byte-for-byte what they were in Phases 8-12, so every interaction still works.
   addObject(o) {
     const s = this.scene, { x, y, w, h } = o, cx = x + w / 2, cy = y + h / 2;
     const solved = o.secret && this.ex.hasClue(o.secret, o.clue);
     const depth = y + h;
 
-    if (o.flat) {                                        // a mark on the floor (a bubble in the ice, a cut hole)
-      const e = s.add.ellipse(cx, cy, w, h, o.color ?? 0xbfe8fb, 0.75).setStrokeStyle(3, 0xffffff, 0.8).setDepth(-940);
-      this.marks.set(o.id, { art: e });
-    } else {
-      const g = s.add.graphics().setDepth(depth);
-      g.fillStyle(0x16304a, 0.18); g.fillEllipse(cx, y + h + 3, w + 18, 20);
-      g.fillStyle(o.color ?? 0x8c5a3a); g.fillRoundedRect(x, y, w, h, 10);
-      g.fillStyle(0xffffff, 0.22); g.fillRoundedRect(x + 4, y + 4, w - 8, Math.max(8, h * 0.28), 8);
-      g.lineStyle(3, 0x16304a, 0.35); g.strokeRoundedRect(x, y, w, h, 10);
-      g.fillStyle(0xffffff); g.fillEllipse(cx, y + 2, w * 0.86, 13);                       // a cap of snow on everything outdoors
-      g.fillStyle(0x16304a, 0.1); g.fillRoundedRect(x + 4, y + h - 12, w - 8, 10, 5);      // base shadow
-      s.add.text(cx, cy + 4, o.icon || '❔', { fontSize: `${Math.min(40, Math.max(24, h * 0.62))}px` }).setOrigin(0.5).setDepth(depth + 1);
-      if (!o.walkable) s.walls.add(s.add.rectangle(cx, cy, w, h, 0, 0));
-      this.marks.set(o.id, { art: g });
-    }
+    const g = s.add.graphics().setDepth(depth);
+    const sprite = spriteFor(o.art || o.icon || o.label, o.flat ? 'bubble' : 'crate');
+    drawSprite(g, sprite, x, y, w, h, { color: o.color, neat: o.id === 'camp_pile_neat' });
+    if (!o.walkable) s.walls.add(s.add.rectangle(cx, cy, w, h, 0, 0));
+    this.marks.set(o.id, { art: g });
 
     // A clue object glows until its clue has been found, so exploring feels guided but never automatic.
     if (o.secret) {
-      const glow = s.add.rectangle(cx, cy, w + 26, h + 26, 0xffc247, solved ? 0.06 : 0.22).setDepth(depth - 2);
+      const glow = s.add.ellipse(cx, y + h, w + 54, h * 0.9 + 28, 0xffc247, solved ? 0.05 : 0.2)
+        .setDepth(depth - 2).setBlendMode(Phaser.BlendModes.ADD);
       if (!solved && !s.registry.get('reduceMotion')) {
-        s.tweens.add({ targets: glow, alpha: 0.07, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+        s.tweens.add({ targets: glow, alpha: 0.06, scaleX: 1.12, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
       }
       this.marks.get(o.id).glow = glow;
     }
 
+    // Hover / tap feedback: the object lifts slightly and a soft ring appears under it, so it is obvious that it
+    // can be used. Pointer events only — walking up and pressing E is unchanged.
+    const ring = s.add.ellipse(cx, y + h + 6, w + 30, 22, 0xffffff, 0).setDepth(depth - 1);
+    const hit = s.add.rectangle(cx, cy, w + 10, h + 10, 0, 0).setDepth(depth)
+      .setInteractive({ useHandCursor: true });
+    hit.on('pointerover', () => { ring.setFillStyle(0xffffff, 0.3); g.setY(-3); });
+    hit.on('pointerout', () => { ring.setFillStyle(0xffffff, 0); g.setY(0); });
+    hit.on('pointerdown', () => { g.setY(1); });
+    hit.on('pointerup', () => { g.setY(-3); });
+
     const zone = new Phaser.Geom.Rectangle(cx - Math.min(80, w / 2 + 20), y + h + 2, Math.min(170, w + 40), 54);
-    s.add.rectangle(zone.centerX, zone.centerY, zone.width, zone.height, 0xffc247, 0.12).setStrokeStyle(2, 0xffc247, 0.45).setDepth(-930);
+    s.markZone(zone);                                     // the shared soft "stand here" oval
     s.doors.push({
       label: o.label, action: `world:${o.id}`, verb: 'look at', world: o,
       zone, body: new Phaser.Geom.Rectangle(x, y, w, h), below: true,
@@ -82,16 +88,20 @@ export class WorldLayer {
     for (const [id, c] of wanted) if (!this.sprites.has(id)) this.sprites.set(id, this.addCollectible(c));
   }
 
+  // Phase 13: a collectible now looks like the thing it is — a snowflake, a crystal, a compass, a locket, a
+  // logbook, a comet fragment — with the rarity glow behind it instead of one generic star for all 32.
   addCollectible(c) {
     const s = this.scene, tint = RARITY[c.rarity]?.glow ?? 0xffffff, calm = s.registry.get('reduceMotion');
     const cont = s.add.container(c.x, c.y).setDepth(c.y + 2);
-    const halo = s.add.image(0, 0, 'sparkle').setTint(tint).setAlpha(0.35).setScale(1.9);
-    const star = s.add.image(0, 0, 'sparkle').setTint(tint);
-    const shadow = s.add.ellipse(0, 16, 26, 10, 0x16304a, 0.18);
-    cont.add([shadow, halo, star]);
+    const halo = s.add.image(0, 0, 'sparkle').setTint(tint).setAlpha(0.3).setScale(2.2);
+    const art = s.add.graphics();
+    drawCollectible(art, c.id, tint);
+    const star = art;
+    const shadow = s.add.ellipse(0, 18, 28, 10, 0x16304a, 0.2);
+    cont.add([shadow, halo, art]);
     if (!calm) {
       s.tweens.add({ targets: cont, y: c.y - 9, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-      s.tweens.add({ targets: star, angle: 360, duration: 6000, repeat: -1 });
+      s.tweens.add({ targets: star, angle: 360, duration: 7000, repeat: -1 });
       s.tweens.add({ targets: halo, scale: 2.5, alpha: 0.12, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
     }
     cont.setData('c', c);
