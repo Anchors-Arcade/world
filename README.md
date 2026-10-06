@@ -3,7 +3,7 @@
 Plain HTML/CSS/JS. Phaser and Supabase load from CDNs. Upload the files as-is to GitHub.
 
 ## Setup (once)
-1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue), **then** `supabase/phase10.sql` (the seven world activities). Then **`supabase/phase15.sql`** (the Town Hall picture wall — read its moderation note first), **`supabase/phase14.sql`** (the Blue Star + the founder's jetpack), **`supabase/phase11.sql`** (Slope Sled Run + Snow Runner) and **`supabase/phase12.sql`** (the five sled routes). All safe to re-run.
+1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue), **then** `supabase/phase10.sql` (the seven world activities). Then **`supabase/phase17.sql`** (roles, moderation, the admin panel), **`supabase/phase16.sql`** (the crate's keypad), **`supabase/phase15.sql`** (the Town Hall picture wall — read its moderation note first), **`supabase/phase14.sql`** (the Blue Star + the founder's jetpack), **`supabase/phase11.sql`** (Slope Sled Run + Snow Runner) and **`supabase/phase12.sql`** (the five sled routes). All safe to re-run.
    Deploy the new client files and run `phase6.sql` together: Phase 6 changes how your own profile is loaded (`get_my_profile()`).
    (Auth → Providers → Email: turn off "Confirm email" while testing, or keep it on and do step 1b.)
 1b. **E-mail confirmation links** go to your Supabase *Site URL*, which defaults to `http://localhost:3000` ("site can't be reached"). Fix: Supabase → Authentication → **URL Configuration** → set **Site URL** to where the game runs (e.g. `https://YOUR-USER.github.io/YOUR-REPO/` or `http://localhost:5173/`) and add the same address(es) under **Redirect URLs** (add `http://localhost:5173/**` and your GitHub Pages address with `/**`). The game now also sends the page you signed up from as the redirect, and the sign-up screen has a "Resend confirmation email" button. Links already sent keep the old address: request a new one.
@@ -274,3 +274,91 @@ line of chat. Before you open it to anyone beyond your friends:
 - **Run an approval queue** if the game is public: `alter table public.wall_pictures alter column approved set default false;`
   Nothing then appears until you flip `approved` yourself. This is the setting to use if children play.
 - Tighten the taps: `wall_picture_limit()` and `wall_cooldown()` are one-line functions at the top of phase15.sql.
+
+## Phase 16: the Sealed Crate has a code lock
+The crate in the Star Chamber now has a keypad on it. Opening it takes **two** things, checked together on the
+server: the right **code**, and the right **account**.
+
+- The code is stored in `founder_accounts`, the same table with RLS on, **no policy and no grant** that already
+  decides who the crate belongs to. It is never sent to the browser — the client only ever posts the digits
+  somebody typed, so reading the source, the network tab or localStorage reveals nothing. (Verified: the digits
+  appear nowhere in `src/`, only in `supabase/phase16.sql`.)
+- Spaces and dashes are ignored, so the code can be typed however it is written down.
+- A wrong code and a wrong account return the **same** answer, so the keypad never tells you which half was wrong.
+- Wrong guesses are logged in `founder_attempts` and capped at **12 an hour**, after which the keypad goes dead for
+  a while — brute force is off the table even before you count the length of the code.
+- The keypad takes the number keys, Enter and Backspace as well as taps, and the crate sprite now has the keypad
+  and its little green display drawn on it under the star lock.
+
+Changing it later: `update public.founder_accounts set code = '<digits>' where email = '<address>';`
+Clearing a lockout: `delete from public.founder_attempts where player_id = '<uuid>';`
+
+## Phase 17: working auth, guests in multiplayer, the admin panel (P), clothes that fit
+(This is the "Phase 16 — auth + admin panel + guest multiplayer" request; the repo already had a `phase16.sql`,
+so the new file is **`supabase/phase17.sql`**.)
+
+### Make yourself an admin
+Run `supabase/phase17.sql`, then once, in the SQL editor:
+```sql
+update public.profiles set role = 'admin' where username = 'YOUR_USERNAME';
+-- or:  update public.profiles set role = 'admin'
+--       where id = (select id from auth.users where lower(email) = lower('you@example.com'));
+```
+Roles are `user`, `moderator`, `admin`, and you change them in Supabase or from the panel. **Nothing about a role
+is ever decided in the browser.**
+
+### Login
+- The session is restored before anything is drawn, an **expired token is refreshed once**, and a profile that is
+  still being created by the database trigger is retried — so a refresh while logged in lands you back in the world
+  instead of on the login screen.
+- Signing out in another tab signs this one out too (`onAuthStateChange`), instead of leaving a half-dead session.
+- Logout clears the local session even when the network call fails, so you can never get stuck signed in.
+- Real error messages: wrong password, unconfirmed e-mail, rate limiting, offline, e-mail already registered,
+  username taken, and "the database is not set up yet" instead of a bare Postgres error.
+- A **banned** account is told it is banned, and for how long, instead of being dropped on a blank form.
+
+### Guests in multiplayer
+Guests now **spawn into the shared world, are seen by everyone and see everyone**, walk normally, show a temporary
+name, and can use the guest-safe parts of the game (exploring, collectibles, minigames for fun, emotes).
+They join the same room channel as everyone else — presence and broadcast need no database rows at all.
+What they do **not** get: chat, friends, the picture wall, the admin panel, saved progress or coins. A guest id is a
+`guest_...` string, never a uuid, so it matches no row anywhere, and every RPC keys off `auth.uid()`, which a guest
+does not have. Guest data lives in the tab and is never written to the database.
+
+### The admin panel — press **P**
+Opens only if the **server** says your role is admin or moderator (`my_role()`); for anyone else P does nothing at
+all, and typing a "p" in a text box never opens it. Inside: search players, inspect one (coins, items, friends,
+arcade total, room, join date, recent moderation history), **give coins** (add or set), **give any item**
+(clothing *and* furniture), **change roles**, **send an announcement**, and refresh.
+Moderation: **kick**, **ban** (5 min → permanent) and **timeout/mute** (5 min → 1 day, or clear), each with an
+optional reason and a confirmation on the destructive ones. Moderators get the moderation half; admins get
+everything, cannot change their own role, and only an admin can act on another staff member.
+
+### Moderation is enforced in the database, not the UI
+- **Ban** → `get_my_profile()` refuses, so the account cannot finish logging in, and a trigger blocks its chat.
+- **Timeout** → a `BEFORE INSERT` trigger on `chat_messages` rejects the row, whatever client sent it.
+- **Kick** → a row in `mod_actions` addressed to that player; their own session receives it over Realtime and drops
+  out of the world immediately.
+- **Announcements** are rows written only by `admin_announce()`, delivered over Realtime — so a player cannot fake
+  one by broadcasting on a channel, which is exactly why neither kicks nor announcements use raw broadcast.
+- Editing the client, flipping a flag or calling the RPCs from a console changes nothing: every admin function
+  starts with `require_staff()`, which reads the caller's role from the database.
+
+### Clothes that actually fit
+Every item in a slot used to be pinned by its centre at one fixed offset, so tall hats floated, short ones sank,
+capes hung off the bottom and anything drawn larger than the original art overlapped the penguin. Each slot now has
+a real **anchor** (`FIT` in `src/shops/items.js`):
+- a hat is pinned by the middle of its **brim**, so every hat — tall, horned, helmeted — rests on the head;
+- a shirt by its **collar**, so the neckline is always at the shoulders; trousers by their **hem**;
+- a necklace by its **top**, so it hangs from the neck;
+- anything wider than its slot allows is scaled **down** to fit the penguin (never up, so a bow tie keeps its size);
+- 21 items carry their own nudge (`fit: { dx, dy, s }`) for the pieces that genuinely sit differently — a halo
+  floats, a jetpack rides low, earmuffs sit on the ears.
+Everything is applied in the existing `layout()`, so clothes follow the body type, the walk cycle, turning, emotes
+and remote players identically. A bug where the "held item" sprite showed even with nothing in hand is fixed too.
+
+### Also in this phase
+- **Jonas Mc Fort**, a penguin in a headset, is sitting in the deepest corner of the **Crystal Hollow** — behind a
+  secret wall, in a secret room. He has nothing to sell and no quest. He says: *"fortnite we need to talk."*
+- **Picking something up** no longer takes over the screen: collectibles now show a small chip in the corner that
+  stacks and fades, instead of a full-width toast.
