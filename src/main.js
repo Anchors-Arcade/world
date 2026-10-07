@@ -9,7 +9,7 @@ import { fetchInventory, setInventory, recordPurchase, claimDaily } from './data
 import { createChat } from './ui/chat.js';
 import { createFriends } from './ui/friends.js';
 import { createSettings } from './ui/settings.js';
-import { createMapPanel } from './ui/mapPanel.js';
+import { createMapPanel } from './ui/ui/mapPanel.js';
 import { createEmoteMenu } from './ui/emoteMenu.js';
 import { createArcade } from './ui/arcade.js';
 import { createJournal } from './ui/journal.js';
@@ -223,12 +223,198 @@ async function logout() {
 // =====================================================================
 function watchAuth() {
   offAuth?.();
-  offAuth = auth.onAuthChange((event) => {
+  offAuth = auth.onAuthChange((event, session) => {
     if (event === 'SIGNED_OUT' || event === 'USER_DELETED') { if (game) logout(); }
   });
 }
 
-(async function init() {
+// NEW PLAYER EXPERIENCE FUNCTIONS
+function showTutorialChoiceDialog() {
+  // Create a dialog similar to worldDialog but for tutorial choice
+  const root = ui;
+  let el = null;
+
+  function createDialog() {
+    el = document.createElement('div');
+    el.className = 'tutorial-choice-overlay';
+    el.innerHTML = `
+      <div class="tutorial-choice-card" role="dialog" aria-label="Tutorial Choice">
+        <header>
+          <h2>Want a tutorial?</h2>
+          <button class="x" data-act="close" aria-label="Close">✕</button>
+        </header>
+        <p class="tutorial-choice-text">
+          A friendly penguin guide will show you around the world and explain important locations and features.
+        </p>
+        <div class="tutorial-choice-buttons">
+          <button class="tutorial-choice-yes">YES (RECOMMENDED)</button>
+          <button class="tutorial-choice-no">NO</button>
+        </div>
+      </div>
+    `;
+    root.appendChild(el);
+    // Add event listeners
+    el.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t.classList.contains('x') || t.dataset.act === 'close') {
+        close();
+      } else if (t.classList.contains('tutorial-choice-yes')) {
+        close();
+        startWorldTutorial();
+      } else if (t.classList.contains('tutorial-choice-no')) {
+        close();
+        markTutorialCompleted();
+      }
+    });
+    // Allow Escape key to close and choose NO (skip tutorial)
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        close();
+        markTutorialCompleted();
+      }
+    };
+    addEventListener('keydown', onKey);
+    // Store the key listener to remove later
+    el._onKey = onKey;
+  }
+
+  function close() {
+    if (!el) return;
+    removeEventListener('keydown', el._onKey);
+    el.remove();
+    el = null;
+  }
+
+  function open() {
+    if (!el) createDialog();
+  }
+
+  return { open, close, isOpen: () => !!el };
+}
+
+function startWorldTutorial() {
+  // Create a tutorial UI at the bottom of the screen
+  const root = ui;
+  let el = null;
+  let currentStep = 0;
+  const steps = [
+    {
+      text: "Welcome to Anchors World! Let's get you started.",
+      action: null
+    },
+    {
+      text: "This is the Town Plaza. You can walk around with WASD or arrow keys.",
+      action: () => { /* Could highlight the plaza, but we just wait for continue */ }
+    },
+    {
+      text: "Enter buildings by pressing E when you see a prompt.",
+      action: null
+    },
+    {
+      text: "Visit the Clothing Shop (Snowy Threads) to buy new outfits.",
+      action: null
+    },
+    {
+      text: "Check out the Furniture Shop (Cozy Corner) to decorate your home.",
+      action: null
+    },
+    {
+      text: "Your home is accessible via the HUD 🏠 button or by walking into your house in the plaza.",
+      action: null
+    },
+    {
+      text: "Play minigames in the Arcade to earn coins and rewards.",
+      action: null
+    },
+    {
+      text: "Use the World Map 🗺️ to explore new areas like the Deep Forest and Harbour Village.",
+      action: null
+    },
+    {
+      text: "Chat with other players by pressing Enter to open the chat box.",
+      action: null
+    },
+    {
+      text: "Collect coins to buy items and accessorize your penguin.",
+      action: null
+    },
+    {
+      text: "That's the basics! You can always open the Wardrobe from the HUD to change your outfit.",
+      action: null
+    }
+  ];
+
+  function createTutorialUI() {
+    el = document.createElement('div');
+    el.className = 'tutorial-ui';
+    el.innerHTML = `
+      <div class="tutorial-text"></div>
+      <div class="tutorial-buttons">
+        <button class="tutorial-continue">Continue</button>
+        <button class="tutorial-skip">Skip tutorial</button>
+        <button class="tutorial-finish">Finish early</button>
+      </div>
+    `;
+    root.appendChild(el);
+    const textEl = el.querySelector('.tutorial-text');
+    const continueBtn = el.querySelector('.tutorial-continue');
+    const skipBtn = el.querySelector('.tutorial-skip');
+    const finishBtn = el.querySelector('.tutorial-finish');
+
+    function showStep() {
+      if (currentStep >= steps.length) {
+        endTutorial();
+        return;
+      }
+      const step = steps[currentStep];
+      textEl.textContent = step.text;
+      if (step.action) step.action();
+    }
+
+    continueBtn.addEventListener('click', () => {
+      currentStep++;
+      showStep();
+    });
+
+    skipBtn.addEventListener('click', () => {
+      endTutorial();
+      markTutorialCompleted();
+    });
+
+    finishBtn.addEventListener('click', () => {
+      endTutorial();
+      markTutorialCompleted();
+    });
+
+    showStep();
+  }
+
+  function endTutorial() {
+    if (!el) return;
+    el.remove();
+    el = null;
+  }
+
+  createTutorialUI();
+}
+
+function markTutorialCompleted() {
+  // Call the RPC function to set has_completed_tutorial to true for the current user
+  if (!game) return; // Safety check
+  const profile = game.registry.get('profile');
+  if (!profile || profile.guest) return;
+  supabase.rpc('set_tutorial_completed').then(() => {
+    // Optionally show a toast
+    toast('Tutorial completed!');
+  }).catch((e) => {
+    console.error('Failed to mark tutorial as completed:', e);
+  });
+}
+
+// =====================================================================
+// PHASE 20 — First-time player experience.
+// =====================================================================
+(function init() {
   const back = isConfigured ? auth.readAuthRedirect() : { confirmed: false, error: null };   // returning from the e-mail confirmation link?
   if (isConfigured) {
     const session = await auth.restoreSession();
@@ -237,7 +423,25 @@ function watchAuth() {
         const p = await auth.fetchProfile(session.user.id);
         p.email = session.user.email || null;
         watchAuth();
-        startGame(p);
+        // Check if this is a new player (not guest and tutorial not completed)
+        if (!p.guest && !p.has_completed_tutorial) {
+          startGame(p);
+          // Wait for room-entered to open the wardrobe and start the first-time flow
+          game.events.once('room-entered', () => {
+            wardrobe.open('look');
+            // Wrap the close method to show tutorial choice dialog after wardrobe is closed
+            let wardrobeClosed = false;
+            const originalClose = wardrobe.close;
+            wardrobe.close = () => {
+              if (wardrobeClosed) return;
+              wardrobeClosed = true;
+              originalClose.call(wardrobe);
+              showTutorialChoiceDialog().open();
+            };
+          });
+        } else {
+          startGame(p);
+        }
         if (back.confirmed) toast('Email confirmed — welcome to Anchors World!');
         return;
       } catch (e) {
@@ -252,5 +456,23 @@ function watchAuth() {
 // The title screen hands the profile here, whether it came from a login, a sign-up or the guest button.
 function enter(p) {
   if (!p.guest) watchAuth();
-  startGame(p);
+  // Check if this is a new player (not guest and tutorial not completed)
+  if (!p.guest && !p.has_completed_tutorial) {
+    startGame(p);
+    // Wait for room-entered to open the wardrobe and start the first-time flow
+    game.events.once('room-entered', () => {
+      wardrobe.open('look');
+      // Wrap the close method to show tutorial choice dialog after wardrobe is closed
+      let wardrobeClosed = false;
+      const originalClose = wardrobe.close;
+      wardrobe.close = () => {
+        if (wardrobeClosed) return;
+        wardrobeClosed = true;
+        originalClose.call(wardrobe);
+        showTutorialChoiceDialog().open();
+      };
+    });
+  } else {
+    startGame(p);
+  }
 }
