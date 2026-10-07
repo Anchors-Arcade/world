@@ -1,4 +1,4 @@
-import { BODY_TYPES, LAYOUT, normalizeAvatar } from '../shops/items.js';
+import { BODY_TYPES, FIT, ITEM_BY_ID, normalizeAvatar } from '../shops/items.js';
 import { THEMES, hex } from '../rooms/themes.js';
 import { DEFAULT_THEME } from '../rooms/roomRules.js';
 
@@ -17,33 +17,61 @@ function tinted(im, color) {
   return c;
 }
 
+// Phase 18: this used to place every garment by its CENTRE at a fixed offset (the pre-Phase-17 scheme), so shop
+// and friends-list previews showed clothes floating, clipping or oversized even though the in-world avatar (which
+// already uses the FIT anchor/maxW system) looked correct. Previews now share the exact same fitting math as
+// Avatar.js: each item is measured once, scaled down (never up) to its slot's maxW, and pinned by the point on the
+// garment that should touch the body, so a shop thumbnail matches what the player will actually look like wearing it.
 export function drawAvatarPreview(game, canvas, data, scale = 2.6) {
   const d = normalizeAvatar(data), ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   const ox = canvas.width / 2, oy = canvas.height - 26;
-  const [sx, sy] = BODY_TYPES[d.bodyType], hy = -48 * (sy - 1);
+  const [sx, sy] = BODY_TYPES[d.bodyType];
+  const bodyTop = -2 - 48 * sy, hatY = bodyTop + 8;           // same head line Avatar.js hangs hats/faces from
+  const hy = -48 * (sy - 1);
   const src = (key) => (game.textures.exists(key) ? game.textures.get(key).getSourceImage() : null);
-  const put = (img, x, y, kx = 1, ky = 1) => {
+  // put(): draws an image anchored at (ax, ay) of ITS OWN box (0,0 = top-left, 1,1 = bottom-right) onto body point
+  // (x, y), at scale kx/ky. This mirrors spr.setOrigin() + setPosition() + setScale() in Avatar.js exactly.
+  const put = (img, x, y, kx = 1, ky = 1, ax = 0.5, ay = 0.5) => {
     if (!img) return;
     const w = img.width * kx * scale, h = img.height * ky * scale;
-    ctx.drawImage(img, ox + x * scale - w / 2, oy + y * scale - h / 2, w, h);
+    ctx.drawImage(img, ox + x * scale - w * ax, oy + y * scale - h * ay, w, h);
   };
-  const L = LAYOUT;
+  // fitted(slot, id): returns { img, x, y, k } using the same anchor/maxW rules as Avatar.setOutfit(), so a garment
+  // wider than its slot allows is scaled down (never up) and pinned by its anchor instead of its centre.
+  const fitted = (slot, id) => {
+    const base = FIT[slot]; if (!base) return null;
+    const img = src(id); if (!img) return null;
+    const extra = (id && ITEM_BY_ID[id]?.fit) || {};
+    let k = 1;
+    if (base.maxW && img.width > 0) k = Math.min(1, base.maxW / img.width);
+    k *= extra.s ?? 1;
+    return { img, k, ax: base.ax, ay: base.ay, x: (base.x ?? 0) + (extra.dx ?? 0), y: base.y + (extra.dy ?? 0) };
+  };
+  const placeFitted = (slot, id, yExtra = 0) => {
+    const f = fitted(slot, id); if (!f) return;
+    put(f.img, f.x, f.y + yExtra, sx * f.k, sy * f.k, f.ax, f.ay);
+  };
   // ground shadow
   ctx.fillStyle = 'rgba(27,51,80,.25)'; ctx.beginPath(); ctx.ellipse(ox, oy - 2, 20 * scale, 6 * scale, 0, 0, Math.PI * 2); ctx.fill();
-  if (d.back) put(src(d.back), L.back.x, L.back.y);
-  const shoe = src(d.shoes || 'av_foot'); put(shoe, -8, -4); put(shoe, 8, -4);
+  if (d.back) placeFitted('back', d.back);
+  const shoe = src(d.shoes || 'av_foot'); put(shoe, -8 * sx, -4, 1, 1); put(shoe, 8 * sx, -4, 1, 1);
   const body = src('av_body'); if (body) put(tinted(body, d.color), 0, -2 - 24 * sy, sx, sy);
-  if (d.pants) put(src(d.pants), 0, L.pants.y);
-  put(src('av_belly'), 0, -20);
-  if (d.shirt) put(src(d.shirt), 0, L.shirt.y);
-  if (d.accessory) put(src(d.accessory), 0, L.accessory.y + hy * 0.3);
-  put(src(d.eyes), 0, L.eyes.y + hy);
+  if (d.pants) placeFitted('pants', d.pants);
+  put(src('av_belly'), 0, -20, sx, sy);
+  if (d.shirt) placeFitted('shirt', d.shirt);
+  if (d.accessory) placeFitted('accessory', d.accessory);
+  const eyesF = fitted('eyes', d.eyes);
+  if (eyesF) put(eyesF.img, eyesF.x, eyesF.y + hy, sx * eyesF.k, sy * eyesF.k, eyesF.ax, eyesF.ay);
   put(src('av_beak'), 0, -28 + hy);
-  if (d.face) put(src(d.face), 0, L.face.y + hy);
-  if (d.hat) put(src(d.hat), 0, L.hat.y + hy);
-  if (d.hand) put(src(d.hand), L.hand.x, L.hand.y);
+  if (d.face) placeFitted('face', d.face, hy);
+  // the hat is pinned by its brim to the head line, exactly as in Avatar.layout()
+  if (d.hat) {
+    const f = fitted('hat', d.hat);
+    if (f) put(f.img, f.x, hatY + (f.y - FIT.hat.y), sx * f.k, sy * f.k, f.ax, f.ay);
+  }
+  if (d.hand) placeFitted('hand', d.hand);
 }
 
 // Furniture preview: the piece sitting on a swatch of the player's room floor.
