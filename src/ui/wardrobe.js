@@ -1,6 +1,7 @@
 import { ITEMS, BODY_TYPES, BODY_COLORS, RARITY, normalizeAvatar } from '../shops/items.js';
 import { saveAvatar, purchaseItem } from '../database/inventory.js';
 import { toast } from './hud.js';
+import { drawAvatarPreview } from '../utils/avatarPreview.js';
 
 const TABS = [['look', 'Look'], ['hat', 'Hats'], ['accessory', 'Neck'], ['shirt', 'Shirts'], ['pants', 'Pants'], ['shoes', 'Shoes'], ['back', 'Back'], ['hand', 'Hand'], ['face', 'Face']];
 const BODY_LABEL = { round: 'Round', tall: 'Tall', chubby: 'Chubby' };
@@ -11,6 +12,7 @@ export function createWardrobe(root, { game, profile, onCoins }) {
   const el = document.createElement('aside');
   el.className = 'drawer'; el.hidden = true; root.appendChild(el);
   let tab = 'look', timer = null, lastSaved = { ...profile.avatar_data }, busy = false;
+  let previewCanvas = null, previewAnimId = null;
   const icons = new Map();
 
   const icon = (asset) => {
@@ -69,9 +71,38 @@ export function createWardrobe(root, { game, profile, onCoins }) {
         ${items(tab).map((i) => card(i, av[tab] === i.id)).join('')}</div>`;
     }
     el.innerHTML = `<header><h2>Wardrobe</h2><button class="x" aria-label="Close">✕</button></header>
+      <div class="preview"><canvas id="wardrobe-preview" width="128" height="128"></canvas></div>
       <nav class="tabs2">${TABS.map(([k, l]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</nav>
       <div class="body">${body}</div>
       <footer>${profile.guest ? 'Guest mode: free items only, nothing is saved.' : 'Locked items cost Anchor Coins. Prices are checked on the server.'}</footer>`;
+    previewCanvas = el.querySelector('#wardrobe-preview');
+  }
+
+  function startPreviewAnimation() {
+    if (previewAnimId) return; // already running
+    const draw = (timestamp) => {
+      if (!previewCanvas) {
+        stopPreviewAnimation();
+        return;
+      }
+      const ctx = previewCanvas.getContext('2d');
+      ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      // Simple vertical bounce for breathing effect
+      const bounce = Math.sin(timestamp * 0.002) * 5; // 5px amplitude, slow frequency
+      ctx.save();
+      ctx.translate(0, bounce);
+      drawAvatarPreview(game, previewCanvas, profile.avatar_data, 2.6);
+      ctx.restore();
+      previewAnimId = requestAnimationFrame(draw);
+    };
+    previewAnimId = requestAnimationFrame(draw);
+  }
+
+  function stopPreviewAnimation() {
+    if (previewAnimId) {
+      cancelAnimationFrame(previewAnimId);
+      previewAnimId = null;
+    }
   }
 
   el.addEventListener('click', (e) => {
@@ -89,17 +120,17 @@ export function createWardrobe(root, { game, profile, onCoins }) {
       apply({ ...av, [it.category]: equipped && it.category !== 'eyes' ? null : it.id });
     }
   });
-  const close = () => { el.hidden = true; };
+  const close = () => { stopPreviewAnimation(); el.hidden = true; };
   addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 
   return {
-    open(t) { if (t) tab = t; render(); el.hidden = false; },
+    open(t) { if (t) tab = t; render(); startPreviewAnimation(); el.hidden = false; },
     toggle(t) { el.hidden ? this.open(t) : close(); },
     close, isOpen: () => !el.hidden,
     refresh: () => !el.hidden && render(),
     // used by the shop: equip an owned item / take a slot off. Same validated save path as the wardrobe itself.
     equip(it) { if (owned(it)) apply({ ...profile.avatar_data, [it.category]: it.id }); },
     unequip(slot) { apply({ ...profile.avatar_data, [slot]: null }); },
-    destroy() { clearTimeout(timer); el.remove(); },
+    destroy() { stopPreviewAnimation(); clearTimeout(timer); el.remove(); },
   };
 }

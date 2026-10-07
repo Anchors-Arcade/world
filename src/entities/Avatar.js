@@ -2,7 +2,7 @@ import { SPEED } from '../config/game.js';
 import { SLOTS, LAYOUT, FIT, BODY_TYPES, ITEM_BY_ID, normalizeAvatar } from '../shops/items.js';
 import { EMOTE_BY_KEY, EMOTE_MS } from '../social/emotes.js';
 
-const INTERP_MS = 140;                                   // remote players are drawn this far in the past (>= one 110 ms packet interval)
+const INTERP_MS = 120;                                   // remote players are drawn this far in the past (>= one 110 ms packet interval)
 
 // Layered avatar. Draw order (back -> front):
 // back, feet, body(tinted), pants, belly, shirt, accessory, eyes, beak, face, hat, hand.
@@ -124,7 +124,7 @@ export class Avatar {
       this.dir = n.d; moving = dist > 1.5 || n.m;
       if (k > 1) b.splice(0, k - 1);
     }
-    const e = 1 - Math.exp(-28 * dt);                                  // tiny extra smoothing hides uneven packet timing
+    const e = 1 - Math.exp(-14 * dt);                                  // reduced extra smoothing for more responsiveness
     const dx = px - h.x, dy = py - h.y; h.x += dx * e; h.y += dy * e;
     this.moving = moving || Math.hypot(dx, dy) > 1.2;
   }

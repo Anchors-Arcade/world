@@ -26,13 +26,64 @@ export class RemotePlayers {
 
   sync(state) {
     this.lastState = state;
-    for (const [id, r] of this.map) if (!state[id] || this.social?.isBlocked(id)) { r.av.destroy(); this.map.delete(id); }
+    // Handle removals and blocks
+    for (const [id, r] of this.map) {
+      if (!state[id] || this.social?.isBlocked(id)) {
+        // Fade out avatar
+        const { av } = r;
+        if (av) {
+          // Cancel any existing fade tween
+          if (r.fadeTween) {
+            r.fadeTween.remove();
+          }
+          // Fade out over 200ms
+          const fadeOut = this.scene.tweens.add({
+            targets: av.root,
+            alpha: 0,
+            duration: 200,
+            ease: 'Linear',
+            onComplete: () => {
+              av.destroy();
+              this.map.delete(id);
+            }
+          });
+          r.fadeTween = fadeOut;
+        } else {
+          this.map.delete(id);
+        }
+      }
+    }
+    // Handle additions and updates
     for (const [id, m] of Object.entries(state)) {
       const json = JSON.stringify(m.avatar), r = this.map.get(id);
-      if (r) { if (r.json !== json) { r.av.setOutfit(m.avatar); r.json = json; } continue; }
-      if (this.map.size >= MAX_REMOTES || this.social?.isBlocked(id)) continue;       // blocked players are simply not drawn
+      if (r) {
+        // Update existing avatar
+        if (r.json !== json) {
+          r.av.setOutfit(m.avatar);
+          r.json = json;
+        }
+        // If we were fading out, cancel the fade and fade back in
+        if (r.fadeTween) {
+          r.fadeTween.remove();
+          r.fadeTween = null;
+          // Ensure avatar is visible
+          av.root.alpha = 1;
+        }
+        continue;
+      }
+      // Check limits and blocks
+      if (this.map.size >= MAX_REMOTES || this.social?.isBlocked(id)) continue;
+      // Create new avatar with initial alpha 0
       const av = new Avatar(this.scene, Number(m.x) || 0, Number(m.y) || 0, m.avatar, String(m.name || 'Player').slice(0, 24), { remote: true });
-      this.map.set(id, { av, json });
+      av.root.alpha = 0;
+      // Fade in over 200ms
+      const fadeIn = this.scene.tweens.add({
+        targets: av.root,
+        alpha: 1,
+        duration: 200,
+        ease: 'Linear'
+      });
+      this.map.set(id, { av, json, fadeTween: fadeIn });
     }
     this.emitCount();
   }
@@ -104,7 +155,11 @@ export class RemotePlayers {
   destroy() {
     this.unsub?.();
     this.net.leave();
-    for (const { av } of this.map.values()) av.destroy();
+    // Remove any active fade tweens
+    for (const { av, fadeTween } of this.map.values()) {
+      if (fadeTween) fadeTween.remove();
+      av.destroy();
+    }
     this.map.clear();
   }
 }

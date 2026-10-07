@@ -20,7 +20,7 @@ export function createFriends(root, { game, profile, social, closeOthers }) {
   const face = (p) => { avatars.set(p.id, p.avatar_data); return `<canvas class="fav" width="64" height="88" data-av="${esc(p.id)}"></canvas>`; };
   const status = (id) => {
     const s = social.statusOf(id);
-    return `<small class="${s.online ? 'on' : 'off'}">${s.online ? '🟢' : '⚪'} ${esc(s.text)}</small>`;
+    return `<small class="${s.online ? 'on' : 'off'}" title="${s.online ? 'Online' : 'Offline'}">${s.online ? '🟢' : '🔴'} ${esc(s.text)}</small>`;
   };
   const joinBtn = (id) => (social.statusOf(id).joinable ? `<button class="sbtn mini go" data-act="join" data-id="${esc(id)}">Join</button>` : '');
 
@@ -38,10 +38,10 @@ export function createFriends(root, { game, profile, social, closeOthers }) {
     if (!inc.length && !out.length) return `<p class="empty">No pending requests.</p>`;
     return (inc.length ? `<h3>Wants to be your friend</h3>` + inc.map((r) => `
       <div class="fr"><button class="fr-main" data-act="profile" data-id="${esc(r.player.id)}">${face(r.player)}<span class="nm"><b>${esc(r.player.display_name)}</b><small>@${esc(r.player.username)}</small></span></button>
-        <button class="sbtn mini go" data-act="accept" data-rid="${esc(r.id)}">Accept</button><button class="sbtn mini ghost" data-act="decline" data-rid="${esc(r.id)}">Decline</button></div>`).join('') : '')
+        <button class="sbtn mini go" data-act="accept" data-rid="${esc(r.id)}">Accept Request</button><button class="sbtn mini ghost" data-act="decline" data-rid="${esc(r.id)}">Decline Request</button></div>`).join('') : '')
       + (out.length ? `<h3>Waiting for an answer</h3>` + out.map((r) => `
       <div class="fr"><button class="fr-main" data-act="profile" data-id="${esc(r.player.id)}">${face(r.player)}<span class="nm"><b>${esc(r.player.display_name)}</b><small>@${esc(r.player.username)}</small></span></button>
-        <button class="sbtn mini ghost" data-act="cancel" data-rid="${esc(r.id)}">Cancel</button></div>`).join('') : '');
+        <button class="sbtn mini ghost" data-act="cancel" data-rid="${esc(r.id)}">Cancel Request</button></div>`).join('') : '');
   }
 
   function findTab() {
@@ -61,8 +61,8 @@ export function createFriends(root, { game, profile, social, closeOthers }) {
     let main = '';
     if (p.is_me) main = `<p class="empty">This is you!</p>`;
     else if (p.relation === 'friend') main = `${joinBtn(p.id)}<button class="sbtn ghost" data-act="remove" data-id="${esc(p.id)}" data-name="${esc(p.display_name)}">Remove friend</button>`;
-    else if (p.relation === 'pending_in' && inc) main = `<button class="sbtn go" data-act="accept" data-rid="${esc(inc.id)}">Accept</button><button class="sbtn ghost" data-act="decline" data-rid="${esc(inc.id)}">Decline</button>`;
-    else if (p.relation === 'pending_out' && out) main = `<button class="sbtn ghost" data-act="cancel" data-rid="${esc(out.id)}">Cancel request</button>`;
+    else if (p.relation === 'pending_in' && inc) main = `<button class="sbtn go" data-act="accept" data-rid="${esc(inc.id)}">Accept Request</button><button class="sbtn ghost" data-act="decline" data-rid="${esc(inc.id)}">Decline Request</button>`;
+    else if (p.relation === 'pending_out' && out) main = `<button class="sbtn ghost" data-act="cancel" data-rid="${esc(out.id)}">Cancel Request</button>`;
     else if (!p.blocked) main = `<button class="sbtn go" data-act="add" data-id="${esc(p.id)}">Add friend</button>`;
     if (v.report) return `${back}<h3>Report ${esc(p.display_name)}</h3><p class="hint">Reports are private and reviewed by the team. Pick what happened:</p>
       <div class="reasons">${REASONS.map(([k, l]) => `<label><input type="radio" name="why" value="${k}" ${v.reason === k ? 'checked' : ''}> ${l}</label>`).join('')}</div>
@@ -73,10 +73,10 @@ export function createFriends(root, { game, profile, social, closeOthers }) {
       ${p.relation === 'friend' ? `<div>${status(p.id)}</div>` : ''}</div>
       <div class="row center">${main}</div>
       ${p.is_me ? '' : `<h3>Safety</h3><div class="row">
-        <button class="chip" data-act="${p.muted ? 'unmute' : 'mute'}" data-id="${esc(p.id)}">${p.muted ? '🔊 Unmute' : '🔇 Mute'}</button>
-        <button class="chip" data-act="${p.blocked ? 'unblock' : 'block'}" data-id="${esc(p.id)}">${p.blocked ? '✅ Unblock' : '🚫 Block'}</button>
-        <button class="chip" data-act="report">⚠️ Report</button></div>
-        <p class="hint">Mute hides their chat and emotes. Block also hides them completely and removes you as friends.</p>`}`;
+        <button class="sbtn mini" data-act="${p.muted ? 'unmute' : 'mute'}" data-id="${esc(p.id)}">${p.muted ? '🔊 Unmute' : '🔇 Mute'}</button>
+        <button class="sbtn mini" data-act="${p.blocked ? 'unblock' : 'block'}" data-id="${esc(p.id)}">${p.blocked ? '✅ Unblock' : '🚫 Block'}</button>
+        <button class="sbtn mini" data-act="report">📝 Report</button></div>
+        <p class="hint">Mute hides chat/emotes. Block hides everything and removes friendship.</p>`}`;
   }
 
   function render() {
