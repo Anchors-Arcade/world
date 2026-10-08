@@ -72,9 +72,13 @@ export async function logout() {
 
 export const getSession = async () => {
   if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  if (error) return null;
-  return data.session || null;
+  try {
+    const { data, error } = await withTimeout(supabase.auth.getSession(), 5000, 'getSession');
+    if (error) return null;
+    return data.session || null;
+  } catch {
+    return null; // timed out or network error — treat as "no session" rather than hang forever
+  }
 };
 
 // Phase 17: the session is restored from storage asynchronously, and a token can expire while the tab was asleep.
@@ -92,8 +96,10 @@ export async function restoreSession() {
   }
   const expires = (session?.expires_at || 0) * 1000;
   if (session && expires && expires - Date.now() < 60000) {
-    const { data } = await supabase.auth.refreshSession();
-    session = data?.session || session;
+    try {
+      const { data } = await withTimeout(supabase.auth.refreshSession(), 5000, 'refreshSession');
+      session = data?.session || session;
+    } catch { /* keep the still-valid-for-a-bit session rather than hang */ }
   }
   return session;
 }
@@ -117,10 +123,21 @@ export function banMessage(err) {
 // The profile row is created by a database trigger when the account is created; that can lag a moment behind the
 // session, so this retries. Phase 17: a ban is reported as a ban, and a profile that never appears is repaired by
 // asking the server to create one rather than dead-ending on "Profile not found".
+// A call that neither resolves nor rejects (seen with Supabase RPCs on flaky networks, or certain
+// browser/CORS edge cases on GitHub Pages) would otherwise hang this forever with no visible error —
+// the player is stuck on the loading screen. Racing it against a timeout guarantees we always move on.
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms)),
+  ]);
+}
+
 export async function fetchProfile(userId) {
   let lastError = null;
   for (let i = 0; i < 6; i++) {
-    const { data, error } = await supabase.rpc('get_my_profile');
+    const { data, error } = await withTimeout(supabase.rpc('get_my_profile'), 8000, 'get_my_profile')
+      .catch((e) => ({ data: null, error: e }));
     if (error) {
       const ban = banMessage(error);
       if (ban) throw Object.assign(new Error(ban), { banned: true });
