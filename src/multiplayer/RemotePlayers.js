@@ -67,7 +67,7 @@ export class RemotePlayers {
           r.fadeTween.remove();
           r.fadeTween = null;
           // Ensure avatar is visible
-          av.root.alpha = 1;
+          r.av.root.alpha = 1;
         }
         continue;
       }

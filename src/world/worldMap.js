@@ -9,15 +9,23 @@ const P = (key, icon, blurb, activities = [], extra = {}) => ({ key, icon, blurb
 export const WORLD_MAP = [
   P('snowy_plaza',    '❄️', 'The heart of Anchors World.',          ['Shops', 'Arcade', 'Café', 'Your room']),
   P('deep_forest',    '🌲', 'Old pines, deep snow, no footprints.', ['Collectibles', 'A secret']),
+  // Phase 21 — the three new places. Frozen Forest grows east of the old pines, Mountain Village sits between
+  // the forest and the ski base, and Ice Island is a boat trip across the bay from the harbour.
+  P('frozen_forest',  '🌲', 'Deeper pines than the eye can follow.',  ['Cabins', 'Hidden clearings']),
+
   P('snow_camp',      '⛺', 'Someone banked the fire and left.',    ['Collectibles', 'A secret']),
   P('frozen_lake',    '🧊', 'Solid at the edges. Mostly.',          ['Collectibles', 'A secret']),
   P('harbor_village', '🏘️', 'Boats in for the winter.',             ['Lighthouse', 'Collectibles']),
   P('lighthouse',     '🗼', 'The keeper is away.',                  ['Collectibles', 'A secret']),
+  P('ice_island',     '🏝️', 'Across the bay, all ice and echo.',    ['Boat trip', 'Ice fields', 'Viewpoints']),
+
   P('mountain_pass',  '🏔️', 'Wind, stone and old cairns.',          ['Ice Caves', 'Observatory', 'A secret']),
   P('ice_caves',      '🕳️', 'Cold, dark and marked.',               ['Collectibles', 'A secret']),
   P('observatory',    '🏛️', 'They watched the sky from here.',      ['Collectibles', 'A secret']),
   // Phase 12 — the ski area. You walk to the base, ride the lift, and sled back down into the world.
   P('ski_base',       '🎿', 'Lift queue, warm hut, cold nose.',     ['Gondola', 'Warming hut']),
+  P('mountain_village','🏔️', 'Lantern-lit lanes under Anchor Peak.', ['Cabins', 'Bridges', 'The Overlook']),
+
   P('ski_summit',     '🚡', 'Five routes down. Pick one.',          ['Sled routes', 'The view']),
   P('slope_beginner', '🟢', 'Wide, gentle, forgiving.',             ['Sledding', 'Coins']),
   P('slope_forest',   '🌲', 'Tight lines between old pines.',       ['Sledding', 'Coins']),

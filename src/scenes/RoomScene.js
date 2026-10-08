@@ -495,6 +495,10 @@ export class RoomScene extends Phaser.Scene {
   }
 
   addPortal(p) {
+    // Phase 21: a soft glow under every portal, so gateways read as warm doorways rather than taped rectangles.
+    const glow = this.add.ellipse(p.x + p.w / 2, p.y + p.h / 2, p.w + 44, p.h + 30, 0xbfe8ff, 0.16)
+      .setDepth(-901).setBlendMode(Phaser.BlendModes.ADD);
+    if (!this.registry.get('reduceMotion')) this.tweens.add({ targets: glow, alpha: 0.07, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
     this.add.rectangle(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h, 0xffffff, 0.35).setStrokeStyle(3, 0x7fb8d8).setDepth(-900);
     this.add.text(p.x + p.w / 2, p.y + p.h / 2, p.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '14px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 6, y: 3 } }).setOrigin(0.5).setDepth(-800);
     // Phase 12 polish: a gate that leads to a sled route also shows its difficulty, its par time and your best.
@@ -564,6 +568,48 @@ export class RoomScene extends Phaser.Scene {
       this.add.text(x, y - 76, p.label || '', {
         fontFamily: 'system-ui, sans-serif', fontSize: '13px', color: '#3a2a18', align: 'center',
       }).setOrigin(0.5).setDepth(y + 1);
+      return;
+    }
+    if (p.type === 'boat') {                                    // Phase 21: a moored sailboat (ferry docks, island shores)
+      const w = p.w || 150, h = p.h || 90, g = this.add.graphics().setDepth(p.y);
+      g.fillStyle(0x16304a, 0.22); g.fillEllipse(p.x, p.y + 8, w * 1.25, 24);   // wake / water shadow
+      drawSprite(g, 'boat', p.x - w / 2, p.y - h / 2, w, h);
+      this.walls.add(this.add.rectangle(p.x, p.y + 4, w * 0.8, h * 0.4, 0, 0));
+      return;
+    }
+    if (p.type === 'water') {                                   // Phase 21: a strip of sea or river, flat and walkable
+      const g = this.add.graphics().setDepth(-996);
+      const x = p.x - p.w / 2, y = p.y - p.h / 2;
+      g.fillStyle(0x1d4a6b); g.fillRoundedRect(x, y, p.w, p.h, 24);
+      g.fillStyle(0x2e6f9e, 0.85); g.fillRoundedRect(x + 8, y + 8, p.w - 16, p.h - 16, 18);
+      g.fillStyle(0xbfe8ff, 0.5); g.fillRoundedRect(x + 6, y + 5, p.w - 12, 12, 6);     // frozen surface sheen
+      g.lineStyle(3, 0x8fd3f0, 0.45);
+      const rows = Math.max(2, Math.floor(p.h / 70));
+      for (let i = 0; i < rows; i++) {
+        const wy = y + 22 + i * (p.h - 34) / rows, off = (i % 2) * 30;
+        for (let wx = x + 26 + off; wx < x + p.w - 34; wx += 74) g.lineBetween(wx, wy, wx + 36, wy);
+      }
+      return;
+    }
+    if (p.type === 'bridge') {                                  // Phase 21: a plank bridge over water or a gap
+      const w = p.w || 240, h = p.h || 90, g = this.add.graphics().setDepth(-995);
+      g.fillStyle(0x6b4428); g.fillRect(p.x - w / 2 - 6, p.y - h / 2 - 12, 16, h + 24); g.fillRect(p.x + w / 2 - 10, p.y - h / 2 - 12, 16, h + 24);
+      g.fillStyle(0x8c5a3a); g.fillRoundedRect(p.x - w / 2, p.y - h / 2, w, h, 10);
+      g.lineStyle(3, 0x6b4428, 0.8);
+      for (let px = p.x - w / 2 + 16; px < p.x + w / 2 - 6; px += 26) g.lineBetween(px, p.y - h / 2 + 6, px, p.y + h / 2 - 6);
+      g.fillStyle(0x8c5a3a); g.fillRect(p.x - w / 2 - 4, p.y - h / 2 - 9, w + 8, 7); g.fillRect(p.x - w / 2 - 4, p.y + h / 2 + 2, w + 8, 7);
+      g.fillStyle(0xffffff, 0.85); g.fillRect(p.x - w / 2 - 4, p.y - h / 2 - 12, w + 8, 4); g.fillRect(p.x - w / 2 - 4, p.y + h / 2 - 1, w + 8, 4);
+      return;
+    }
+    if (p.type === 'iceberg') {                                 // Phase 21: a beached chunk of glacier ice
+      const s = p.s || 1, w = 96 * s, h = 74 * s, g = this.add.graphics().setDepth(p.y);
+      g.fillStyle(0x16304a, 0.18); g.fillEllipse(p.x, p.y + 4, w * 1.6, 22 * s);
+      g.fillStyle(0x9fd8ef); g.fillTriangle(p.x, p.y - h, p.x - w / 2, p.y, p.x + w / 2, p.y);
+      g.fillStyle(0xc9ecfc); g.fillTriangle(p.x, p.y - h, p.x - w * 0.12, p.y, p.x + w * 0.3, p.y);
+      g.fillStyle(0xd8f2fc, 0.9); g.fillTriangle(p.x - w * 0.1, p.y - h * 0.8, p.x - w * 0.34, p.y - h * 0.08, p.x, p.y - h * 0.08);
+      g.fillStyle(0xffffff, 0.95); g.fillEllipse(p.x - w * 0.08, p.y - h * 0.62, w * 0.42, h * 0.26);   // snow on the facet
+      g.lineStyle(2, 0x66c2e8, 0.6); g.lineBetween(p.x, p.y - h, p.x - w * 0.16, p.y - h * 0.1);
+      this.walls.add(this.add.rectangle(p.x, p.y - h * 0.18, w * 0.78, h * 0.5, 0, 0));
       return;
     }
     if (p.type === 'pond') return this.addPond(p);

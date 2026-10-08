@@ -17,6 +17,7 @@ import { createWorldDialog } from './ui/worldDialog.js';
 import { createWallPanel } from './ui/wallPanel.js';
 import { createKeypad } from './ui/keypad.js';
 import { createAdminPanel } from './ui/adminPanel.js';
+import { createIdeasPanel } from './ui/ideasPanel.js';
 import { setWallState } from './database/wallCache.js';
 import { ExplorationState } from './world/ExplorationState.js';
 import { MINIGAME_SCENES, MinigameManager } from './minigames/index.js';
@@ -28,7 +29,7 @@ import { ROOMS } from './maps/rooms.js';
 
 const ui = document.getElementById('ui');
 let game = null, hud = null, wardrobe = null, shop = null, net = null, social = null, chat = null, friends = null, settings = null, mapPanel = null, emotes = null, arcade = null, minigames = null;
-let explore = null, journal = null, worldDialog = null, wallPanel = null, keypad = null, adminPanel = null;
+let explore = null, journal = null, worldDialog = null, wallPanel = null, keypad = null, adminPanel = null, ideasPanel = null;
 let offAuth = null;                                    // Phase 17: unsubscribes the auth listener on logout   // Phase 8: exploration state + journal + interaction cards
 
 function startGame(profile) {
@@ -56,6 +57,7 @@ function startGame(profile) {
   const veil = document.createElement('div'); veil.className = 'loading-veil'; veil.innerHTML = '<div class="ld-ring"></div><div class="ld-text">Entering Anchors World…</div>'; ui.appendChild(veil);
   game.events.once('room-entered', () => { veil.classList.add('gone'); setTimeout(() => veil.remove(), 500); });
   hud = mountHUD(ui, profile, { onAction });
+  game.registry.set('hud', hud); // Store HUD for tutorial access
   wardrobe = createWardrobe(ui, { game, profile, onCoins: (n) => hud.setCoins(n) });
   shop = createShop(ui, { game, profile, wardrobe, onCoins: (n) => hud.setCoins(n) });
 
@@ -79,6 +81,7 @@ function startGame(profile) {
   // keeps its own state, and the cached total is what lets the room size itself the moment you walk in.
   keypad = createKeypad(ui, { game });                 // Phase 16: the Sealed Crate's code lock
   adminPanel = createAdminPanel(ui, { game, profile }); // Phase 17: P opens it, but only for staff (server-checked)
+  ideasPanel = createIdeasPanel(ui);                    // Phase 21: the Ideas button opens the Google Form overlay
 
   // Phase 17: moderation and announcements arrive as ROWS the server wrote, over Realtime, filtered to this
   // player. A kick ends the session; a ban or a timeout is applied immediately rather than at the next login.
@@ -176,6 +179,7 @@ function startGame(profile) {
       return;
     }
     if (key === 'map') return mapPanel.toggle();
+    if (key === 'ideas') return ideasPanel.toggle();
     if (key === 'journal') { unseen = 0; hud.setBadge('journal', 0); return journal.toggle(); }
     if (key === 'shop') return shop.open('clothing');
     if (key === 'home') return game.scene.getScene('Room')?.goHome?.();
@@ -206,11 +210,11 @@ function announce(text) {
 
 async function logout() {
   offAuth?.(); offAuth = null;
-  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, keypad, adminPanel, explore].forEach((x) => x?.destroy());
+  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, keypad, adminPanel, ideasPanel, explore].forEach((x) => x?.destroy());
   ui.classList.remove('in-minigame');
   net?.destroy(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
   game = hud = wardrobe = shop = net = social = chat = friends = settings = mapPanel = emotes = arcade = minigames = null;
-  explore = journal = worldDialog = wallPanel = keypad = adminPanel = null;
+  explore = journal = worldDialog = wallPanel = keypad = adminPanel = ideasPanel = null;
   if (isConfigured) await auth.logout();
   mountAuth(ui, enter);
 }
@@ -243,6 +247,7 @@ function showTutorialChoiceDialog() {
           <h2>Want a tutorial?</h2>
           <button class="x" data-act="close" aria-label="Close">✕</button>
         </header>
+        <div class="guide-penguin">🐧</div>
         <p class="tutorial-choice-text">
           A friendly penguin guide will show you around the world and explain important locations and features.
         </p>
@@ -297,54 +302,75 @@ function startWorldTutorial() {
   const root = ui;
   let el = null;
   let currentStep = 0;
+  let hudRef = null; // Will be set when tutorial starts
+
   const steps = [
     {
-      text: "Welcome to Anchors World! Let's get you started.",
+      text: "Welcome to Anchors World! Let's get you started. Use WASD or arrow keys to waddle around.",
       action: null
     },
     {
-      text: "This is the Town Plaza. You can walk around with WASD or arrow keys.",
-      action: () => { /* Could highlight the plaza, but we just wait for continue */ }
-    },
-    {
-      text: "Enter buildings by pressing E when you see a prompt.",
+      text: "You're in the Town Plaza — the heart of the world. Other penguins hang out here!",
       action: null
     },
     {
-      text: "Visit the Clothing Shop (Snowy Threads) to buy new outfits.",
+      text: "Press E near building doors to enter them. Try the clothing shop!",
       action: null
     },
     {
-      text: "Check out the Furniture Shop (Cozy Corner) to decorate your home.",
+      text: "Snowy Threads sells hats, shirts, pants, shoes, and accessories for your penguin.",
+      action: () => highlightHud('shop')
+    },
+    {
+      text: "Cozy Corner has furniture to decorate your very own home.",
       action: null
     },
     {
-      text: "Your home is accessible via the HUD 🏠 button or by walking into your house in the plaza.",
+      text: "Your home is private. Open it with the 🏠 HUD button or walk into your house in the plaza.",
+      action: () => highlightHud('home')
+    },
+    {
+      text: "The Arcade has minigames like Snow Dash, Coin Catcher, and Snowball Arena. Play to earn coins!",
+      action: () => highlightHud('shop')
+    },
+    {
+      text: "Take the Ski Lift up the mountain or go Sledding down for fast-paced fun!",
       action: null
     },
     {
-      text: "Play minigames in the Arcade to earn coins and rewards.",
+      text: "The World Map 🗺️ shows all areas — Plaza, Forest, Harbour, Mountain, and secret locations.",
+      action: () => highlightHud('map')
+    },
+    {
+      text: "Press Enter to chat with other players. Be friendly!",
+      action: () => highlightHud('chat')
+    },
+    {
+      text: "You'll see other penguins waddling around — this is a multiplayer world!",
       action: null
     },
     {
-      text: "Use the World Map 🗺️ to explore new areas like the Deep Forest and Harbour Village.",
-      action: null
+      text: "Collect Anchor Coins ⚓ from daily rewards, minigames, and exploration. Spend them in shops.",
+      action: () => highlightHud('wardrobe')
     },
     {
-      text: "Chat with other players by pressing Enter to open the chat box.",
-      action: null
-    },
-    {
-      text: "Collect coins to buy items and accessorize your penguin.",
-      action: null
-    },
-    {
-      text: "That's the basics! You can always open the Wardrobe from the HUD to change your outfit.",
-      action: null
+      text: "That's it! Open the Wardrobe 🎒 anytime to change your look. Have fun exploring!",
+      action: () => highlightHud('wardrobe')
     }
   ];
 
+  function highlightHud(key) {
+    if (hudRef && hudRef.setOn) {
+      // Briefly highlight the HUD button
+      hudRef.setOn(key, true);
+      setTimeout(() => hudRef.setOn(key, false), 3000);
+    }
+  }
+
   function createTutorialUI() {
+    // Get HUD reference from game registry
+    hudRef = game?.registry?.get('hud') || null;
+
     el = document.createElement('div');
     el.className = 'tutorial-ui';
     el.innerHTML = `
@@ -364,6 +390,7 @@ function startWorldTutorial() {
     function showStep() {
       if (currentStep >= steps.length) {
         endTutorial();
+        markTutorialCompleted();
         return;
       }
       const step = steps[currentStep];
@@ -428,16 +455,10 @@ function markTutorialCompleted() {
           startGame(p);
           // Wait for room-entered to open the wardrobe and start the first-time flow
           game.events.once('room-entered', () => {
-            wardrobe.open('look');
-            // Wrap the close method to show tutorial choice dialog after wardrobe is closed
-            let wardrobeClosed = false;
-            const originalClose = wardrobe.close;
-            wardrobe.close = () => {
-              if (wardrobeClosed) return;
-              wardrobeClosed = true;
-              originalClose.call(wardrobe);
-              showTutorialChoiceDialog().open();
-            };
+            wardrobe.open('look', {
+              firstTime: true,
+              onFirstTimeClose: () => showTutorialChoiceDialog().open()
+            });
           });
         } else {
           startGame(p);
@@ -461,16 +482,10 @@ function enter(p) {
     startGame(p);
     // Wait for room-entered to open the wardrobe and start the first-time flow
     game.events.once('room-entered', () => {
-      wardrobe.open('look');
-      // Wrap the close method to show tutorial choice dialog after wardrobe is closed
-      let wardrobeClosed = false;
-      const originalClose = wardrobe.close;
-      wardrobe.close = () => {
-        if (wardrobeClosed) return;
-        wardrobeClosed = true;
-        originalClose.call(wardrobe);
-        showTutorialChoiceDialog().open();
-      };
+      wardrobe.open('look', {
+        firstTime: true,
+        onFirstTimeClose: () => showTutorialChoiceDialog().open()
+      });
     });
   } else {
     startGame(p);

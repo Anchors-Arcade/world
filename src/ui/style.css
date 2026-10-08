@@ -89,6 +89,20 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 .coin.sm{width:14px;height:14px;font-size:9px}
 @media (max-width:600px){.drawer{top:auto;height:46vh;bottom:84px}}
 
+/* ---------- First-time wardrobe mode ---------- */
+.drawer.first-time .preview{padding:16px 0 8px;display:flex;justify-content:center}
+.drawer.first-time .preview canvas{width:300px;height:300px;max-width:90vw;max-height:90vh}
+.drawer.first-time header h2{font-size:24px;letter-spacing:.5px}
+.drawer.first-time footer{padding:16px 20px}
+.save-continue-btn{
+  width:100%;margin-top:0;padding:14px 20px;border:0;border-radius:14px;
+  font-size:17px;font-weight:900;font-family:inherit;color:#fff;
+  background:var(--anchor);box-shadow:0 5px 0 #c4472b;transition:transform .08s,box-shadow .08s
+}
+.save-continue-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 7px 0 #c4472b}
+.save-continue-btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #c4472b}
+.save-continue-btn:disabled{opacity:.45;cursor:not-allowed}
+
 /* ---------- Phase 5: shops ---------- */
 .deco{color:#4a3200;background:var(--gold);border-color:#fff3c9}
 .deco:hover{background:#ffd26b}
@@ -400,6 +414,18 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 .wd-ok:active{transform:translateY(2px);box-shadow:0 2px 0 #1f6e3f}
 #ui.in-minigame .wd-overlay,#ui.editing .wd-overlay{display:none}
 @media (prefers-reduced-motion:reduce){.wd-card{animation:none}}
+
+/* Phase 21 — the Ideas button's overlay: the Google Form in an iframe, styled like the world-dialog cards */
+.ideas-overlay{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:rgba(14,34,56,.55);z-index:60}
+.ideas-overlay[hidden]{display:none}
+.ideas-card{width:min(720px,100%);height:min(78vh,720px);display:flex;flex-direction:column;border-radius:22px;
+  background:#f4fbff;color:var(--ink);box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden;animation:wdin .18s ease-out}
+.ideas-card header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px 4px}
+.ideas-card h2{margin:0;font-size:21px}
+.ideas-note{margin:4px 18px 10px;font-size:13px;font-weight:700;color:#4a5b6b}
+.ideas-frame{flex:1;width:100%;border:0;background:#fff}
+#ui.in-minigame .ideas-overlay,#ui.editing .ideas-overlay{display:none}
+@media (prefers-reduced-motion:reduce){.ideas-card{animation:none}}
 /* Phase 8: the dock now carries 11 buttons — keep it inside the viewport on small screens */
 .dock{max-width:calc(100vw - 16px);overflow-x:auto;scrollbar-width:none}
 .dock::-webkit-scrollbar{display:none}
@@ -805,14 +831,17 @@ button:not(:disabled):active{transform:translateY(1px) scale(.97)}
   box-shadow:0 2px 0 #b5401f;
 }
 
+/* Tutorial choice dialog - penguin guide */
+.tutorial-choice-card .guide-penguin { font-size: 48px; text-align: center; margin: 8px 0; line-height: 1; }
+
 /* Tutorial UI */
 .tutorial-ui{
   position:fixed; left:50%; bottom:80px; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:10px;
-  background:var(--glass); backdrop-filter:blur(6px); border:2px solid rgba(207,234,247,.35); border-radius:18px; box-shadow:0 5px 0 rgba(0,0,0,.25);
-  padding:16px 24px; z-index:60;
+  background:var(--glass); backdrop-filter:blur(6px); border:2px solid rgba(207,234,247,.35); border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.4);
+  padding:16px 24px; z-index:60; animation:pop-in .26s cubic-bezier(.2,.8,.2,1);
 }
 .tutorial-text{
-  max-width:min(400px,90vw); text-align:center; font-size:14.5px; line-height:1.5; font-weight:600; color:var(--snow);
+  max-width:min(400px,90vw); text-align:center; font-size:15px; line-height:1.6; font-weight:600; color:var(--snow);
 }
 .tutorial-buttons{
   display:flex; gap:10px;
@@ -845,7 +874,11 @@ button:not(:disabled):active{transform:translateY(1px) scale(.97)}
 
 @media (prefers-reduced-motion:reduce){
   .tutorial-choice-card{animation:none}
-  .tutorial-ui{transition:none}
+  .tutorial-ui{animation:none;transition:none}
+}
+
+@media (max-height:520px){
+  .tutorial-ui{bottom:40px}
 }
 
 @media (max-height:520px){

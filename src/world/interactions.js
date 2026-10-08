@@ -193,6 +193,63 @@ export const INTERACTIONS = {
     { id: 'star_ceiling', label: 'Painted Ceiling', icon: '✨', x: 740, y: 180, w: 120, h: 90, color: 0x2d2a5e,
       title: '✨ Painted Ceiling', text: 'The winter sky as it was, in gold leaf. One star is painted brighter than the rest, and it is not a star.' },
   ],
+
+  // ── Phase 21: the three new maps. Lore only — no secrets, no clues; the server knows nothing of
+  // these rooms, so everything here is flavour that works fully offline.
+  ice_island: [
+    { id: 'island_board', label: 'Island Notice', icon: '📋', x: 600, y: 700, w: 110, h: 70, color: 0x8c5a3a,
+      title: '📋 Island Notice', text: 'WELCOME TO ICE ISLAND\n\nThe boat leaves when the bell rings and not before. Watch the tide pools — they freeze from the edges in.\n\nIf the wind picks up, shelter in an igloo. They are warmer than they look and much warmer than you expect.' },
+    { id: 'island_bell', label: 'Harbour Bell', icon: '🔔', x: 660, y: 860, w: 70, h: 90, color: 0xc9a227,
+      title: '🔔 Harbour Bell', text: 'Rung once when a boat leaves, twice when one comes home. On still evenings you can hear it all the way across the bay.' },
+    { id: 'island_wreck', label: 'Frozen Wreck', icon: '⛵', x: 240, y: 880, w: 150, h: 80, color: 0x3d5a80,
+      title: '⛵ Frozen Wreck', text: 'Half a dinghy, frozen into the shore ice at a hopeful angle. Her nameplate reads ANCHOR I — which explains a certain harbour boat\'s numbering.' },
+    { id: 'island_pond', label: 'Tide Pool', icon: '💠', x: 1150, y: 820, w: 130, h: 70, color: 0x8fd3f0, flat: true, walkable: true,
+      title: '💠 Frozen Tide Pool', text: 'A tide pool caught mid-freeze — a lace of ice over water still moving beneath. Tiny silver fish under it, going about their business.' },
+    { id: 'island_cairn', label: 'Trail Cairn', icon: '🪨', x: 1300, y: 220, w: 80, h: 70, color: 0x9fb8c9,
+      title: '🪨 Trail Cairn', text: 'Stones stacked shoulder-high, each one carried up from the shore. On top, wedged under the last stone, a scrap of paper: "KEEP GOING. THE VIEW IS THE PAYMENT."' },
+    { id: 'island_view', label: 'North Viewpoint', icon: '🔭', x: 800, y: 110, w: 110, h: 80, color: 0x4a6fa5,
+      title: '🔭 North Viewpoint', text: 'From up here the whole bay unrolls: the harbour lights, the lighthouse winking, and the town far off under its snow. Somebody has carved a seat into the rock, facing exactly this way.' },
+  ],
+
+  frozen_forest: [
+    { id: 'fforest_fire', label: 'Fire Ring', icon: '🔥', x: 760, y: 680, w: 100, h: 70, color: 0xb5703f,
+      title: '🔥 Fire Ring', text: 'A ring of river stones with embers still breathing at the bottom. Whoever lit it is never far — it is forest law.' },
+    { id: 'fforest_cabin', label: 'Trapper\'s Cabin', icon: '🛖', art: 'cabin', x: 360, y: 700, w: 180, h: 120, color: 0x8c5a3a,
+      title: '🛖 Trapper\'s Cabin', text: 'Smoke from the chimney, boots by the door, and a kettle that has clearly just been moved. Nobody answers your knock, but the fire inside is fresh.' },
+    { id: 'fforest_cabin2', label: 'Hollow Pine Cabin', icon: '🛖', art: 'cabin', x: 1250, y: 740, w: 180, h: 120, color: 0x8c5a3a,
+      title: '🛖 Hollow Pine Cabin', text: 'Built around a living tree — the pine goes straight up through the roof. A sign on the door: "GONE TO TOWN. KNOCK ANYWAY, IT IS POLITE."' },
+    { id: 'fforest_marker', label: 'Trail Marker', icon: '🪧', x: 1120, y: 360, w: 120, h: 70, color: 0x6b4428,
+      title: '🪧 Trail Marker', text: '▴ DEEP FOREST\n▸ MOUNTAIN VILLAGE\n▾ back the way you came\n\nSomebody has added: "the trees are thicker than the map admits. Count your turns."' },
+    { id: 'fforest_board', label: 'Forest Notice', icon: '📋', x: 1090, y: 440, w: 110, h: 70, color: 0x8c5a3a,
+      title: '📋 Forest Notice', text: 'RULES OF THE FROZEN FOREST\n\n1. Replace any firewood you burn.\n2. Do not follow lights between the trees.\n3. If lost, walk downhill. Everything in this world is downhill from somewhere.' },
+    { id: 'fforest_sled', label: 'Sled in the Snow', icon: '🛷', x: 1150, y: 1080, w: 110, h: 60, color: 0xb5703f,
+      title: '🛷 Sled in the Snow', text: 'Parked upright against nothing at all, half drifted over. The rope still trails towards the trees, as if the rider meant to come straight back.' },
+    { id: 'fforest_berries', label: 'Frost Berries', icon: '🫐', x: 700, y: 940, w: 80, h: 60, color: 0x4a2f6b,
+      title: '🫐 Frost Berries', text: 'Dark as ink under the frost. The birds leave these alone, which either means something or the birds just found better ones.' },
+    { id: 'fforest_grove', label: 'Glowing Grove', icon: '💠', x: 300, y: 1060, w: 120, h: 80, color: 0x8ff0b3, flat: true, walkable: true,
+      title: '💠 The Glowing Grove', text: 'A clearing where the snow itself gives off a soft green light. No footprints in it, and none leading away — as if nobody has ever quite wanted to step on it.' },
+  ],
+
+  mountain_village: [
+    { id: 'village_fire', label: 'Village Hearth', icon: '🔥', x: 700, y: 560, w: 100, h: 70, color: 0xb5703f,
+      title: '🔥 Village Hearth', text: 'The village hearth — a big stone fire that has not gone out in living memory. Poles lean over it with a kettle, two pots, and somebody\'s mittens drying.' },
+    { id: 'village_cabin_a', label: 'Rope Maker\'s Cabin', icon: '🛖', art: 'cabin', x: 600, y: 420, w: 180, h: 120, color: 0x8c5a3a,
+      title: '🛖 Rope Maker\'s Cabin', text: 'Coils of rope hang under the eaves in every thickness, from thread to tow-line. The rope maker trades in cocoa and gossip, in that order.' },
+    { id: 'village_cabin_b', label: 'Lantern Cabin', icon: '🛖', art: 'cabin', x: 1150, y: 480, w: 180, h: 120, color: 0x8c5a3a,
+      title: '🛖 Lantern Cabin', text: 'Every window holds a lit lantern. A sign explains: "ONE LIT FOR EACH PENGUIN ON THE MOUNTAIN TONIGHT." You count nine. It is nice to be counted.' },
+    { id: 'village_cabin_c', label: 'Bakery Cabin', icon: '🛖', art: 'cabin', x: 600, y: 740, w: 180, h: 120, color: 0x8c5a3a,
+      title: '🛖 Bakery Cabin', text: 'The smell reaches you before the door does — cinnamon and burnt sugar. A rack outside holds cooling buns, with a tin marked "COINS (HONESTY SYSTEM)".' },
+    { id: 'village_cabin_d', label: 'Guest Cabin', icon: '🛖', art: 'cabin', x: 1150, y: 740, w: 180, h: 120, color: 0x8c5a3a,
+      title: '🛖 Guest Cabin', text: 'Always made up, never locked. A note on the pillow: "FOR ANYONE THE MOUNTAIN KEEPS LATE. Breakfast is whenever you wake."' },
+    { id: 'village_board', label: 'Village Notice', icon: '📋', x: 1090, y: 620, w: 110, h: 70, color: 0x8c5a3a,
+      title: '📋 Village Notice', text: 'MOUNTAIN VILLAGE\n\nBakery, ropes, lanterns, lodging. The bridge east leads to the Overlook — best view in the world, worst railing.\n\nSleds left at the top of the run WILL be used. That is what they are for.' },
+    { id: 'village_view', label: 'The Overlook', icon: '🔭', x: 1790, y: 1060, w: 100, h: 70, color: 0x4a6fa5,
+      title: '🔭 The Overlook', text: 'Past the bridge the world drops away: the forest, the bay, the lighthouse winking, and the plaza somewhere under all that snow. A brass plate reads "QUIET, PLEASE. THE VIEW IS WORKING."' },
+    { id: 'village_bell', label: 'Village Bell', icon: '🔔', x: 1090, y: 300, w: 70, h: 90, color: 0xc9a227,
+      title: '🔔 Village Bell', text: 'Rung for supper, for storms, and — one memorable evening — for a penguin who returned an igloo\'s borrowed door. The rope is worn smooth from all three.' },
+    { id: 'village_sled', label: 'Village Sled', icon: '🛷', x: 480, y: 840, w: 110, h: 60, color: 0xb5703f,
+      title: '🛷 Village Sled', text: 'Long, low, and waxed within an inch of its life. A tag: "IF YOU BORROW ME, COME BACK SNOWY."' },
+  ],
 };
 
 export const interactionsIn = (roomId) => INTERACTIONS[roomId] || [];

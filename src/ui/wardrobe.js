@@ -13,6 +13,8 @@ export function createWardrobe(root, { game, profile, onCoins }) {
   el.className = 'drawer'; el.hidden = true; root.appendChild(el);
   let tab = 'look', timer = null, lastSaved = { ...profile.avatar_data }, busy = false;
   let previewCanvas = null, previewAnimId = null;
+  let firstTimeMode = false;
+  let onFirstTimeClose = null;
   const icons = new Map();
 
   const icon = (asset) => {
@@ -33,10 +35,11 @@ export function createWardrobe(root, { game, profile, onCoins }) {
     render();
     if (profile.guest) return;
     clearTimeout(timer);
+    const delay = firstTimeMode ? 0 : 600; // Save immediately in first-time mode
     timer = setTimeout(async () => {
       try { lastSaved = { ...(await saveAvatar(profile.avatar_data)) }; }
       catch (e) { toast(e.message); profile.avatar_data = normalizeAvatar(lastSaved); game.events.emit('outfit-changed', profile.avatar_data); render(); }
-    }, 600);
+    }, delay);
   }
 
   async function buy(it) {
@@ -70,11 +73,18 @@ export function createWardrobe(root, { game, profile, onCoins }) {
       body = `<div class="grid"><button class="item none ${av[tab] ? '' : 'eq'}" data-none="${tab}"><b>None</b><small>${av[tab] ? 'Take off' : 'Nothing on'}</small></button>
         ${items(tab).map((i) => card(i, av[tab] === i.id)).join('')}</div>`;
     }
-    el.innerHTML = `<header><h2>Wardrobe</h2><button class="x" aria-label="Close">✕</button></header>
-      <div class="preview"><canvas id="wardrobe-preview" width="128" height="128"></canvas></div>
+
+    const previewSize = firstTimeMode ? 300 : 128;
+    const headerTitle = firstTimeMode ? 'CREATE YOUR PENGUIN' : 'Wardrobe';
+    const footerContent = firstTimeMode
+      ? '<button class="save-continue-btn" data-act="save-continue">Save & Continue</button>'
+      : (profile.guest ? 'Guest mode: free items only, nothing is saved.' : 'Locked items cost Anchor Coins. Prices are checked on the server.');
+
+    el.innerHTML = `<header><h2>${headerTitle}</h2><button class="x" aria-label="Close" ${firstTimeMode ? 'hidden' : ''}>✕</button></header>
+      <div class="preview"><canvas id="wardrobe-preview" width="${previewSize}" height="${previewSize}"></canvas></div>
       <nav class="tabs2">${TABS.map(([k, l]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</nav>
       <div class="body">${body}</div>
-      <footer>${profile.guest ? 'Guest mode: free items only, nothing is saved.' : 'Locked items cost Anchor Coins. Prices are checked on the server.'}</footer>`;
+      <footer>${footerContent}</footer>`;
     previewCanvas = el.querySelector('#wardrobe-preview');
   }
 
@@ -91,7 +101,9 @@ export function createWardrobe(root, { game, profile, onCoins }) {
       const bounce = Math.sin(timestamp * 0.002) * 5; // 5px amplitude, slow frequency
       ctx.save();
       ctx.translate(0, bounce);
-      drawAvatarPreview(game, previewCanvas, profile.avatar_data, 2.6);
+      // Use larger scale for first-time mode preview (canvas is 300x300 vs 128x128)
+      const scale = firstTimeMode ? 5.5 : 2.6;
+      drawAvatarPreview(game, previewCanvas, profile.avatar_data, scale);
       ctx.restore();
       previewAnimId = requestAnimationFrame(draw);
     };
@@ -119,12 +131,33 @@ export function createWardrobe(root, { game, profile, onCoins }) {
       const equipped = av[it.category] === it.id;
       apply({ ...av, [it.category]: equipped && it.category !== 'eyes' ? null : it.id });
     }
+    if (t.dataset.act === 'save-continue') {
+      return close();
+    }
   });
-  const close = () => { stopPreviewAnimation(); el.hidden = true; };
-  addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  const close = () => {
+    stopPreviewAnimation();
+    if (firstTimeMode && onFirstTimeClose) {
+      onFirstTimeClose();
+    }
+    firstTimeMode = false; // Reset first-time mode on close
+    onFirstTimeClose = null;
+    el.hidden = true;
+  };
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !firstTimeMode) close(); // Prevent Escape from closing in first-time mode
+  });
 
   return {
-    open(t) { if (t) tab = t; render(); startPreviewAnimation(); el.hidden = false; },
+    open(t, opts = {}) {
+      firstTimeMode = !!opts.firstTime;
+      onFirstTimeClose = opts.onFirstTimeClose || null;
+      if (firstTimeMode) el.classList.add('first-time'); else el.classList.remove('first-time');
+      if (t) tab = t;
+      render();
+      startPreviewAnimation();
+      el.hidden = false;
+    },
     toggle(t) { el.hidden ? this.open(t) : close(); },
     close, isOpen: () => !el.hidden,
     refresh: () => !el.hidden && render(),

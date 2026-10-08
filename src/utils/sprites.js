@@ -76,6 +76,40 @@ export const SPRITES = {
     if (o.neat) { g.lineStyle(3, 0x9fc6de, 0.9); g.strokeRect(x + 4, y + h * 0.1, w - 8, h * 0.9); }  // suspiciously tidy
   },
 
+  // Phase 21: a small log cabin — log walls, snow-loaded roof, one warm window, a chimney with a snow cap.
+  cabin(g, x, y, w, h) {
+    const cx = x + w / 2, base = y + h;
+    shadow(g, cx, base + 4, w + 34, 20);
+    const logs = 4, lh = (h * 0.6) / logs;                            // stacked log walls
+    for (let i = 0; i < logs; i++) { g.fillStyle(i % 2 ? 0x8c5a3a : 0x7a4f2f); g.fillRoundedRect(x + 4, y + h * 0.4 + i * lh, w - 8, lh - 3, 6); }
+    g.fillStyle(0x6b4428); g.fillTriangle(cx, y - h * 0.3, x - 10, y + h * 0.44, x + w + 10, y + h * 0.44);   // gable
+    g.fillStyle(SNOW, 0.95);                                         // snow on both roof slopes
+    g.fillTriangle(cx, y - h * 0.3, x - 6, y + h * 0.34, cx, y + h * 0.34);
+    g.fillTriangle(cx, y - h * 0.3, cx, y + h * 0.34, x + w + 6, y + h * 0.34);
+    g.fillStyle(0x3a2616); g.fillRoundedRect(cx - w * 0.11, base - h * 0.36, w * 0.22, h * 0.36, 6);          // door
+    g.fillStyle(0xffc247); g.fillCircle(cx + w * 0.06, base - h * 0.18, 3.5);
+    for (const wx of [x + w * 0.12, x + w * 0.74]) {                 // a window each side
+      g.fillStyle(0x3a2616); g.fillRoundedRect(wx, y + h * 0.5, w * 0.14, h * 0.18, 5);
+      g.fillStyle(0xffe9a8); g.fillRoundedRect(wx + 3, y + h * 0.53, w * 0.14 - 6, h * 0.18 - 6, 3);
+    }
+    g.fillStyle(0x59707f); g.fillRect(cx + w * 0.24, y - h * 0.22, 13, h * 0.2);      // chimney
+    g.fillStyle(SNOW); g.fillRect(cx + w * 0.21, y - h * 0.26, 19, 6);
+  },
+
+  // Phase 21: a snow-block igloo — dome with seams, a dark entrance tunnel and a bright cap.
+  igloo(g, x, y, w, h) {
+    const cx = x + w / 2, base = y + h;
+    shadow(g, cx, base + 3, w + 26, 17);
+    g.fillStyle(0xdceefa); g.fillEllipse(cx, base - h * 0.34, w, h * 0.94);           // dome
+    g.fillStyle(0xf4fbff); g.fillEllipse(cx - w * 0.12, base - h * 0.44, w * 0.58, h * 0.5);
+    g.lineStyle(2.5, 0x9fc6de, 0.85);                                                 // block seams
+    g.strokeEllipse(cx, base - h * 0.34, w * 0.74, h * 0.6);
+    g.strokeEllipse(cx, base - h * 0.34, w * 0.42, h * 0.34);
+    g.fillStyle(0xdceefa); g.fillEllipse(cx, base - h * 0.13, w * 0.44, h * 0.3);    // entrance tunnel
+    g.fillStyle(0x16304a); g.fillEllipse(cx, base - h * 0.15, w * 0.26, h * 0.2);
+    g.fillStyle(SNOW, 0.9); g.fillEllipse(cx, base - h * 0.8, w * 0.46, h * 0.14);    // sunlit cap
+  },
+
   sign(g, x, y, w, h, o = {}) {
     const cx = x + w / 2, base = y + h;
     shadow(g, cx, base + 2, w, 14);

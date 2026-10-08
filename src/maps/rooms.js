@@ -49,11 +49,20 @@ export const ROOMS = {
     ],
     props: [
       { type: 'pond', x: 900, y: 500, rx: 150, ry: 80 },
+      { type: 'ice', x: 1600, y: 800, rx: 90, ry: 55 }, { type: 'ice', x: 500, y: 860, rx: 90, ry: 55 },
       { type: 'lamp', x: 700, y: 620 }, { type: 'lamp', x: 1100, y: 620 }, { type: 'lamp', x: 1150, y: 980 },
+      { type: 'lamp', x: 250, y: 380 }, { type: 'lamp', x: 1550, y: 380 },
       { type: 'snowman', x: 1500, y: 880 }, { type: 'snowman', x: 330, y: 980, s: 0.8 },
       { type: 'bush', x: 520, y: 480 }, { type: 'bush', x: 1290, y: 480 }, { type: 'bush', x: 880, y: 1050 },
+      { type: 'bush', x: 1180, y: 1040 },
+      { type: 'rock', x: 80, y: 700, r: 34 }, { type: 'rock', x: 1730, y: 700, r: 34 },
     ],
-    trees: [[60,60],[190,420],[640,430],[1160,430],[1650,430],[130,900],[420,950],[1400,930],[1680,880],[1720,1040],[60,1040],[640,980],[1130,1010],[560,720],[1240,720]],
+    blocks: [
+      { x: 150, y: 800, w: 70, h: 80, art: 'barrel', label: '🛢️ Barrel' },
+      { x: 1580, y: 840, w: 70, h: 80, art: 'barrel', label: '🛢️ Barrel' },
+      { x: 1090, y: 600, w: 110, h: 60, art: 'sled', label: '🛷 Sled' },
+    ],
+    trees: [[60,60],[190,420],[640,430],[1160,430],[1650,430],[130,900],[420,950],[1400,930],[1680,880],[1720,1040],[60,1040],[640,980],[1130,1010],[560,720],[1240,720],[1750,760],[70,760],[80,240],[1720,240]],
   },
   cafe: {
     name: 'Café', w: 1000, h: 700, floor: 'wood', indoor: true, spawn: { x: 500, y: 560 },
@@ -133,15 +142,20 @@ export const ROOMS = {
     portals: [
       { label: 'Plaza ▸',     x: 1540, y: 440, w: 60,  h: 220, to: 'snowy_plaza', spawn: { x: 1460, y: 550 } },
       { label: '▴ Snow Camp', x: 690,  y: 0,   w: 220, h: 60,  to: 'snow_camp',   spawn: { x: 800,  y: 150 } },
+      // Phase 21: the trail south out of the pines into the deeper, colder forest.
+      { label: 'Frozen Forest ▾', x: 700, y: 940, w: 220, h: 60, to: 'frozen_forest', spawn: { x: 810, y: 900 } },
     ],
     props: [
       { type: 'rock', x: 1420, y: 820, r: 46 }, { type: 'rock', x: 160, y: 180, r: 38 },
       { type: 'bush', x: 300, y: 740 }, { type: 'bush', x: 980, y: 540 }, { type: 'bush', x: 1180, y: 960 },
-      { type: 'lamp', x: 1460, y: 560 },
+      { type: 'bush', x: 1460, y: 760 }, { type: 'bush', x: 460, y: 300 },
+      { type: 'lamp', x: 1460, y: 560 }, { type: 'lamp', x: 860, y: 300 }, { type: 'lamp', x: 400, y: 560 },
+      { type: 'glow', x: 1000, y: 640, r: 120, color: 0x8ff0b3 },     // a faint green light between the trees
     ],
     trees: [[90, 240], [170, 480], [120, 760], [400, 180], [460, 420], [380, 900], [560, 560], [700, 260],
       [760, 700], [880, 420], [960, 160], [1020, 620], [1120, 460], [1240, 240], [1280, 900], [1360, 620],
-      [1500, 340], [1540, 880], [620, 960], [240, 980]],
+      [1500, 340], [1540, 880], [620, 960], [240, 980], [240, 100], [440, 60], [1160, 80], [1340, 100],
+      [1000, 700], [480, 780], [1300, 780], [560, 200], [1120, 960]],
   },
   snow_camp: {
     name: 'Snow Camp', w: 1400, h: 900, floor: 'snow', spawn: { x: 700, y: 700 },
@@ -155,14 +169,18 @@ export const ROOMS = {
     blocks: [
       { x: 180, y: 180, w: 150, h: 90, label: '⛺', color: 0xc9553d }, { x: 1120, y: 180, w: 150, h: 90, label: '⛺', color: 0x3f8fc9 },
       { x: 640, y: 180, w: 160, h: 90, label: '⛺ Mess Tent', color: 0x2a9d8f },
+      { x: 920, y: 600, w: 150, h: 90, art: 'tent', label: '⛺ Spare Tent' },
+      { x: 1000, y: 680, w: 110, h: 60, art: 'sled', label: '🛷 Sled' },
     ],
     props: [
       { type: 'rock', x: 240, y: 620, r: 40 }, { type: 'rock', x: 1240, y: 720, r: 36 },
       { type: 'glow', x: 700, y: 470, r: 170, color: 0xffa63c },      // the campfire's light
       { type: 'lamp', x: 460, y: 300 }, { type: 'lamp', x: 940, y: 300 },
-      { type: 'snowman', x: 1300, y: 460, s: 0.9 }, { type: 'bush', x: 160, y: 760 },
+      { type: 'lamp', x: 860, y: 780 }, { type: 'lamp', x: 240, y: 300 },
+      { type: 'snowman', x: 1300, y: 460, s: 0.9 }, { type: 'bush', x: 160, y: 760 }, { type: 'bush', x: 1240, y: 700 },
+      { type: 'fence', x: 200, y: 480, w: 200 }, { type: 'fence', x: 1200, y: 480, w: 200 },
     ],
-    trees: [[70, 420], [80, 820], [1340, 120], [1330, 880], [460, 120], [900, 120]],
+    trees: [[70, 420], [80, 820], [1340, 120], [1330, 880], [460, 120], [900, 120], [1000, 900], [1060, 760]],
   },
   frozen_lake: {
     name: 'Frozen Lake', w: 1600, h: 1000, floor: 'ice', spawn: { x: 800, y: 820 },
@@ -176,11 +194,16 @@ export const ROOMS = {
     props: [
       { type: 'ice', x: 800, y: 540, rx: 300, ry: 170 }, { type: 'ice', x: 320, y: 300, rx: 150, ry: 90 },
       { type: 'ice', x: 1320, y: 820, rx: 170, ry: 100 },
-      { type: 'rock', x: 180, y: 900, r: 44 }, { type: 'rock', x: 1480, y: 200, r: 50 },
-      { type: 'snowman', x: 1080, y: 900 }, { type: 'snowman', x: 420, y: 300, s: 0.75 },
-      { type: 'lamp', x: 300, y: 640 }, { type: 'lamp', x: 1300, y: 640 },
+      { type: 'ice', x: 640, y: 760, rx: 140, ry: 80 }, { type: 'ice', x: 1180, y: 260, rx: 120, ry: 70 },
+      { type: 'rock', x: 180, y: 900, r: 44 }, { type: 'rock', x: 1480, y: 200, r: 50 }, { type: 'rock', x: 560, y: 180, r: 36 },
+      { type: 'snowman', x: 1080, y: 900 }, { type: 'snowman', x: 420, y: 300, s: 0.75 }, { type: 'snowman', x: 1480, y: 700, s: 0.8 },
+      { type: 'lamp', x: 300, y: 640 }, { type: 'lamp', x: 1300, y: 640 }, { type: 'lamp', x: 820, y: 400 },
     ],
-    trees: [[80, 120], [80, 660], [1520, 480], [1540, 980], [420, 980], [1180, 120]],
+    blocks: [
+      { x: 1240, y: 880, w: 150, h: 100, art: 'tent', label: '⛺ Ice Hut' },
+      { x: 1120, y: 900, w: 70, h: 80, art: 'barrel', label: '🛢️ Barrel' },
+    ],
+    trees: [[80, 120], [80, 660], [1520, 480], [1540, 980], [420, 980], [1180, 120], [980, 960], [1500, 420]],
   },
   harbor_village: {
     name: 'Harbour Village', w: 1600, h: 1000, floor: 'snow', spawn: { x: 800, y: 820 },
@@ -193,20 +216,27 @@ export const ROOMS = {
     portals: [
       { label: '◂ Snowy Plaza', x: 0,   y: 440, w: 60,  h: 220, to: 'snowy_plaza', spawn: { x: 120, y: 550 } },
       { label: '▴ Frozen Lake', x: 690, y: 0,   w: 220, h: 60,  to: 'frozen_lake', spawn: { x: 800, y: 150 } },
+      // Phase 21: the ferry at the end of the east dock. A portal like any other, dressed up as a boat.
+      { label: '⛵ Sail to Ice Island', x: 1300, y: 830, w: 120, h: 90, to: 'ice_island', spawn: { x: 1400, y: 880 } },
     ],
     blocks: [
       { x: 240, y: 240, w: 170, h: 100, label: '🏘️ Boathouse', color: 0x8c5a3a },
       { x: 480, y: 540, w: 130, h: 60,  label: '📦', color: 0x9c5f12 },
       { x: 1040, y: 560, w: 130, h: 60, label: '📦', color: 0x9c5f12 },
+      { x: 300, y: 540, w: 70, h: 80, art: 'barrel', label: '🛢️ Barrel' },
+      { x: 900, y: 500, w: 70, h: 80, art: 'barrel', label: '🛢️ Barrel' },
     ],
     props: [
       { type: 'dock', x: 700, y: 900, w: 500, h: 70 }, { type: 'dock', x: 1240, y: 880, w: 260, h: 60 },
+      { type: 'boat', x: 1440, y: 940 },                        // Phase 21: the ferry herself, moored by the portal
+      { type: 'ice', x: 1420, y: 700, rx: 90, ry: 50 }, { type: 'ice', x: 200, y: 860, rx: 110, ry: 60 },
       { type: 'rock', x: 1500, y: 880, r: 44 },
       { type: 'glow', x: 1235, y: 300, r: 200, color: 0xfff0b0 },     // the lighthouse beam spilling down
       { type: 'lamp', x: 520, y: 700 }, { type: 'lamp', x: 1000, y: 700 }, { type: 'lamp', x: 760, y: 420 },
-      { type: 'snowman', x: 180, y: 620, s: 0.85 }, { type: 'bush', x: 1420, y: 460 },
+      { type: 'lamp', x: 1400, y: 640 }, { type: 'lamp', x: 180, y: 480 },
+      { type: 'snowman', x: 180, y: 620, s: 0.85 }, { type: 'bush', x: 1420, y: 460 }, { type: 'bush', x: 1340, y: 480 },
     ],
-    trees: [[90, 180], [80, 880], [1540, 560], [1420, 120]],
+    trees: [[90, 180], [80, 880], [1540, 560], [1420, 120], [1560, 300], [1520, 780]],
   },
   lighthouse: {
     name: 'Lighthouse', w: 900, h: 700, floor: 'stone', indoor: true, wallColor: 0x4a5b6b, spawn: { x: 450, y: 560 },
@@ -235,10 +265,13 @@ export const ROOMS = {
     props: [
       { type: 'rock', x: 180, y: 560, r: 52 }, { type: 'rock', x: 300, y: 860, r: 44 }, { type: 'rock', x: 560, y: 260, r: 48 },
       { type: 'rock', x: 1240, y: 560, r: 50 }, { type: 'rock', x: 1120, y: 900, r: 46 }, { type: 'rock', x: 840, y: 620, r: 40 },
-      { type: 'lamp', x: 480, y: 880 }, { type: 'lamp', x: 920, y: 880 },
+      { type: 'rock', x: 700, y: 200, r: 44 }, { type: 'rock', x: 1260, y: 860, r: 40 },
+      { type: 'lamp', x: 480, y: 880 }, { type: 'lamp', x: 920, y: 880 }, { type: 'lamp', x: 700, y: 860 },
+      { type: 'snowman', x: 420, y: 880, s: 0.85 },
+      { type: 'fence', x: 900, y: 860, w: 260 },
       { type: 'glow', x: 1070, y: 360, r: 150, color: 0xb48cff },     // light from the observatory dome
     ],
-    trees: [[70, 300], [60, 960], [1360, 240], [1340, 960]],
+    trees: [[70, 300], [60, 960], [1360, 240], [1340, 960], [40, 700], [1380, 700], [1360, 80]],
   },
   ice_caves: {
     name: 'Ice Caves', w: 1400, h: 900, floor: 'cave', indoor: true, wallColor: 0x24404f, spawn: { x: 700, y: 780 },
@@ -315,17 +348,24 @@ export const ROOMS = {
     ],
     portals: [
       { label: '◂ Mountain Pass', x: 0, y: 520, w: 60, h: 220, to: 'mountain_pass', spawn: { x: 1280, y: 520 } },
+      // Phase 21: the track over the north shoulder to the village below the peak.
+      { label: '▾ Mountain Village', x: 200, y: 0, w: 220, h: 60, to: 'mountain_village', spawn: { x: 310, y: 110 } },
+    ],
+    blocks: [
+      { x: 520, y: 400, w: 60, h: 90, art: 'flag', label: '🚩 Flag' },
+      { x: 1180, y: 400, w: 60, h: 90, art: 'flag', label: '🚩 Flag' },
     ],
     props: [
       { type: 'peak', x: 300,  y: 150, w: 760, h: 440 },
       { type: 'peak', x: 1180, y: 110, w: 900, h: 520 },
       { type: 'rock', x: 1420, y: 760, r: 50 }, { type: 'rock', x: 180, y: 880, r: 42 },
       { type: 'fence', x: 520, y: 640, w: 300 }, { type: 'fence', x: 1120, y: 640, w: 300 },
-      { type: 'lamp', x: 700, y: 840 }, { type: 'lamp', x: 1020, y: 840 },
+      { type: 'lamp', x: 700, y: 840 }, { type: 'lamp', x: 1020, y: 840 }, { type: 'lamp', x: 860, y: 600 },
+      { type: 'lamp', x: 400, y: 740 }, { type: 'lamp', x: 1320, y: 740 },
       { type: 'snowman', x: 1320, y: 930 },
       { type: 'bush', x: 420, y: 980 }, { type: 'bush', x: 1200, y: 1020 },
     ],
-    trees: [[90,420],[150,620],[1560,420],[1620,660],[80,1020],[1640,980],[420,520],[1300,520]],
+    trees: [[90,420],[150,620],[1560,420],[1620,660],[80,1020],[1640,980],[420,520],[1300,520],[1620,140],[80,120]],
   },
 
   // ===================================================================
@@ -375,9 +415,14 @@ export const ROOMS = {
       { type: 'peak', x: 1320, y: 20,  w: 980,  h: 480 },
       { type: 'tower', x: 900, y: 1010 },
       { type: 'sign', x: 900, y: 700, label: 'PICK YOUR ROUTE' },
+      { type: 'sign', x: 600, y: 800, label: 'SUMMIT — 1,140 m' },
       { type: 'fence', x: 380, y: 420, w: 320 }, { type: 'fence', x: 1260, y: 420, w: 320 },
       { type: 'rock', x: 140, y: 820, r: 54 }, { type: 'rock', x: 1680, y: 860, r: 50 },
       { type: 'lamp', x: 740, y: 900 }, { type: 'lamp', x: 1060, y: 900 },
+    ],
+    blocks: [
+      { x: 560, y: 500, w: 60, h: 90, art: 'flag', label: '🚩 Flag' },
+      { x: 1240, y: 500, w: 60, h: 90, art: 'flag', label: '🚩 Flag' },
     ],
     trees: [[60,620],[1740,640],[120,1080],[1700,1080]],
   },
@@ -387,5 +432,99 @@ export const ROOMS = {
   slope_ridge:    slopeRoom('slope_ridge',    'Mountain Ridge', { sky: 0x0b1f33, aurora: true, wash: [0xd8e7f6, 0.95] }),
   slope_extreme:  slopeRoom('slope_extreme',  'Extreme Slope',  { sky: 0x07131f, fx: 'blizzard', wash: [0xcddced, 0.95] }),
   slope_hidden:   slopeRoom('slope_hidden',   'Hidden Snow Valley', { sky: 0x101a33, hidden: true, wash: [0xdedcf6, 0.95] }),
+
+  // ===================================================================
+  // PHASE 21 — three new places on the same map system:
+  //   Harbour Village ──(boat)──▸ Ice Island
+  //   Deep Forest ──▸ Frozen Forest ──▸ Mountain Village ──▸ Ski Base
+  // The village sits under Anchor Peak, so sledding and the village are one area.
+  // ===================================================================
+  ice_island: {
+    name: 'Ice Island', w: 1700, h: 1100, floor: 'snow', spawn: { x: 855, y: 920 },
+    sky: 0x0e2438, fx: 'snow', stars: true, aurora: true, wash: [0xdff0fb, 0.95],
+    paths: [[790, 200, 220, 760], [300, 520, 1100, 140]],
+    portals: [
+      { label: '⛵ Sail to Harbour', x: 790, y: 1000, w: 130, h: 90, to: 'harbor_village', spawn: { x: 855, y: 950 } },
+    ],
+    blocks: [
+      { x: 345, y: 680, w: 150, h: 110, art: 'igloo', label: '🛖 Igloo' },
+      { x: 1105, y: 660, w: 150, h: 110, art: 'igloo', label: '🛖 Igloo' },
+    ],
+    props: [
+      // sea and shore first, then the things that stand in/on it
+      { type: 'water', x: 850, y: 1040, w: 1700, h: 120 },
+      { type: 'water', x: 1640, y: 560, w: 120, h: 1000 },
+      { type: 'water', x: 60,   y: 560, w: 120, h: 1000 },
+      { type: 'dock', x: 855, y: 1040, w: 340, h: 100 },
+      { type: 'boat', x: 1150, y: 1060 },
+      { type: 'iceberg', x: 240, y: 980, s: 1.2 }, { type: 'iceberg', x: 1480, y: 960, s: 1 },
+      { type: 'iceberg', x: 1560, y: 300, s: 0.8 }, { type: 'iceberg', x: 150, y: 300, s: 0.9 },
+      { type: 'peak', x: 350, y: 80, w: 700, h: 380 }, { type: 'peak', x: 1400, y: 60, w: 760, h: 420 },
+      { type: 'crystal', x: 1420, y: 280, s: 1 }, { type: 'crystal', x: 300, y: 160, s: 0.7 },
+      { type: 'ice', x: 520, y: 300, rx: 120, ry: 70 }, { type: 'ice', x: 1150, y: 400, rx: 160, ry: 90 },
+      { type: 'ice', x: 480, y: 820, rx: 110, ry: 60 },
+      { type: 'rock', x: 160, y: 520, r: 40 }, { type: 'rock', x: 1560, y: 640, r: 46 },
+      { type: 'lamp', x: 900, y: 920 }, { type: 'lamp', x: 760, y: 600 }, { type: 'lamp', x: 1040, y: 600 }, { type: 'lamp', x: 360, y: 560 },
+      { type: 'snowman', x: 200, y: 760 }, { type: 'snowman', x: 1420, y: 520, s: 0.85 },
+      { type: 'glow', x: 500, y: 820, r: 160, color: 0xffa63c }, { type: 'glow', x: 1180, y: 800, r: 140, color: 0xffa63c },
+      { type: 'fence', x: 600, y: 960, w: 200 }, { type: 'fence', x: 1110, y: 960, w: 200 },
+      { type: 'sign', x: 540, y: 900, label: 'WELCOME TO ICE ISLAND' },
+    ],
+    trees: [[140, 150], [180, 700], [1520, 160], [1500, 760], [240, 600], [1470, 480]],
+  },
+
+  frozen_forest: {
+    name: 'Frozen Forest', w: 1800, h: 1200, floor: 'snow', spawn: { x: 900, y: 800 },
+    sky: 0x0f2b26, fx: 'snow', wash: [0xd2e6da, 0.95],
+    paths: [[850, 60, 220, 1080], [250, 520, 1300, 150]],
+    portals: [
+      { label: '▴ Deep Forest', x: 850, y: 0, w: 220, h: 60, to: 'deep_forest', spawn: { x: 960, y: 120 } },
+      { label: 'Mountain Village ▸', x: 1740, y: 520, w: 60, h: 220, to: 'mountain_village', spawn: { x: 1680, y: 620 } },
+    ],
+    props: [
+      { type: 'peak', x: 400, y: 40, w: 900, h: 360 }, { type: 'peak', x: 1450, y: 20, w: 800, h: 340 },
+      { type: 'ice', x: 520, y: 940, rx: 140, ry: 80 },
+      { type: 'rock', x: 200, y: 900, r: 40 }, { type: 'rock', x: 1500, y: 340, r: 44 }, { type: 'rock', x: 1600, y: 820, r: 44 },
+      { type: 'lamp', x: 790, y: 480 }, { type: 'lamp', x: 1120, y: 700 }, { type: 'lamp', x: 780, y: 1100 },
+      { type: 'bush', x: 400, y: 880 }, { type: 'bush', x: 1140, y: 920 }, { type: 'bush', x: 1560, y: 620 },
+      { type: 'snowman', x: 1460, y: 980, s: 0.9 },
+      { type: 'glow', x: 810, y: 720, r: 150, color: 0xffa63c },        // the campfire's light
+      { type: 'glow', x: 300, y: 1080, r: 120, color: 0x8ff0b3 },       // something faint in the hidden grove
+      { type: 'sign', x: 960, y: 180, label: 'FROZEN FOREST' },
+    ],
+    trees: [[100, 180], [280, 140], [460, 220], [640, 120], [160, 420], [380, 360], [600, 300],
+      [180, 760], [340, 820], [540, 760], [700, 860], [640, 940], [100, 1020], [300, 1040], [520, 1000], [700, 1060],
+      [1180, 200], [1360, 140], [1540, 260], [1660, 120], [1080, 240], [1320, 340], [1500, 420], [1620, 500],
+      [1180, 800], [1480, 720], [1520, 840], [1660, 700], [1300, 980], [1500, 1060], [1660, 940], [1400, 1120]],
+  },
+
+  mountain_village: {
+    name: 'Mountain Village', w: 1900, h: 1200, floor: 'snow', spawn: { x: 950, y: 900 },
+    sky: 0x0d2033, fx: 'snow', stars: true, wash: [0xdce9f5, 0.95],
+    paths: [[850, 400, 220, 620], [300, 940, 1300, 130], [240, 1020, 200, 160]],
+    portals: [
+      { label: '◂ Frozen Forest', x: 0, y: 520, w: 60, h: 220, to: 'frozen_forest', spawn: { x: 150, y: 620 } },
+      { label: 'Ski Base ▴', x: 240, y: 1140, w: 200, h: 60, to: 'ski_base', spawn: { x: 340, y: 1090 } },
+    ],
+    blocks: [
+      { x: 1360, y: 800, w: 140, h: 100, art: 'igloo', label: '🛖 Igloo' },
+    ],
+    props: [
+      { type: 'water', x: 1600, y: 600, w: 180, h: 1200 },             // the frozen river
+      { type: 'bridge', x: 1600, y: 940, w: 260, h: 100 },             // the lane's bridge
+      { type: 'bridge', x: 1600, y: 480, w: 220, h: 80 },              // the north footbridge
+      { type: 'peak', x: 400, y: 100, w: 800, h: 420 }, { type: 'peak', x: 1100, y: 60, w: 700, h: 380 },
+      { type: 'peak', x: 1830, y: 80, w: 540, h: 500 },
+      { type: 'lamp', x: 830, y: 720 }, { type: 'lamp', x: 1070, y: 720 }, { type: 'lamp', x: 900, y: 380 },
+      { type: 'lamp', x: 500, y: 920 }, { type: 'lamp', x: 1200, y: 920 }, { type: 'lamp', x: 260, y: 900 },
+      { type: 'snowman', x: 1000, y: 560, s: 0.9 }, { type: 'snowman', x: 1740, y: 860 },
+      { type: 'rock', x: 150, y: 600, r: 42 }, { type: 'rock', x: 1760, y: 520, r: 40 },
+      { type: 'glow', x: 960, y: 560, r: 160, color: 0xffa63c },       // the square's brazier
+      { type: 'sign', x: 960, y: 860, label: 'MOUNTAIN VILLAGE' },
+      { type: 'fence', x: 700, y: 920, w: 300 }, { type: 'fence', x: 1200, y: 920, w: 300 },
+    ],
+    trees: [[120, 300], [200, 700], [140, 1040], [1300, 200], [1450, 300], [1200, 200], [700, 200], [300, 300],
+      [1760, 600], [1820, 300], [100, 900], [180, 1120], [1780, 420]],
+  },
 
 };
