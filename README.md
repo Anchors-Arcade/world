@@ -1,31 +1,17 @@
 # Anchors World ⚓❄️
 
-Anchors World is a Vite-built browser game configured for GitHub Pages project sites. Phaser and Supabase are bundled into the static output; players do not need a CDN to start the game.
+## GitHub Pages — upload and launch, no npm
 
-## Run locally
+This folder is prepared as a **static GitHub Pages site**. The root `index.html` and `assets/` directory contain the already-built game, including bundled Phaser and Supabase libraries. You do not need Node.js, npm, a GitHub Actions build, or a CDN to publish or start guest play.
 
-Requires Node.js 22 or newer:
+1. Extract this ZIP.
+2. Upload the **contents inside `world-main/`** to the root of your GitHub repository. Make sure `index.html`, `assets/`, and `.nojekyll` are at the repository root—not one folder deeper.
+3. In **Settings → Pages**, choose **Deploy from a branch**, then select `main` and `/(root)`.
+4. Open the Pages URL after GitHub finishes publishing.
 
-```sh
-npm ci
-npm test
-npm run dev
-```
+The generated asset URLs are relative, so the game works at both a user Pages URL and a repository Pages URL. Do not open the game using `file://`; use the GitHub Pages address.
 
-Open the local URL printed by Vite. Do not open `index.html` with `file://`; browser module imports require a web server.
-
-## Deploy to GitHub Pages
-
-1. Put the **contents** of this project folder at the root of your GitHub repository. Keep `.github/workflows/pages.yml`, `src/`, `public/`, `supabase/`, and the package files.
-2. Push to the `main` branch. The workflow runs the tests, builds the site, and deploys `dist/` automatically.
-3. In **Settings → Pages**, set the source to **GitHub Actions** (not “Deploy from a branch”).
-4. Open the Pages URL shown in the workflow’s deployment environment.
-
-The build uses relative asset paths, so it works at both `https://USER.github.io/` and `https://USER.github.io/REPOSITORY/`.
-
-## Supabase (optional for guest play)
-
-Edit `src/config/keys.js` with your Supabase project URL and public anon/publishable key for accounts and online features. Never put a service-role key in the client. For guest play, click **Look around as a guest**; no Supabase credentials are needed. To enable accounts and saved/multiplayer features, apply the SQL migrations in `supabase/` in the phase order described below and configure the Supabase Auth Site URL and Redirect URLs for your Pages address.
+Guest play needs no Supabase setup: choose **Look around as a guest**. To enable accounts and online features, edit `src/config/keys.js` with your Supabase project URL and public anon/publishable key, and apply the SQL migrations in `supabase/` in the phase order described below. Never put a service-role key in the client.
 
 Controls: WASD / arrows or click. E (or click a building) to enter doors. **Enter** opens chat, **Q** opens the emote wheel, **1–8** play an emote directly, **Esc** closes panels. Tap a player to see their card.
 
