@@ -18,27 +18,26 @@ export function skyTexture(scene, top) {
   return bake(scene, key, 4, 128, (g) => { for (let i = 0; i < 32; i++) { g.fillStyle(mix(top, bottom, (i / 31) ** 1.6)); g.fillRect(0, i * 4, 4, 4); } });
 }
 
-// Three ridge layers at HALF resolution (drawn 2x on screen): far = pale + blue, near = dark with pines. 3 x ~1.2 MB.
+// Three ridge layers at HALF resolution (drawn 2x on screen): soft rounded cartoon peaks, smooth snowlines.
 const LAYERS = [
-  { rock: 0x4d6f96, snow: 0xdbe9f6, shadow: 0x7a98ba, h: 190, peak: 0.95, snowLine: 120, fog: 0.5 },
-  { rock: 0x34557a, snow: 0xeaf4fb, shadow: 0xa9c2dc, h: 170, peak: 0.8, snowLine: 105, fog: 0.32 },
-  { rock: 0x24405f, snow: 0xf6fbff, shadow: 0xbcd3e8, h: 130, peak: 0.6, snowLine: 80, fog: 0.15, pines: true },
+  { rock: 0x5f7fa6, snow: 0xe4effa, shadow: 0x8fabc9, h: 185, peak: 0.95, snowLine: 120, fog: 0.5 },
+  { rock: 0x41628b, snow: 0xf0f7fd, shadow: 0xb3c8dd, h: 165, peak: 0.8, snowLine: 105, fog: 0.32 },
+  { rock: 0x2e4f74, snow: 0xfaffff, shadow: 0xc3d6e9, h: 125, peak: 0.6, snowLine: 80, fog: 0.15, pines: true },
 ];
 export function mountainTextures(scene) {
   return LAYERS.map((L, n) => bake(scene, `mt_${n}`, 1600, 200, (g) => {
-    const r = rng(11 + n * 37), ph = [r() * 6, r() * 6, r() * 6], N = 1600 / 8, top = [];
-    for (let i = 0; i <= N; i++) {                                         // ridge height: layered sines + sharp peaks
-      const x = i / N * 6.28 * (1.4 + n * 0.5);
-      const hh = 0.5 + 0.22 * Math.sin(x + ph[0]) + 0.16 * Math.sin(x * 2.3 + ph[1]) + 0.1 * Math.abs(Math.sin(x * 4.1 + ph[2]));
-      top.push(200 - L.h * Math.min(1, hh * L.peak + 0.12));
+    const r = rng(11 + n * 37), ph = [r() * 6, r() * 6], N = 1600 / 8, top = [];
+    for (let i = 0; i <= N; i++) {                                         // ridge height: two soft sines = round, friendly peaks
+      const x = i / N * 6.28 * (1.1 + n * 0.3);
+      const hh = 0.55 + 0.3 * Math.sin(x + ph[0]) + 0.15 * Math.sin(x * 1.7 + ph[1]);
+      top.push(200 - L.h * Math.min(1, hh * L.peak + 0.1));
     }
     for (let i = 0; i < N; i++) {
       const x0 = i * 8, x1 = x0 + 8, y0 = top[i], y1 = top[i + 1], lit = y1 < y0;            // rising slope = lit face
-      const rock = lit ? L.rock : shade(L.rock, -0.28);
+      const rock = lit ? L.rock : shade(L.rock, -0.22);
       g.fillStyle(rock); g.fillTriangle(x0, y0, x1, y1, x0, 200); g.fillTriangle(x1, y1, x1, 200, x0, 200);
       const snowY = 200 - L.h * 0.62;                                                                    // snow covers only the top ~40% of the range
-      const sd0 = Math.max(0, (snowY - y0) * (0.5 + 0.5 * Math.sin(i * 1.7) ** 2));                      // jagged snow edge
-      const sd1 = Math.max(0, (snowY - y1) * (0.5 + 0.5 * Math.sin((i + 1) * 1.7) ** 2));
+      const sd0 = Math.max(0, snowY - y0), sd1 = Math.max(0, snowY - y1);                                // smooth, chunky snowline
       if (sd0 + sd1 > 0) {
         g.fillStyle(lit ? L.snow : L.shadow);
         g.fillTriangle(x0, y0, x1, y1, x0, y0 + sd0); g.fillTriangle(x1, y1, x1, y1 + sd1, x0, y0 + sd0);
@@ -49,8 +48,8 @@ export function mountainTextures(scene) {
         g.fillStyle(0xcfe4f5, L.fog / 14); g.fillRect(x0, Math.max(yb, ridge), 8, yb + 6 - Math.max(yb, ridge));
       }
     }
-    if (L.pines) for (let x = 6; x < 1600; x += 9 + r() * 14) {                                             // pine silhouettes along the foot
-      const s = 0.7 + r() * 0.8; g.fillStyle(0x16324a); g.fillTriangle(x, 168 - s * 20, x - 6 * s, 196, x + 6 * s, 196); g.fillStyle(0xe9f4fb, 0.8); g.fillTriangle(x, 168 - s * 20, x - 2.5 * s, 176 - s * 14, x + 2.5 * s, 176 - s * 14);
+    if (L.pines) for (let x = 6; x < 1600; x += 12 + r() * 18) {                                             // a few chunky pine silhouettes along the foot
+      const s = 0.7 + r() * 0.8; g.fillStyle(0x16324a); g.fillTriangle(x, 168 - s * 20, x - 7 * s, 196, x + 7 * s, 196); g.fillStyle(0xe9f4fb, 0.85); g.fillTriangle(x, 168 - s * 20, x - 3 * s, 176 - s * 14, x + 3 * s, 176 - s * 14);
     }
   }));
 }

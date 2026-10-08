@@ -46,6 +46,7 @@ export function drawAvatarPreview(game, canvas, data, scale = 2.6) {
     const extra = (id && ITEM_BY_ID[id]?.fit) || {};
     let k = 1;
     if (base.maxW && img.width > 0) k = Math.min(1, base.maxW / img.width);
+    if (base.minW && img.width > 0) k = Math.max(k, base.minW / img.width);
     k *= extra.s ?? 1;
     return { img, k, ax: base.ax, ay: base.ay, x: (base.x ?? 0) + (extra.dx ?? 0), y: base.y + (extra.dy ?? 0) };
   };

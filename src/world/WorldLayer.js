@@ -45,13 +45,10 @@ export class WorldLayer {
     if (!o.walkable) s.walls.add(s.add.rectangle(cx, cy, w, h, 0, 0));
     this.marks.set(o.id, { art: g });
 
-    // A clue object glows until its clue has been found, so exploring feels guided but never automatic.
+    // A clue object glows steadily until its clue has been found, so exploring feels guided but never automatic.
     if (o.secret) {
-      const glow = s.add.ellipse(cx, y + h, w + 54, h * 0.9 + 28, 0xffc247, solved ? 0.05 : 0.2)
+      const glow = s.add.ellipse(cx, y + h, w + 54, h * 0.9 + 28, 0xffc247, solved ? 0.05 : 0.16)
         .setDepth(depth - 2).setBlendMode(Phaser.BlendModes.ADD);
-      if (!solved && !s.registry.get('reduceMotion')) {
-        s.tweens.add({ targets: glow, alpha: 0.06, scaleX: 1.12, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-      }
       this.marks.get(o.id).glow = glow;
     }
 

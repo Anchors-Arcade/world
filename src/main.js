@@ -54,6 +54,9 @@ function startGame(profile) {
     } },
   });
 
+  // Debug handle for the browser-only smoke/screenshot scripts (scripts/smoke-pages-browser.mjs family).
+  globalThis.__aw = { get game() { return game; } };
+
   const veil = document.createElement('div'); veil.className = 'loading-veil'; veil.innerHTML = '<div class="ld-ring"></div><div class="ld-text">Entering Anchors World…</div>'; ui.appendChild(veil);
   game.events.once('room-entered', () => { veil.classList.add('gone'); setTimeout(() => veil.remove(), 500); });
   hud = mountHUD(ui, profile, { onAction });

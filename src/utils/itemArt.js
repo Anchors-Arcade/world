@@ -3,11 +3,16 @@ const INK = 0x1b2a41;
 const ART = {};
 const add = (id, w, h, fn) => (ART[id] = [w, h, fn]);
 
-add('av_beak', 12, 9, (g) => { g.fillStyle(INK); g.fillTriangle(0, 0, 12, 0, 6, 9); g.fillStyle(0xff9a3c); g.fillTriangle(2, 1, 10, 1, 6, 7); });
+add('av_beak', 14, 11, (g) => {
+  g.fillStyle(INK); g.fillEllipse(7, 5.5, 14, 10);                 // soft rounded beak
+  g.fillStyle(0xff9a3c); g.fillEllipse(7, 5.5, 10.5, 7);
+  g.fillStyle(0xffc247); g.fillEllipse(6, 3.4, 5, 2.4);            // top glint
+});
 
 // eyes (30x14)
 const eyeBase = (g) => { g.fillStyle(0xffffff); g.fillCircle(8, 7, 6); g.fillCircle(22, 7, 6); };
-add('eyes_0', 30, 14, (g) => { eyeBase(g); g.fillStyle(INK); g.fillCircle(9, 8, 3); g.fillCircle(21, 8, 3); });
+add('eyes_0', 30, 14, (g) => { eyeBase(g); g.fillStyle(INK); g.fillCircle(8.5, 7.5, 3.5); g.fillCircle(21.5, 7.5, 3.5);
+  g.fillStyle(0xffffff); g.fillCircle(7.2, 5.9, 1.3); g.fillCircle(20.2, 5.9, 1.3); });
 add('eyes_1', 30, 14, (g) => { g.lineStyle(3, INK); [8, 22].forEach((x) => { g.beginPath(); g.arc(x, 10, 5, Math.PI, 0, false); g.strokePath(); }); });
 add('eyes_2', 30, 14, (g) => { g.lineStyle(3, INK); g.lineBetween(3, 8, 13, 8); g.lineBetween(17, 8, 27, 8); g.lineBetween(3, 8, 1, 11); g.lineBetween(27, 8, 29, 11); });
 add('eyes_3', 30, 14, (g) => { eyeBase(g); g.fillStyle(INK); g.fillCircle(8, 7, 4.5); g.fillCircle(22, 7, 4.5); g.fillStyle(0xffffff); g.fillCircle(6.5, 5.5, 1.8); g.fillCircle(20.5, 5.5, 1.8); g.fillCircle(9.5, 9, 1); g.fillCircle(23.5, 9, 1); });

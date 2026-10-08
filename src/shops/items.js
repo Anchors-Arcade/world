@@ -27,14 +27,16 @@ export const LAYOUT = {
 //   y       where on the BODY that point goes, in body units (scaled with the body type, like everything else).
 //   maxW    the widest the item may be across the penguin. Art wider than this is scaled DOWN to fit (never up,
 //           so small items such as a bow tie keep their natural size).
+//   minW    for garments that must WRAP the body (shirts, pants): the item is scaled UP to at least this width
+//           so it reads as worn around the penguin instead of pasted onto its front.
 //
 // An item can nudge its own anchor with  fit: { dx, dy, s }  — used by the handful of pieces that genuinely sit
 // differently (a halo floats, a jetpack rides low, a cape hangs wide).
 // =====================================================================
 export const FIT = {
   back:      { ax: 0.5, ay: 0.5, x: 0,  y: -25, maxW: 42 },
-  pants:     { ax: 0.5, ay: 1.0, x: 0,  y: -2,  maxW: 38 },
-  shirt:     { ax: 0.5, ay: 0.0, x: 0,  y: -27, maxW: 40 },
+  pants:     { ax: 0.5, ay: 1.0, x: 0,  y: -2,  maxW: 38, minW: 42 },
+  shirt:     { ax: 0.5, ay: 0.0, x: 0,  y: -27, maxW: 40, minW: 42 },
   accessory: { ax: 0.5, ay: 0.0, x: 0,  y: -26, maxW: 44 },
   eyes:      { ax: 0.5, ay: 0.5, x: 0,  y: -36, maxW: 32 },
   face:      { ax: 0.5, ay: 0.5, x: 0,  y: -33, maxW: 38 },

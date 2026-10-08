@@ -78,6 +78,7 @@ export class Avatar {
       const extra = (id && ITEM_BY_ID[id]?.fit) || {};
       let k = 1;
       if (id && spr.width > 0 && base.maxW) k = Math.min(1, base.maxW / spr.width);
+      if (id && spr.width > 0 && base.minW) k = Math.max(k, base.minW / spr.width);   // shirts & pants wrap the body
       k *= extra.s ?? 1;
       spr.setOrigin(base.ax, base.ay);
       this.fit[slot] = { k, x: (base.x ?? 0) + (extra.dx ?? 0), y: base.y + (extra.dy ?? 0) };

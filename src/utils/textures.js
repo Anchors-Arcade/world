@@ -9,9 +9,18 @@ export function makeTextures(scene) {
   const INK = 0x1b2a41;
 
   // --- avatar layers (body is white so it can be tinted with the player's colour) ---
-  gen('av_body', 44, 48, (g) => { g.fillStyle(INK); g.fillEllipse(22, 26, 44, 48); g.fillStyle(0xffffff); g.fillEllipse(22, 26, 39, 43); });
+  // Chunky cartoon penguin: a round head merged deep into a pear-shaped body (no neck pinch, so clothes sit
+  // on a continuous silhouette), all inside the same 44x48 box the FIT anchors are measured against.
+  gen('av_body', 44, 48, (g) => {
+    g.fillStyle(INK);
+    g.fillEllipse(22, 16, 36, 28);                     // head silhouette
+    g.fillEllipse(22, 32, 44, 34);                      // body silhouette
+    g.fillStyle(0xffffff);
+    g.fillEllipse(22, 16, 31, 23);                      // head fill
+    g.fillEllipse(22, 32, 39, 29);                      // body fill
+  });
   gen('av_belly', 26, 28, (g) => { g.fillStyle(0xf4fbff); g.fillEllipse(13, 14, 26, 28); });
-  gen('av_foot', 16, 8, (g) => { g.fillStyle(INK); g.fillEllipse(8, 4, 16, 8); g.fillStyle(0xff9a3c); g.fillEllipse(8, 4, 13, 6); });
+  gen('av_foot', 18, 9, (g) => { g.fillStyle(INK); g.fillEllipse(9, 4.5, 18, 9); g.fillStyle(0xff9a3c); g.fillEllipse(9, 4.5, 14, 6.5); });
   // --- world ---
   gen('snow', 64, 64, (g) => {
     g.fillStyle(0xe9f4fb); g.fillRect(0, 0, 64, 64);
@@ -52,7 +61,7 @@ export function makeTextures(scene) {
     g.fillTriangle(0, 17, 17, 12, 17, 22); g.fillTriangle(34, 17, 17, 12, 17, 22);
     g.fillCircle(17, 17, 6);
   });
-  // Phase 13: proper cartoon pines — a trunk, layered tiers with a lit side, and a load of snow on every tier.
+  // Cartoon pines — a trunk, a few chunky tiers with a lit side, one clean snow cap per tier.
   // Baked twice (a broad one and a tall one) so a forest has variety while still costing one image per tree.
   const pine = (tall) => (g) => {
     const W = tall ? 84 : 96, H = tall ? 160 : 140, cx = W / 2;
@@ -61,10 +70,9 @@ export function makeTextures(scene) {
     const tiers = tall ? 4 : 3;
     for (let i = 0; i < tiers; i++) {
       const t = i / tiers, cy = H - 26 - (H - 50) * t * 0.82, hw = (W / 2 - 4) * (1 - t * 0.5), th = (H - 40) * 0.44;
-      g.fillStyle(i % 2 ? 0x1b5f46 : 0x1f6b4f); g.fillTriangle(cx, cy - th, cx - hw, cy, cx + hw, cy);
-      g.fillStyle(0x2a8a63, 0.6); g.fillTriangle(cx, cy - th, cx - hw * 0.34, cy, cx + hw * 0.12, cy);
-      g.fillStyle(0xffffff, 0.95); g.fillTriangle(cx, cy - th, cx - hw * 0.52, cy - th * 0.34, cx + hw * 0.52, cy - th * 0.34);
-      g.fillStyle(0xdfeefb, 0.9); g.fillTriangle(cx, cy - th, cx - hw * 0.2, cy - th * 0.3, cx + hw * 0.52, cy - th * 0.34);
+      g.fillStyle(i % 2 ? 0x21684c : 0x257556); g.fillTriangle(cx, cy - th, cx - hw, cy, cx + hw, cy);
+      g.fillStyle(0x2f9e6b, 0.6); g.fillTriangle(cx, cy - th, cx - hw * 0.34, cy, cx + hw * 0.12, cy);
+      g.fillStyle(0xffffff, 0.95); g.fillTriangle(cx, cy - th, cx - hw * 0.55, cy - th * 0.38, cx + hw * 0.55, cy - th * 0.38);
     }
     g.fillStyle(0xffc247); g.fillCircle(cx, 6, 3);
   };

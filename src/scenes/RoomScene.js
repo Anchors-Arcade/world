@@ -253,19 +253,12 @@ export class RoomScene extends Phaser.Scene {
     // Phase 13: a path is trodden snow, not a translucent box. Three softening passes and a scatter of
     // boot prints, with no hard outline, so walkways read as ground rather than as UI.
     if (paths) {
+      // A path is trodden snow: two soft layers, no outline, no prints — quiet ground, not UI.
       const g = this.add.graphics().setDepth(-999);
       for (const [x, y, w, h] of paths) {
         const r = Math.min(60, Math.min(w, h) / 2);
-        g.fillStyle(0xdceefa, 0.3); g.fillRoundedRect(x - 10, y - 10, w + 20, h + 20, r + 10);
-        g.fillStyle(0xcfe6f4, 0.45); g.fillRoundedRect(x, y, w, h, r);
-        g.fillStyle(0xc3dcee, 0.4); g.fillRoundedRect(x + 12, y + 12, w - 24, h - 24, Math.max(4, r - 12));
-        g.fillStyle(0xaecbe0, 0.35);                                        // boot prints down the middle
-        const along = w > h, n = Math.floor((along ? w : h) / 54);
-        for (let i = 0; i < n; i++) {
-          const t = (i + 0.5) / n, px = along ? x + w * t : x + w / 2 + (i % 2 ? 11 : -11);
-          const py = along ? y + h / 2 + (i % 2 ? 11 : -11) : y + h * t;
-          g.fillEllipse(px, py, 13, 9);
-        }
+        g.fillStyle(0xdceefa, 0.35); g.fillRoundedRect(x - 10, y - 10, w + 20, h + 20, r + 10);
+        g.fillStyle(0xcfe6f4, 0.5); g.fillRoundedRect(x, y, w, h, r);
       }
     }
     if (room.wash) this.add.rectangle(0, 0, room.w, room.h, room.wash[0], room.wash[1]).setOrigin(0).setDepth(-995).setBlendMode(Phaser.BlendModes.MULTIPLY);
@@ -346,10 +339,9 @@ export class RoomScene extends Phaser.Scene {
   // Phase 13: a standing spot used to be a bright yellow rectangle, which read as a placeholder. It is now a soft
   // trodden-snow oval with a faint rim — still obvious when you are near it, invisible as clutter from a distance.
   markZone(zone) {
-    const e = this.add.ellipse(zone.centerX, zone.centerY + 6, zone.width * 1.15, zone.height * 0.95, 0xffffff, 0.3)
+    // One quiet trodden oval. No ring, no gold rim — the E prompt says the rest.
+    const e = this.add.ellipse(zone.centerX, zone.centerY + 6, zone.width * 1.15, zone.height * 0.95, 0xffffff, 0.18)
       .setDepth(-930);
-    this.add.ellipse(zone.centerX, zone.centerY + 6, zone.width * 1.15, zone.height * 0.95, 0xffc247, 0)
-      .setStrokeStyle(2, 0xffc247, 0.35).setDepth(-929);
     return e;
   }
 
@@ -376,7 +368,6 @@ export class RoomScene extends Phaser.Scene {
     this.add.image(x - t.ox, y - t.oy, t.key).setOrigin(0).setDepth(y + h);          // one baked image per building: walls, roof, windows, door, lights, shadow
     const lamp = this.add.ellipse(cx2, y + h - 30, 170, 70, 0xffc247, 0.14).setDepth(-992).setBlendMode(Phaser.BlendModes.ADD);
     if (!this.registry.get('reduceMotion')) {
-      this.tweens.add({ targets: lamp, alpha: 0.07, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
       this.add.particles(x + w - 42, y - 6, 'flake', {                                                 // chimney smoke
         lifespan: 2600, speedY: { min: -46, max: -22 }, speedX: { min: -16, max: 16 },
         scale: { start: 0.5, end: 2.1 }, alpha: { start: 0.35, end: 0 }, frequency: 240, quantity: 1, tint: 0xdfe8ef,
@@ -424,8 +415,7 @@ export class RoomScene extends Phaser.Scene {
   // Phase 7: an arcade cabinet (or, with `board`, the wide leaderboard screen). Solid, glowing, with a play zone on the floor in front.
   addCabinet(c) {
     const { x, y, w, h } = c, cx = x + w / 2, g = this.add.graphics().setDepth(y + h), calm = this.registry.get('reduceMotion');
-    const glow = this.add.rectangle(cx, y + h / 2, w + 36, h + 36, c.color, 0.2).setDepth(y + h - 2);
-    if (!calm) this.tweens.add({ targets: glow, alpha: 0.07, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    const glow = this.add.rectangle(cx, y + h / 2, w + 36, h + 36, c.color, 0.13).setDepth(y + h - 2);
     g.fillStyle(0x16304a, 0.2); g.fillEllipse(cx, y + h + 4, w + 24, 28);
     g.fillStyle(c.color); g.fillRoundedRect(x, y, w, h, 14);
     g.fillStyle(0x000000, 0.18); g.fillRoundedRect(x, y + h - 28, w, 28, { tl: 0, tr: 0, bl: 14, br: 14 });
@@ -461,8 +451,7 @@ export class RoomScene extends Phaser.Scene {
     const dark = Phaser.Display.Color.HexStringToColor(def.colors.b).color;
     const calm = this.registry.get('reduceMotion');
 
-    const glow = this.add.rectangle(cx, y + h / 2, w + 44, h + 44, tint, 0.18).setDepth(depth - 3);
-    if (!calm) this.tweens.add({ targets: glow, alpha: 0.06, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    const glow = this.add.rectangle(cx, y + h / 2, w + 44, h + 44, tint, 0.12).setDepth(depth - 3);
 
     const g = this.add.graphics().setDepth(depth);
     g.fillStyle(0x16304a, 0.2); g.fillEllipse(cx, y + h + 6, w + 20, 26);
@@ -489,17 +478,16 @@ export class RoomScene extends Phaser.Scene {
 
   // neon sign on an indoor back wall
   addSign(room) {
-    const s = this.add.text(room.w / 2, 70, room.sign, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '46px', fontStyle: 'bold', color: '#ffffff', stroke: '#ff6fae', strokeThickness: 7 })
+    this.add.text(room.w / 2, 70, room.sign, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '46px', fontStyle: 'bold', color: '#ffffff', stroke: '#ff6fae', strokeThickness: 7 })
       .setOrigin(0.5).setDepth(-400).setShadow(0, 0, '#ff6fae', 18, true, true);
-    if (!this.registry.get('reduceMotion')) this.tweens.add({ targets: s, alpha: 0.72, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
   }
 
   addPortal(p) {
-    // Phase 21: a soft glow under every portal, so gateways read as warm doorways rather than taped rectangles.
-    const glow = this.add.ellipse(p.x + p.w / 2, p.y + p.h / 2, p.w + 44, p.h + 30, 0xbfe8ff, 0.16)
+    // A gateway is a warm, quiet doorway: one soft glow pad and a label. No stroked rectangle, no pulsing.
+    this.add.ellipse(p.x + p.w / 2, p.y + p.h / 2, p.w + 44, p.h + 30, 0xbfe8ff, 0.14)
       .setDepth(-901).setBlendMode(Phaser.BlendModes.ADD);
-    if (!this.registry.get('reduceMotion')) this.tweens.add({ targets: glow, alpha: 0.07, duration: 1900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-    this.add.rectangle(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h, 0xffffff, 0.35).setStrokeStyle(3, 0x7fb8d8).setDepth(-900);
+    this.add.ellipse(p.x + p.w / 2, p.y + p.h / 2, p.w * 0.9, p.h * 0.8, 0xffffff, 0.3)
+      .setDepth(-900);
     this.add.text(p.x + p.w / 2, p.y + p.h / 2, p.label, { fontFamily: 'Trebuchet MS, sans-serif', fontSize: '14px', fontStyle: 'bold', color: '#16304a', backgroundColor: '#f4fbffee', padding: { x: 6, y: 3 } }).setOrigin(0.5).setDepth(-800);
     // Phase 12 polish: a gate that leads to a sled route also shows its difficulty, its par time and your best.
     if (p.route) {
@@ -653,8 +641,7 @@ export class RoomScene extends Phaser.Scene {
     }
     if (p.type === 'lamp') {                                 // a pole with a warm pool of light on the ground
       const g = this.add.graphics().setDepth(p.y);
-      const pool = this.add.ellipse(p.x, p.y + 6, 170, 70, 0xffc247, 0.16).setDepth(-992).setBlendMode(Phaser.BlendModes.ADD);
-      if (!this.registry.get('reduceMotion')) this.tweens.add({ targets: pool, alpha: 0.1, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+      this.add.ellipse(p.x, p.y + 6, 170, 70, 0xffc247, 0.13).setDepth(-992).setBlendMode(Phaser.BlendModes.ADD);
       g.fillStyle(0x16304a, 0.18); g.fillEllipse(p.x, p.y + 4, 34, 12);
       g.fillStyle(0x34506b); g.fillRect(p.x - 4, p.y - 96, 8, 96); g.fillRect(p.x - 10, p.y - 4, 20, 6);
       g.fillStyle(0x1b2a41); g.fillTriangle(p.x, p.y - 128, p.x - 16, p.y - 104, p.x + 16, p.y - 104);
@@ -671,8 +658,7 @@ export class RoomScene extends Phaser.Scene {
       return;
     }
     if (p.type === 'glow') {                                 // a bare light source (campfire, crystal cluster, brazier)
-      const pool = this.add.ellipse(p.x, p.y, (p.r || 90) * 2, (p.r || 90) * 1.1, p.color ?? 0xffa63c, 0.2).setDepth(-991).setBlendMode(Phaser.BlendModes.ADD);
-      if (!this.registry.get('reduceMotion')) this.tweens.add({ targets: pool, scale: 1.12, alpha: 0.12, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+      this.add.ellipse(p.x, p.y, (p.r || 90) * 2, (p.r || 90) * 1.1, p.color ?? 0xffa63c, 0.18).setDepth(-991).setBlendMode(Phaser.BlendModes.ADD);
       return;
     }
     if (p.type === 'dock') {                                   // walkable boardwalk
