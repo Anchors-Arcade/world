@@ -2,6 +2,7 @@ import { BootScene } from './scenes/BootScene.js';
 import { RoomScene } from './scenes/RoomScene.js';
 import { mountAuth } from './ui/authUI.js';
 import { mountHUD, toast, pickup, toggleFullscreen, fsSupported } from './ui/hud.js';
+import { mountJobHUD } from './ui/jobHUD.js';
 import { createWardrobe } from './ui/wardrobe.js';
 import { createShop } from './ui/shop.js';
 import * as auth from './database/auth.js';
@@ -29,7 +30,7 @@ import { ROOMS } from './maps/rooms.js';
 
 const ui = document.getElementById('ui');
 let game = null, hud = null, wardrobe = null, shop = null, net = null, social = null, chat = null, friends = null, settings = null, mapPanel = null, emotes = null, arcade = null, minigames = null;
-let explore = null, journal = null, worldDialog = null, wallPanel = null, keypad = null, adminPanel = null, ideasPanel = null;
+let explore = null, journal = null, worldDialog = null, wallPanel = null, keypad = null, adminPanel = null, ideasPanel = null, jobHUD = null;
 let offAuth = null;                                    // Phase 17: unsubscribes the auth listener on logout   // Phase 8: exploration state + journal + interaction cards
 
 function startGame(profile) {
@@ -61,6 +62,7 @@ function startGame(profile) {
   game.events.once('room-entered', () => { veil.classList.add('gone'); setTimeout(() => veil.remove(), 500); });
   hud = mountHUD(ui, profile, { onAction });
   game.registry.set('hud', hud); // Store HUD for tutorial access
+  jobHUD = mountJobHUD(ui, game);   // Phase 22: the small in-world shift card (hidden unless a shift is running)
   wardrobe = createWardrobe(ui, { game, profile, onCoins: (n) => hud.setCoins(n) });
   shop = createShop(ui, { game, profile, wardrobe, onCoins: (n) => hud.setCoins(n) });
 
@@ -213,7 +215,7 @@ function announce(text) {
 
 async function logout() {
   offAuth?.(); offAuth = null;
-  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, keypad, adminPanel, ideasPanel, explore].forEach((x) => x?.destroy());
+  [chat, friends, settings, mapPanel, emotes, social, arcade, minigames, journal, worldDialog, wallPanel, keypad, adminPanel, ideasPanel, jobHUD, explore].forEach((x) => x?.destroy());
   ui.classList.remove('in-minigame');
   net?.destroy(); shop?.destroy(); wardrobe?.destroy(); hud?.destroy(); game?.destroy(true);
   game = hud = wardrobe = shop = net = social = chat = friends = settings = mapPanel = emotes = arcade = minigames = null;

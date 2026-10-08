@@ -15,6 +15,15 @@ export const FALLBACK_TIERS = {   // used only when the overview RPC is unavaila
   cliff_climb:    [{ min: 1, coins: 8 }, { min: 800, coins: 20 }, { min: 1800, coins: 40 }, { min: 3000, coins: 70 }, { min: 4500, coins: 110 }],
   crystal_echo:   [{ min: 1, coins: 8 }, { min: 400, coins: 20 }, { min: 900, coins: 40 }, { min: 1600, coins: 70 }, { min: 2600, coins: 110 }],
   star_link:      [{ min: 1, coins: 8 }, { min: 400, coins: 20 }, { min: 900, coins: 40 }, { min: 1600, coins: 70 }, { min: 2600, coins: 110 }],
+  // Phase 22 jobs (mirrors phase22.sql) — steady work, not a jackpot
+  job_cafe:        [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 95, coins: 22 }, { min: 115, coins: 30 }],
+  job_cleanup:     [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 95, coins: 22 }, { min: 115, coins: 30 }],
+  job_delivery:    [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 95, coins: 22 }, { min: 115, coins: 30 }],
+  job_tour:        [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 95, coins: 22 }, { min: 115, coins: 30 }],
+  job_library:     [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 95, coins: 22 }, { min: 115, coins: 30 }],
+  job_snow:        [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 95, coins: 22 }, { min: 115, coins: 30 }],
+  job_fishing:     [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 100, coins: 24 }, { min: 140, coins: 36 }],
+  job_maintenance: [{ min: 1, coins: 4 }, { min: 40, coins: 10 }, { min: 70, coins: 16 }, { min: 100, coins: 24 }, { min: 140, coins: 36 }],
 };
 export const tiersFor = (overview, id) => overview?.games?.find((g) => g.id === id)?.rewards || FALLBACK_TIERS[id] || [];
 export const maxReward = (overview, id) => { const g = overview?.games?.find((x) => x.id === id); return g?.max_reward ?? Math.max(0, ...tiersFor(overview, id).map((t) => t.coins)); };

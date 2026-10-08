@@ -70,6 +70,24 @@ export const ROOMS = {
     ],
     portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 560 } }],
   },
+  // Phase 22: the Library — the plaza's library building finally has an inside. Four genre shelves
+  // along the north wall (their colours are the Library Aide's sorting code), a return cart, and
+  // somewhere quiet to read. Reached by walking into the Library building, like the café.
+  library: {
+    name: 'Library', w: 1100, h: 700, floor: 'wood', indoor: true, spawn: { x: 500, y: 560 },
+    sky: 0x241d14, fx: 'dust', wash: [0xffe6c2, 0.9], sign: 'LIBRARY',
+    props: [{ type: 'glow', x: 480, y: 340, r: 180, color: 0xffc247 }],
+    blocks: [
+      // the genre shelves — colour-matched to the aide's book tags (see world/jobs/library.js)
+      { x: 60,  y: 170, w: 180, h: 130, label: '🧭 Adventure', color: 0x3f8fc9 },
+      { x: 300, y: 170, w: 180, h: 130, label: '🏛️ History',  color: 0xd96a5a },
+      { x: 540, y: 170, w: 180, h: 130, label: '🔬 Science',  color: 0x2f9e5b },
+      { x: 780, y: 170, w: 180, h: 130, label: '🖋️ Poetry',   color: 0xffc247 },
+      { x: 150, y: 470, w: 150, h: 80, label: '📖', color: 0x6b4428 },     // reading tables
+      { x: 790, y: 470, w: 150, h: 80, label: '📖', color: 0x6b4428 },
+    ],
+    portals: [{ label: 'Exit ▾', x: 420, y: 650, w: 160, h: 50, to: 'snowy_plaza', spawn: { x: 500, y: 560 } }],
+  },
   // Shops: walk to the counter and press E (or click it) to open the storefront.
   clothing_shop: {
     name: 'Snowy Threads', w: 1000, h: 700, floor: 'wood', indoor: true, spawn: { x: 500, y: 580 },

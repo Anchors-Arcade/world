@@ -12,6 +12,7 @@ import { SkiArea } from '../world/SkiArea.js';
 import { SKI_ROUTES } from '../world/skiAreas.js';
 import { drawSprite, spriteFor, captionOf } from '../utils/sprites.js';
 import { GalleryWall } from '../world/GalleryWall.js';
+import { JobSystem } from '../world/JobSystem.js';
 import { wallTotal } from '../database/wallCache.js';
 import { GAMES } from '../minigames/registry.js';
 import { bestOf } from '../minigames/scoreSystem.js';
@@ -78,6 +79,9 @@ export class RoomScene extends Phaser.Scene {
 
     // Phase 8: build THIS room's interactive objects and collectibles (and nothing from any other room).
     if (this.explore && room.type !== 'home') this.world = new WorldLayer(this, this.explore);
+    // Phase 22: in-world jobs (café shifts, cleanups, deliveries…). Same pattern as the ski area:
+    // owns the player only while a shift is running, cleans up after itself on shutdown.
+    this.jobs = new JobSystem(this);
 
     // Phase 6: tell the social layer where I am (friends see it only if my privacy setting allows)
     this.registry.get('social')?.setLocation(this.roomId, this.ownerId);
@@ -716,6 +720,7 @@ export class RoomScene extends Phaser.Scene {
         return this.game.events.emit('open-wall', { pic: this.nearPic.pic });
       }
       if (this.editing || this.uiLocked) return;
+      if (this.jobs?.consumeE()) return;                            // Phase 22: the shift in progress, if any
       if (this.ski?.nearLift()) return this.ski.boardLift();        // Phase 12: board the gondola
       if (this.nearDoor) this.enter(this.nearDoor);
     });
@@ -752,6 +757,7 @@ export class RoomScene extends Phaser.Scene {
     this.mp.update(time, delta, this.registry.get('reduceMotion'));
 
     this.world?.update();                                   // Phase 8: collectible pickups (a few distance checks)
+    this.jobs?.update(time, delta);                         // Phase 22: the shift clock + gameplay ticks
     this.gallery?.update();                                 // Phase 15: load only the pictures you are standing near
 
     this.nearDoor = this.doors.find((d) => Phaser.Geom.Rectangle.Contains(d.zone, this.player.x, this.player.y)) || null;
@@ -761,7 +767,7 @@ export class RoomScene extends Phaser.Scene {
     this.game.events.emit('door-prompt',
       this.nearPic ? `Press E to look at this picture`
       : nd ? `Press E to ${nd.verb || (nd.action ? 'browse' : 'enter')} ${nd.label}`
-         : (this.ski?.hint() || ''));                     // Phase 12: lift / push-off hints
+         : (this.jobs?.hint() || this.ski?.hint() || '')); // Phase 22/12: shift / lift hints
     if (this.nearDoor && this.pendingDoor === this.nearDoor) this.enter(this.nearDoor);
   }
 

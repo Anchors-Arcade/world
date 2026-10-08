@@ -14,6 +14,16 @@ export const INTERACTIONS = {
     { id: 'plaza_board', label: 'Notice Board', icon: '📋', x: 1080, y: 790, w: 110, h: 70, color: 0x8c5a3a,
       title: '📋 Notice Board',
       text: 'WELCOME TO ANCHORS WORLD\n\nThe paths west and east are open again. Travellers report strange marks in the ice caves and a light in the old lighthouse.\n\n🎿 ANCHOR PEAK IS OPEN. Take the Mountain Pass to the ski base, ride the gondola, and sled a route back down into the world.\n\nFound something odd? Press E on it.' },
+    // Phase 22: job boards — press E for the offer card, "Start shift" to clock in. No menus: the
+    // shift happens out in the room, exactly like the notice boards they hang next to.
+    { id: 'job_cleanup', label: 'Cleanup Job Board', icon: '🧹', art: 'noticeboard', x: 1250, y: 800, w: 110, h: 70,
+      color: 0x2a5238, job: 'cleanup', title: '🧹 Town Cleanup', text: 'The plaza is a mess and somebody has to fix it. That somebody is you.' },
+    { id: 'job_delivery', label: 'Parcel Station', icon: '📦', art: 'counter', x: 560, y: 500, w: 110, h: 80,
+      color: 0x8a6240, job: 'delivery', title: '📦 Parcel Run', text: 'Parcels stacked, addresses on the tags. The town needs a courier.' },
+    { id: 'job_maintenance', label: 'Maintenance Board', icon: '🛠️', art: 'toolbox', x: 1200, y: 470, w: 110, h: 70,
+      color: 0x3a4d5c, job: 'maintenance', title: '🛠️ Maintenance Crew', text: 'Two lamps and a snowman are out of sorts. Bring the toolbox.' },
+    { id: 'job_tour', label: 'Tour Booth', icon: '🧭', art: 'counter', x: 1050, y: 800, w: 130, h: 90,
+      color: 0x8a6240, job: 'tour', title: '🧭 Tour Guide', text: 'A visitor wants the grand tour of the plaza. The booth is where tours start and end.' },
   ],
 
   deep_forest: [
@@ -44,6 +54,8 @@ export const INTERACTIONS = {
     { id: 'lake_bubble', label: 'Bubble in the Ice', icon: '🫧', x: 760, y: 530, w: 90, h: 60, color: 0xbfe8fb, flat: true, walkable: true,
       secret: 'frozen_message', clue: 'ice_bubble',
       title: '🫧 Something in the Ice', text: 'A bubble the size of a dinner plate, and inside it a glint of metal on a chain. You tap once. The ice sighs and lets it go.' },
+    { id: 'job_fishing', label: 'Fishing Board', icon: '🎣', art: 'noticeboard', x: 430, y: 760, w: 110, h: 70,
+      color: 0x6b4428, job: 'fishing', title: '🎣 Ice Fisher', text: 'Holes are cut, fish are biting. Bring your own everything — the rod is theoretical.' },
   ],
 
   harbor_village: [
@@ -169,6 +181,20 @@ export const INTERACTIONS = {
       title: '📋 Village Notice', text: 'MOUNTAIN VILLAGE\n\nBakery, ropes, lanterns, lodging. The bridge east leads to the Overlook — best view in the world, worst railing.\n\nSleds left at the top of the run WILL be used. That is what they are for.' },
     { id: 'village_view', label: 'The Overlook', icon: '🔭', x: 1790, y: 1060, w: 100, h: 70, color: 0x4a6fa5,
       title: '🔭 The Overlook', text: 'Past the bridge the world drops away: the forest, the bay, the lighthouse winking, and the plaza somewhere under all that snow. A brass plate reads "QUIET, PLEASE. THE VIEW IS WORKING."' },
+    { id: 'job_snow', label: 'Snow Crew Board', icon: '🧊', art: 'noticeboard', x: 560, y: 600, w: 110, h: 70,
+      color: 0x3a4d5c, job: 'snow', title: '🧊 Snow Crew', text: 'The lanes are drifted over again. Shovels are provided. Warmth is not.' },
+  ],
+
+  // Phase 22: the café's job board, by the window — the shift happens around the tables.
+  cafe: [
+    { id: 'job_cafe', label: 'Café Job Board', icon: '☕', art: 'noticeboard', x: 770, y: 350, w: 100, h: 70,
+      color: 0x8c5a3a, job: 'cafe', title: '☕ Café Shift', text: 'The kettle is on and the counter needs somebody behind it.' },
+  ],
+
+  // Phase 22: the library's return cart — where the aide's shift starts, and its whole floor.
+  library: [
+    { id: 'job_library', label: 'Return Cart', icon: '📚', art: 'books', x: 480, y: 430, w: 110, h: 80,
+      color: 0x6b4428, job: 'library', title: '📚 Library Aide', text: 'Returned books stacked on the cart, each with its genre tag. They belong on the shelves.' },
   ],
 };
 

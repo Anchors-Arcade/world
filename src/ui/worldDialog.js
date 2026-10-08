@@ -1,5 +1,8 @@
 import { esc } from './dom.js';
 import { toast } from './hud.js';
+import { JOBS } from '../world/jobs.js';
+import { tiersFor } from '../minigames/rewards.js';
+import { bestOf } from '../minigames/scoreSystem.js';
 
 // Phase 8 — the little card you get when you press E on something in the world.
 // It shows the object's text and, when the object is a clue, the server's answer: how many clues are in, whether the
@@ -8,13 +11,15 @@ import { toast } from './hud.js';
 export function createWorldDialog(root, { game, explore }) {
   let el = null, pending = false;
 
-  function card({ title, body, note, progress, reward }) {
+  function card({ title, body, note, progress, reward, action, sub }) {
     return `<section class="wd-card" role="dialog" aria-label="${esc(title)}">
       <header><h2>${esc(title)}</h2><button class="x" data-act="close" aria-label="Close">✕</button></header>
       <p class="wd-text">${esc(body).replace(/\n/g, '<br>')}</p>
       ${progress ? `<div class="wd-prog"><span>${esc(progress.label)}</span><div class="bar"><i style="width:${progress.pct}%"></i></div><b>${progress.found}/${progress.total}</b></div>` : ''}
       ${note ? `<p class="wd-note ${note.kind || ''}">${esc(note.text)}</p>` : ''}
       ${reward ? `<p class="wd-reward">⚓ +${reward.toLocaleString()} Anchor Coins</p>` : ''}
+      ${sub ? `<p class="wd-sub">${esc(sub)}</p>` : ''}
+      ${action ? `<button class="wd-go" data-act="go">${esc(action.label)}</button>` : ''}
       <button class="wd-ok" data-act="close">Close</button>
     </section>`;
   }
@@ -23,6 +28,9 @@ export function createWorldDialog(root, { game, explore }) {
     if (!el) {
       el = document.createElement('div'); el.className = 'wd-overlay';
       el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-act="go"]') && el?.dataset?.go) {
+          const jobId = el.dataset.go; close(); game.events.emit('job-start', jobId); return;
+        }
         if (e.target === el || e.target.closest('[data-act="close"]')) close();
       });
       root.appendChild(el);
@@ -30,6 +38,7 @@ export function createWorldDialog(root, { game, explore }) {
       game.events.emit('ui-lock', true);
     }
     el.innerHTML = card(data);
+    if (data.go) el.dataset.go = data.go; else delete el.dataset.go;
   }
 
   const onKey = (e) => { if (e.key === 'Escape' || e.key === 'Enter' || e.key === 'e' || e.key === 'E') close(); };
@@ -50,6 +59,25 @@ export function createWorldDialog(root, { game, explore }) {
 
     // Phase 15: an object that opens a panel of its own (the Town Hall picture desk).
     if (o.opens) { close(); game.events.emit(`open-${o.opens}`, {}); return; }
+
+    // Phase 22: a job board. The card is the offer — the shift itself happens out in the room,
+    // never in a menu. Payouts live on the server (supabase/phase22.sql); the tiers shown are
+    // the client's copy, so the board works even before the first sync of the day.
+    if (o.job) {
+      const job = JOBS[o.job];
+      if (!job) return show(base);
+      const tiers = tiersFor(null, job.game);
+      const best = bestOf(job.game, !!game.registry.get('profile')?.guest);
+      return show({
+        title: `${job.emoji} ${job.name}`,
+        body: `${job.tagline}\n${job.description}`,
+        sub: best > 0 ? `Your personal best: ${best} points · Shift clock: ${Math.round(job.shiftMs / 1000)}s`
+                      : `A full shift takes about ${Math.round(job.shiftMs / 1000)} seconds. Replay it any time.`,
+        reward: tiers.length ? tiers[tiers.length - 1].coins : 0,
+        action: { label: `Start shift — up to ⚓${tiers.length ? tiers[tiers.length - 1].coins : 0}` },
+        go: job.id,
+      });
+    }
 
     // Phase 14 + 16: the sealed crate. Reading it shows what it is; the keypad does the rest, and the server
     // decides both the code and who the crate belongs to.
