@@ -11,6 +11,8 @@ This folder is prepared as a **static GitHub Pages site**. The root `index.html`
 
 The generated asset URLs are relative, so the game works at both a user Pages URL and a repository Pages URL. Do not open the game using `file://`; use the GitHub Pages address.
 
+**Rebuilding after changes (only needed by the developer, never to play):** the true build entry is `index.src.html` — the root `index.html` is the *deployed* page pointing at the bundles in `assets/`, and building from it would just re-minify the previous deploy. After editing `src/`, run `npm run pages`: it builds to `dist/` and copies `dist/index.src.html` + `dist/assets/` over the root `index.html` and `assets/` (see `scripts/sync-pages.mjs`).
+
 Guest play needs no Supabase setup: choose **Look around as a guest**. To enable accounts and online features, edit `src/config/keys.js` with your Supabase project URL and public anon/publishable key, and apply the SQL migrations in `supabase/` in the phase order described below. Never put a service-role key in the client.
 
 Controls: WASD / arrows or click. E (or click a building) to enter doors. **Enter** opens chat, **Q** opens the emote wheel, **1–8** play an emote directly, **Esc** closes panels. Tap a player to see their card.
