@@ -7,7 +7,9 @@ import { GAMES } from '../src/minigames/registry.js';
 
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok -', name); };
 // Phase 10 adds the seven world activities to the same `minigames` table, so both catalogues count as "the SQL".
-const sql = ['phase7', 'phase10', 'phase11', 'phase12']            // every file that seeds the `minigames` table
+// Phase 22 adds the jobs the same way: job rows are NOT in the arcade registry (the arcade renders its own
+// client list) but they must mirror everywhere else — tiers, max scores, the lot.
+const sql = ['phase7', 'phase10', 'phase11', 'phase12', 'phase22']  // every file that seeds the `minigames` table
   .map((f) => fs.readFileSync(new URL(`../supabase/${f}.sql`, import.meta.url), 'utf8')).join('\n');
 
 t('snow dash: faster is better, crashes cost points, partial credit when time runs out', () => {
