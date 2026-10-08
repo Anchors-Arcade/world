@@ -1,7 +1,7 @@
 // node scripts/test-social.mjs — exercises SocialState (friends/presence/privacy/join rules) with a fake Supabase client.
 import { register } from 'node:module';
 register('data:text/javascript,' + encodeURIComponent(`
-  export async function resolve(s, c, next) { if (s.startsWith('https://cdn.jsdelivr.net')) return { url: 'data:text/javascript,export const createClient = () => globalThis.__sb;', shortCircuit: true }; return next(s, c); }
+  export async function resolve(s, c, next) { if (s === '@supabase/supabase-js' || s.startsWith('https://cdn.jsdelivr.net')) return { url: 'data:text/javascript,export const createClient = () => globalThis.__sb;', shortCircuit: true }; return next(s, c); }
 `));
 import assert from 'node:assert/strict';
 

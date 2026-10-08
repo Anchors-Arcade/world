@@ -9,7 +9,7 @@ import { fetchInventory, setInventory, recordPurchase, claimDaily } from './data
 import { createChat } from './ui/chat.js';
 import { createFriends } from './ui/friends.js';
 import { createSettings } from './ui/settings.js';
-import { createMapPanel } from './ui/ui/mapPanel.js';
+import { createMapPanel } from './ui/mapPanel.js';
 import { createEmoteMenu } from './ui/emoteMenu.js';
 import { createArcade } from './ui/arcade.js';
 import { createJournal } from './ui/journal.js';
@@ -414,7 +414,7 @@ function markTutorialCompleted() {
 // =====================================================================
 // PHASE 20 — First-time player experience.
 // =====================================================================
-(function init() {
+(async function init() {
   const back = isConfigured ? auth.readAuthRedirect() : { confirmed: false, error: null };   // returning from the e-mail confirmation link?
   if (isConfigured) {
     const session = await auth.restoreSession();

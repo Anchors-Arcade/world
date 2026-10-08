@@ -1,18 +1,31 @@
-# Anchors World ⚓❄️  (no build, no npm)
+# Anchors World ⚓❄️
 
-Plain HTML/CSS/JS. Phaser and Supabase load from CDNs. Upload the files as-is to GitHub.
+Anchors World is a Vite-built browser game configured for GitHub Pages project sites. Phaser and Supabase are bundled into the static output; players do not need a CDN to start the game.
 
-## Setup (once)
-1. Supabase → SQL Editor → paste and run `supabase/schema.sql`, then `supabase/phase5.sql` (shops, furniture, rooms), then `supabase/phase6.sql` (chat, friends, safety), **then** `supabase/phase7.sql` (arcade scores, rewards, leaderboards), **then** `supabase/phase8.sql` (collectibles, secrets, achievements, visited places), **then** `supabase/phase9.sql` (the bigger clothing catalogue), **then** `supabase/phase10.sql` (the seven world activities). Then **`supabase/phase17.sql`** (roles, moderation, the admin panel), **`supabase/phase16.sql`** (the crate's keypad), **`supabase/phase15.sql`** (the Town Hall picture wall — read its moderation note first), **`supabase/phase14.sql`** (the Blue Star + the founder's jetpack), **`supabase/phase11.sql`** (Slope Sled Run + Snow Runner) and **`supabase/phase12.sql`** (the five sled routes). All safe to re-run.
-   Deploy the new client files and run `phase6.sql` together: Phase 6 changes how your own profile is loaded (`get_my_profile()`).
-   (Auth → Providers → Email: turn off "Confirm email" while testing, or keep it on and do step 1b.)
-1b. **E-mail confirmation links** go to your Supabase *Site URL*, which defaults to `http://localhost:3000` ("site can't be reached"). Fix: Supabase → Authentication → **URL Configuration** → set **Site URL** to where the game runs (e.g. `https://YOUR-USER.github.io/YOUR-REPO/` or `http://localhost:5173/`) and add the same address(es) under **Redirect URLs** (add `http://localhost:5173/**` and your GitHub Pages address with `/**`). The game now also sends the page you signed up from as the redirect, and the sign-up screen has a "Resend confirmation email" button. Links already sent keep the old address: request a new one.
-2. Edit `src/config/keys.js` with your Project URL and anon/publishable key.
-3. Upload every file in this folder to the root of your GitHub repo (keep the folder structure, include `.nojekyll`).
-4. Repo → Settings → Pages → Source: **Deploy from a branch** → `main` / `(root)` → Save.
-5. Open `https://YOUR-USER.github.io/YOUR-REPO/`
+## Run locally
 
-No keys yet? Click "Look around as a guest".
+Requires Node.js 22 or newer:
+
+```sh
+npm ci
+npm test
+npm run dev
+```
+
+Open the local URL printed by Vite. Do not open `index.html` with `file://`; browser module imports require a web server.
+
+## Deploy to GitHub Pages
+
+1. Put the **contents** of this project folder at the root of your GitHub repository. Keep `.github/workflows/pages.yml`, `src/`, `public/`, `supabase/`, and the package files.
+2. Push to the `main` branch. The workflow runs the tests, builds the site, and deploys `dist/` automatically.
+3. In **Settings → Pages**, set the source to **GitHub Actions** (not “Deploy from a branch”).
+4. Open the Pages URL shown in the workflow’s deployment environment.
+
+The build uses relative asset paths, so it works at both `https://USER.github.io/` and `https://USER.github.io/REPOSITORY/`.
+
+## Supabase (optional for guest play)
+
+Edit `src/config/keys.js` with your Supabase project URL and public anon/publishable key for accounts and online features. Never put a service-role key in the client. For guest play, click **Look around as a guest**; no Supabase credentials are needed. To enable accounts and saved/multiplayer features, apply the SQL migrations in `supabase/` in the phase order described below and configure the Supabase Auth Site URL and Redirect URLs for your Pages address.
 
 Controls: WASD / arrows or click. E (or click a building) to enter doors. **Enter** opens chat, **Q** opens the emote wheel, **1–8** play an emote directly, **Esc** closes panels. Tap a player to see their card.
 
