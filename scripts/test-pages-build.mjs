@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
+import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve('dist');
+// The build entry is index.src.html; the deployed page is the same file renamed to index.html
+// (scripts/sync-pages.mjs does this for the repo root). Do the same here so `npm run test:pages`
+// works on a fresh build without the sync step.
+const built = path.join(root, 'index.src.html');
+if (existsSync(built) && !existsSync(path.join(root, 'index.html'))) {
+  writeFileSync(path.join(root, 'index.html'), await readFile(built, 'utf8'));
+}
 const html = await readFile(path.join(root, 'index.html'), 'utf8');
 assert.match(html, /<div id="game"><\/div>/, 'game mount point is present');
 assert.match(html, /<div id="ui"><\/div>/, 'UI mount point is present');
