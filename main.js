@@ -1,3 +1,10 @@
+// ============================================================
+// ANCHORS WORLD — PROPRIETARY COPYRIGHT NOTICE
+// © 2026 Anchors Arcade — Creator of Anchors World.
+// All rights reserved.
+// ============================================================
+
+
 import { BootScene } from './scenes/BootScene.js';
 import { RoomScene } from './scenes/RoomScene.js';
 import { mountAuth } from './ui/authUI.js';
